@@ -1,0 +1,1215 @@
+.dashboard-hero {
+    margin-bottom: 14px;
+}
+
+.dashboard-month-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.dashboard-month-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 12px 0 18px;
+    padding: 0 4px;
+}
+
+.dashboard-month-nav a {
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.dashboard-metrics {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.metric-card {
+    display: block;
+    padding: 20px;
+    border: 1px solid #dfe4ea;
+    border-radius: 16px;
+    background: #ffffff;
+    color: inherit;
+    text-decoration: none;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(31, 41, 55, .09);
+}
+
+.metric-card span,
+.metric-card small {
+    display: block;
+    color: #687385;
+}
+
+.metric-card strong {
+    display: block;
+    margin: 8px 0 6px;
+    font-size: 26px;
+    font-variant-numeric: tabular-nums;
+}
+
+.warning-metric {
+    background: #fff9e8;
+}
+
+.danger-metric {
+    background: #fff0f0;
+    border-color: #efb6b6;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.quick-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.quick-menu-grid a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 58px;
+    border: 1px solid #dfe4ea;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #1f2937;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.quick-menu-grid a:hover {
+    background: #eef5ff;
+}
+
+.route-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.route-summary-grid > div {
+    padding: 18px;
+    border-radius: 12px;
+    background: #f7f9fb;
+}
+
+.route-summary-grid span,
+.route-summary-grid strong {
+    display: block;
+}
+
+.route-summary-grid strong {
+    margin-top: 8px;
+    font-size: 24px;
+}
+
+.outstanding-number {
+    color: #bc2929;
+    font-weight: 800;
+}
+
+#routeMap {
+    width: 100%;
+    height: 560px;
+    border: 1px solid #dfe4ea;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+#routeMap.picking-location {
+    cursor: crosshair;
+    outline: 3px solid #f3b53f;
+}
+
+.route-map-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.route-map-button {
+    min-width: 92px;
+    background: #e8edf3;
+    color: #233044;
+}
+
+.route-map-button.active {
+    background: #b91c1c;
+    color: white;
+}
+
+.map-picker-notice {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #fff7dd;
+    font-weight: 700;
+}
+
+.map-picker-notice button {
+    margin-left: 12px;
+    padding: 6px 10px;
+}
+
+.vendor-table-wrap {
+    max-height: 760px;
+}
+
+.vendor-management-table {
+    min-width: 1900px;
+}
+
+.vendor-management-table td {
+    vertical-align: middle;
+}
+
+.vendor-management-table input,
+.vendor-management-table select {
+    min-height: 38px;
+    border: 1px solid #cfd6df;
+    border-radius: 8px;
+    padding: 7px 8px;
+    background: white;
+    font: inherit;
+}
+
+.vendor-management-table select {
+    min-width: 105px;
+}
+
+.small-number-input {
+    width: 72px;
+}
+
+.address-input {
+    width: 260px;
+}
+
+.phone-input {
+    width: 145px;
+}
+
+.memo-input {
+    width: 220px;
+}
+
+.location-controls {
+    display: grid;
+    grid-template-columns: 115px 115px;
+    gap: 6px;
+}
+
+.location-controls .pick-location {
+    grid-column: 1 / -1;
+}
+
+.deposit-badge,
+.muted-badge,
+.payment-status {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.deposit-badge {
+    background: #e7f7ec;
+    color: #19713b;
+}
+
+.muted-badge {
+    background: #eef1f4;
+    color: #697586;
+}
+
+.payment-entry-form {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr 1fr 1.6fr auto;
+    gap: 12px;
+    align-items: end;
+}
+
+.payment-entry-form label {
+    display: grid;
+    gap: 6px;
+    font-weight: 700;
+}
+
+.payment-entry-form input,
+.payment-entry-form select {
+    min-height: 42px;
+}
+
+.receivable-row {
+    background: #fff8f8;
+}
+
+.status-paid {
+    color: #17683a;
+    background: #e6f6ec;
+}
+
+.status-partial {
+    color: #8a5c00;
+    background: #fff3cf;
+}
+
+.status-unpaid {
+    color: #a22222;
+    background: #ffe7e7;
+}
+
+.danger-outline-button {
+    color: #a52c2c;
+    border: 1px solid #d9a5a5;
+    background: #ffffff;
+}
+
+.danger-outline-button:hover {
+    color: #ffffff;
+    background: #a52c2c;
+}
+
+.compact-button {
+    min-height: 36px;
+    padding: 7px 10px;
+    white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+    .dashboard-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-entry-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .payment-entry-form button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 700px) {
+    .dashboard-metrics,
+    .quick-menu-grid,
+    .route-summary-grid,
+    .payment-entry-form {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-month-form {
+        width: 100%;
+    }
+
+    .dashboard-month-form input,
+    .dashboard-month-form button {
+        flex: 1;
+    }
+
+    #routeMap {
+        height: 440px;
+    }
+}
+
+
+.home-dashboard-link {
+    font-weight: 800;
+    border-color: #aeb8c5;
+    background: #f5f7fa;
+}
+
+.home-dashboard-link::before {
+    content: "⌂ ";
+}
+
+#routeMap .leaflet-container,
+#routeMap .leaflet-tile-container {
+    line-height: normal;
+}
+
+#routeMap .leaflet-tile {
+    box-shadow: none !important;
+}
+
+
+.route-map-buttons {
+    flex-wrap: wrap;
+}
+
+.route-map-button {
+    min-width: 105px;
+}
+
+
+.address-controls {
+    display: grid;
+    gap: 6px;
+}
+
+.address-controls .address-input {
+    width: 260px;
+}
+
+.address-controls .find-address-location {
+    width: 100%;
+}
+
+.map-geocode-status {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #b9dcc6;
+    background: #eef9f2;
+    color: #1d5f37;
+    font-weight: 700;
+}
+
+.map-geocode-status.error-status {
+    border-color: #e2b0b0;
+    background: #fff1f1;
+    color: #9e2929;
+}
+
+.find-address-location:disabled {
+    opacity: .65;
+    cursor: wait;
+}
+
+
+/* NAVER Maps route UI */
+#routeMap {
+    position: relative;
+    width: 100%;
+    height: 580px;
+    border: 1px solid #dfe4ea;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #eef1f4;
+}
+
+#routeMap.picking-location {
+    cursor: crosshair;
+    outline: 3px solid #f3b53f;
+    outline-offset: -3px;
+}
+
+.naver-route-marker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transform: translate(-2px, -2px);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.naver-route-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 3px solid #ffffff;
+    border-radius: 999px;
+    background: #d71920;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 900;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .24);
+}
+
+.naver-route-name {
+    display: inline-block;
+    max-width: 180px;
+    overflow: hidden;
+    padding: 6px 9px;
+    border: 1px solid #d9dee5;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .96);
+    color: #172033;
+    font-size: 13px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+}
+
+.map-load-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 32px;
+    color: #9e2929;
+    background: #fff1f1;
+    font-weight: 800;
+    text-align: center;
+}
+
+.map-geocode-status {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid #b9dcc6;
+    border-radius: 10px;
+    background: #eef9f2;
+    color: #1d5f37;
+    font-weight: 700;
+}
+
+.map-geocode-status.error-status {
+    border-color: #e2b0b0;
+    background: #fff1f1;
+    color: #9e2929;
+}
+
+.route-map-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.route-map-button {
+    min-width: 105px;
+}
+
+.route-map-button.active {
+    background: #d71920;
+    color: #ffffff;
+}
+
+@media (max-width: 700px) {
+    #routeMap {
+        height: 460px;
+    }
+
+    .naver-route-name {
+        max-width: 120px;
+    }
+}
+
+
+/* 배송코스 드래그 순서관리 */
+.route-order-panel {
+    overflow: visible;
+}
+
+.route-order-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.route-order-tab {
+    min-width: 105px;
+    background: #e8edf3;
+    color: #233044;
+}
+
+.route-order-tab.active {
+    background: #d71920;
+    color: #ffffff;
+}
+
+.route-order-help {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #f7f9fb;
+    color: #4b5768;
+}
+
+.route-order-help strong {
+    margin-right: 8px;
+    color: #182235;
+}
+
+.route-order-list {
+    display: grid;
+    gap: 8px;
+}
+
+.route-sort-item {
+    display: grid;
+    grid-template-columns: 38px 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 58px;
+    padding: 9px 12px;
+    border: 1px solid #dce2e9;
+    border-radius: 12px;
+    background: #ffffff;
+    cursor: grab;
+    transition:
+        border-color .12s ease,
+        background .12s ease,
+        transform .12s ease;
+}
+
+.route-sort-item:hover {
+    border-color: #b7c1cd;
+    background: #fafbfd;
+}
+
+.route-sort-item.dragging {
+    opacity: .45;
+    border-color: #d71920;
+    background: #fff2f2;
+    cursor: grabbing;
+}
+
+.route-sort-item.inactive-route-item {
+    opacity: .62;
+    background: #f4f5f7;
+}
+
+.route-sort-handle {
+    color: #7b8798;
+    font-size: 23px;
+    text-align: center;
+    user-select: none;
+}
+
+.route-sort-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #d71920;
+    color: #ffffff;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+.route-sort-name {
+    min-width: 0;
+    color: #182235;
+    font-weight: 800;
+}
+
+.route-sort-state {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: #e4e7eb;
+    color: #687385;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.route-sort-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.route-sort-move-button {
+    min-width: 38px;
+    min-height: 36px;
+    padding: 5px 9px;
+    border: 1px solid #d5dbe3;
+    border-radius: 8px;
+    background: #f7f9fb;
+    color: #273448;
+    font-weight: 900;
+}
+
+.route-sort-move-button:hover {
+    background: #e9eef5;
+}
+
+.route-order-empty {
+    padding: 24px;
+    border: 1px dashed #cbd3dd;
+    border-radius: 12px;
+    color: #707b8c;
+    text-align: center;
+}
+
+.route-order-status {
+    margin-top: 12px;
+    padding: 11px 13px;
+    border: 1px solid #b9dcc6;
+    border-radius: 10px;
+    background: #eef9f2;
+    color: #1d5f37;
+    font-weight: 800;
+}
+
+.route-order-status.error-status {
+    border-color: #e2b0b0;
+    background: #fff1f1;
+    color: #9e2929;
+}
+
+.route-order-readonly {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    min-height: 34px;
+    padding: 4px 8px;
+    border-radius: 9px;
+    background: #eef2f6;
+    color: #38475c;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px) {
+    .route-sort-item {
+        grid-template-columns: 32px 38px minmax(0, 1fr);
+    }
+
+    .route-sort-controls {
+        grid-column: 2 / -1;
+        justify-content: flex-end;
+    }
+
+    .route-order-tabs,
+    .route-order-tab {
+        width: 100%;
+    }
+}
+
+
+.close-month-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.closure-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.closure-row {
+    display: grid;
+    grid-template-columns: 100px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid #e0e5eb;
+    border-radius: 10px;
+}
+
+.primary-link {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 9px;
+    background: #172033;
+    color: #ffffff;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.road-route-info {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f6f8fb;
+    color: #39475a;
+    font-weight: 700;
+}
+
+.statement-export-actions {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0;
+}
+
+.statement-paper {
+    padding: 32px;
+    border: 1px solid #d7dde5;
+    background: #ffffff;
+    color: #111827;
+}
+
+.statement-title {
+    margin-bottom: 24px;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 10px;
+    text-align: center;
+}
+
+.statement-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 14px;
+}
+
+.statement-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.statement-table th,
+.statement-table td {
+    padding: 8px;
+    border: 1px solid #4b5563;
+    text-align: center;
+}
+
+.statement-table tfoot th {
+    background: #f1f3f5;
+}
+
+@media (max-width: 700px) {
+    .closure-row {
+        grid-template-columns: 1fr;
+    }
+
+    .statement-paper {
+        padding: 14px;
+        overflow-x: auto;
+    }
+}
+
+
+/* 일별 매출 캘린더 */
+.calendar-month-navigation {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+    margin: 12px 0 18px;
+}
+
+.calendar-month-navigation > a {
+    color: #344054;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.calendar-month-navigation > a:last-child {
+    text-align: right;
+}
+
+.calendar-month-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.calendar-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.calendar-summary-card {
+    padding: 17px;
+    border: 1px solid #dfe4ea;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.calendar-summary-card span,
+.calendar-summary-card small {
+    display: block;
+    color: #6a7585;
+}
+
+.calendar-summary-card strong {
+    display: block;
+    margin: 7px 0 3px;
+    color: #172033;
+    font-size: 21px;
+    font-variant-numeric: tabular-nums;
+}
+
+.calendar-summary-warning {
+    border-color: #ecc5a4;
+    background: #fff8ed;
+}
+
+.sales-calendar-panel {
+    padding: 0;
+    overflow: hidden;
+}
+
+.sales-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border-bottom: 1px solid #dfe4ea;
+    background: #f6f8fa;
+}
+
+.sales-calendar-weekdays > div {
+    padding: 12px 8px;
+    color: #566173;
+    font-weight: 900;
+    text-align: center;
+}
+
+.calendar-sunday {
+    color: #c53838 !important;
+}
+
+.calendar-saturday {
+    color: #356bc4 !important;
+}
+
+.sales-calendar-weeks {
+    display: grid;
+}
+
+.sales-calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.sales-calendar-day {
+    display: block;
+    min-height: 125px;
+    padding: 10px;
+    border-right: 1px solid #e4e8ed;
+    border-bottom: 1px solid #e4e8ed;
+    background: #ffffff;
+    color: #172033;
+    text-decoration: none;
+    transition:
+        background .12s ease,
+        box-shadow .12s ease;
+}
+
+.sales-calendar-week .sales-calendar-day:last-child {
+    border-right: 0;
+}
+
+.sales-calendar-day:hover {
+    background: #f8fafc;
+    box-shadow: inset 0 0 0 2px #c9d4e0;
+}
+
+.sales-calendar-day.has-sales {
+    background: #fbfdfb;
+}
+
+.sales-calendar-day.selected-calendar-day {
+    position: relative;
+    z-index: 1;
+    background: #fff5f5;
+    box-shadow: inset 0 0 0 3px #d71920;
+}
+
+.sales-calendar-day.outside-month {
+    background: #f5f6f7;
+    color: #a4acb8;
+}
+
+.calendar-sunday-cell .calendar-day-top > strong {
+    color: #c53838;
+}
+
+.calendar-saturday-cell .calendar-day-top > strong {
+    color: #356bc4;
+}
+
+.calendar-day-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.calendar-day-top > strong {
+    font-size: 16px;
+}
+
+.calendar-missing-badge {
+    display: inline-flex;
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: #fff0df;
+    color: #9d5d15;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.calendar-day-sales {
+    margin-top: 17px;
+}
+
+.calendar-day-sales strong {
+    display: block;
+    color: #172033;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+}
+
+.calendar-day-sales small {
+    display: block;
+    margin-top: 6px;
+    color: #6d7786;
+    line-height: 1.4;
+}
+
+.calendar-no-sales {
+    margin-top: 20px;
+    color: #b1b7c0;
+    font-size: 12px;
+}
+
+.daily-sales-detail {
+    margin-top: 20px;
+}
+
+.daily-detail-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.daily-detail-summary > div {
+    padding: 14px;
+    border-radius: 12px;
+    background: #f6f8fa;
+}
+
+.daily-detail-summary span {
+    display: block;
+    color: #6b7685;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.daily-detail-summary strong {
+    display: block;
+    margin-top: 5px;
+    color: #172033;
+    font-size: 19px;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1000px) {
+    .calendar-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sales-calendar-day {
+        min-height: 105px;
+        padding: 8px;
+    }
+
+    .calendar-day-sales strong {
+        font-size: 14px;
+    }
+
+    .daily-detail-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .calendar-month-navigation {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .calendar-month-form {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        justify-content: center;
+    }
+
+    .calendar-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-calendar-panel {
+        overflow-x: auto;
+    }
+
+    .sales-calendar-weekdays,
+    .sales-calendar-week {
+        min-width: 760px;
+    }
+
+    .sales-calendar-day {
+        min-height: 112px;
+    }
+
+    .daily-detail-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+
+/* 행사/임시단가 */
+.promotion-guide {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.promotion-guide strong {
+    flex: 0 0 auto;
+}
+
+.promotion-create-form {
+    display: grid;
+    grid-template-columns:
+        minmax(150px, 1.2fr)
+        minmax(130px, 1fr)
+        150px
+        150px
+        150px
+        minmax(190px, 1.5fr)
+        auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.promotion-create-form label {
+    display: grid;
+    gap: 5px;
+    color: #586477;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* 배송코스 최적순서 */
+.route-optimize-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+    padding: 12px 14px;
+    border: 1px solid #dbe2ea;
+    border-radius: 11px;
+    background: #f8fafc;
+    color: #566173;
+}
+
+.route-optimization-result {
+    margin-bottom: 14px;
+    padding: 14px;
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.route-optimize-saving {
+    color: #17663a;
+}
+
+.route-optimize-warning {
+    color: #a05416;
+}
+
+.route-optimize-distance {
+    margin-top: 7px;
+    color: #25344a;
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.route-optimize-stop-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.route-optimize-stop-list span {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #f0f3f7;
+    color: #344054;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.route-optimize-actions {
+    margin-top: 12px;
+}
+
+/* 문자 명세서 */
+.statement-send-toolbar {
+    display: grid;
+    gap: 14px;
+}
+
+.statement-send-toolbar > form,
+.statement-recipient-add {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: end;
+}
+
+.statement-send-toolbar label {
+    display: grid;
+    gap: 5px;
+}
+
+.statement-share-guide {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: center;
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border: 1px solid #c9d9ee;
+    border-radius: 11px;
+    background: #f4f8ff;
+    color: #35465f;
+}
+
+.share-statement-button {
+    background: #176b3a;
+}
+
+.inline-form {
+    display: inline-block;
+    margin: 2px;
+}
+
+.compact-link {
+    padding: 7px 10px;
+}
+
+@media (max-width: 1100px) {
+    .promotion-create-form {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .promotion-create-form {
+        grid-template-columns: 1fr;
+    }
+
+    .route-optimize-bar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

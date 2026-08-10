@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>콩 재고 관리</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory.css}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">원재료 관리</p>
+                <h1>콩 재고 관리</h1>
+                <p>
+                    매입과 일별 사용량을 기록하면 소립·중립·대립·녹두의
+                    원산지별 현재 재고를 자동 계산합니다. 1포대는 25kg으로 계산합니다.
+                </p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
+                <a class="secondary-link" th:href="@{/reports/monthly}">월매출 현황</a>
+                <a class="secondary-link" th:href="@{/statements}">명세서 생성</a>
+                <a class="secondary-link" th:href="@{/sales}">판매내역</a>
+                <a class="secondary-link" th:href="@{/upload}">장부 업로드</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
+    <div class="alert error" th:if="${inventoryError}" th:text="${inventoryError}"></div>
+
+    <section class="panel inventory-date-panel">
+        <form method="get" th:action="@{/inventory}" class="inventory-date-form">
+            <label for="asOf">재고 기준일</label>
+            <input id="asOf" name="asOf" type="date" th:value="${inventory.asOfDate}" required>
+            <button type="submit">기준일 조회</button>
+            <a class="secondary-link" th:href="@{/inventory}">오늘 기준</a>
+        </form>
+        <p class="helper">
+            기준일까지의 매입량 - 사용량으로 계산합니다. 사용량이 매입량보다 많으면 재고가 음수로 표시됩니다.
+        </p>
+    </section>
+
+    <section class="summary-grid four inventory-summary">
+        <article class="summary-card">
+            <span>관리 품목 조합</span>
+            <strong th:text="|${#lists.size(inventory.stockRows)}개|">8개</strong>
+        </article>
+        <article class="summary-card" th:classappend="${inventory.lowStockCount > 0} ? ' warning-card' : ' success-card'">
+            <span>재고 부족</span>
+            <strong th:text="|${inventory.lowStockCount}개|">0개</strong>
+        </article>
+        <article class="summary-card">
+            <span>포대당 중량</span>
+            <strong>25kg</strong>
+        </article>
+        <article class="summary-card">
+            <span>기준일</span>
+            <strong class="date-metric" th:text="${inventory.asOfDate}">2026-08-07</strong>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>현재 재고</h2>
+                <p>부족 기준은 원산지별로 직접 변경할 수 있습니다. 기본값은 3포대입니다.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="stock-table">
+                <thead>
+                <tr>
+                    <th>콩 종류</th>
+                    <th>원산지</th>
+                    <th>누적 매입</th>
+                    <th>누적 사용</th>
+                    <th>현재 재고</th>
+                    <th>현재 kg</th>
+                    <th>평균 매입단가/포대</th>
+                    <th>예상 재고가액</th>
+                    <th>부족 기준</th>
+                    <th>상태</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${inventory.stockRows}" th:classappend="${row.lowStock} ? ' low-stock-row'">
+                    <td><strong th:text="${row.beanTypeLabel}">소립</strong></td>
+                    <td th:text="${row.originLabel}">캐나다산</td>
+                    <td class="number" th:text="|${row.purchasedBags.stripTrailingZeros().toPlainString()}포 / ${row.purchasedKg.stripTrailingZeros().toPlainString()}kg|">0</td>
+                    <td class="number" th:text="|${row.usedBags.stripTrailingZeros().toPlainString()}포 / ${row.usedKg.stripTrailingZeros().toPlainString()}kg|">0</td>
+                    <td class="number strong-number" th:text="|${row.currentBags.stripTrailingZeros().toPlainString()}포|">0포</td>
+                    <td class="number strong-number" th:text="|${row.currentKg.stripTrailingZeros().toPlainString()}kg|">0kg</td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.weightedAveragePricePerBag, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.estimatedStockValue, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
+                    <td>
+                        <form class="threshold-form" th:action="@{/inventory/threshold}" method="post">
+                            <input type="hidden" name="beanType" th:value="${row.beanType.name()}">
+                            <input type="hidden" name="origin" th:value="${row.origin.name()}">
+                            <input type="number" name="thresholdBags" min="0" step="0.1"
+                                   th:value="${row.lowStockThresholdBags.stripTrailingZeros().toPlainString()}" required>
+                            <button type="submit" class="secondary-button compact-button">저장</button>
+                        </form>
+                    </td>
+                    <td>
+                        <span th:if="${!row.active}" class="stock-badge idle">미사용</span>
+                        <span th:if="${row.active and row.lowStock}" class="stock-badge danger">부족</span>
+                        <span th:if="${row.active and !row.lowStock}" class="stock-badge safe">정상</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="inventory-form-grid">
+        <article class="panel">
+            <h2>콩 매입 등록</h2>
+            <form th:action="@{/inventory/purchases}" method="post" class="inventory-entry-form">
+                <label>매입 날짜
+                    <input type="date" name="purchaseDate" th:value="${today}" required>
+                </label>
+                <label>콩 종류
+                    <select name="beanType" required>
+                        <option th:each="type : ${beanTypes}" th:value="${type.name()}" th:text="${type.label}"></option>
+                    </select>
+                </label>
+                <label>원산지
+                    <select name="origin" required>
+                        <option th:each="origin : ${beanOrigins}" th:value="${origin.name()}" th:text="${origin.label}"></option>
+                    </select>
+                </label>
+                <label>구입 포대 수
+                    <input type="number" name="bagCount" min="0.001" step="0.001" placeholder="예: 20" required>
+                </label>
+                <label>포대당 매입단가
+                    <input type="number" name="unitPricePerBag" min="0" step="1" placeholder="예: 85000" required>
+                </label>
+                <label class="wide-field">비고
+                    <input type="text" name="note" maxlength="500" placeholder="선택 입력">
+                </label>
+                <button type="submit" class="wide-field">매입 저장</button>
+            </form>
+            <p class="helper">소립·중립·대립은 캐나다산/중국산, 녹두는 중국산/칠레산만 등록됩니다.</p>
+        </article>
+
+        <article class="panel">
+            <h2>일별 사용량 등록</h2>
+            <form th:action="@{/inventory/usages}" method="post" class="inventory-entry-form">
+                <label>사용 날짜
+                    <input type="date" name="usageDate" th:value="${today}" required>
+                </label>
+                <label>콩 종류
+                    <select name="beanType" required>
+                        <option th:each="type : ${beanTypes}" th:value="${type.name()}" th:text="${type.label}"></option>
+                    </select>
+                </label>
+                <label>원산지
+                    <select name="origin" required>
+                        <option th:each="origin : ${beanOrigins}" th:value="${origin.name()}" th:text="${origin.label}"></option>
+                    </select>
+                </label>
+                <label>사용 포대 수
+                    <input type="number" name="bagCount" min="0.001" step="0.001" placeholder="예: 4.5" required>
+                </label>
+                <label class="wide-field">비고
+                    <input type="text" name="note" maxlength="500" placeholder="예: 오전 생산 사용량">
+                </label>
+                <button type="submit" class="wide-field">사용량 저장</button>
+            </form>
+            <p class="helper">0.5포를 입력하면 12.5kg으로 자동 계산됩니다. 현재 재고보다 많이 사용하면 음수 재고와 부족 표시로 확인할 수 있습니다.</p>
+        </article>
+    </section>
+
+    <section class="history-grid">
+        <article class="panel">
+            <h2>최근 매입 기록</h2>
+            <div class="table-wrap history-table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>날짜</th><th>종류</th><th>원산지</th><th>포대</th><th>kg</th><th>포대단가</th><th>총액</th><th>비고</th><th>삭제</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(inventory.recentPurchases)}"><td colspan="9">매입 기록이 없습니다.</td></tr>
+                    <tr th:each="row : ${inventory.recentPurchases}">
+                        <td th:text="${row.purchaseDate}"></td>
+                        <td th:text="${row.beanTypeLabel}"></td>
+                        <td th:text="${row.originLabel}"></td>
+                        <td class="number" th:text="${row.bagCount.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number" th:text="${row.totalKg.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number" th:text="|${#numbers.formatDecimal(row.unitPricePerBag, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.totalAmount, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                        <td th:text="${row.note}"></td>
+                        <td>
+                            <form th:action="@{/inventory/purchases/{id}/delete(id=${row.id})}" method="post" onsubmit="return confirm('이 매입 기록을 삭제할까요?');">
+                                <button type="submit" class="danger-button compact-button">삭제</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="panel">
+            <h2>최근 사용 기록</h2>
+            <div class="table-wrap history-table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>날짜</th><th>종류</th><th>원산지</th><th>포대</th><th>kg</th><th>비고</th><th>삭제</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(inventory.recentUsages)}"><td colspan="7">사용 기록이 없습니다.</td></tr>
+                    <tr th:each="row : ${inventory.recentUsages}">
+                        <td th:text="${row.usageDate}"></td>
+                        <td th:text="${row.beanTypeLabel}"></td>
+                        <td th:text="${row.originLabel}"></td>
+                        <td class="number" th:text="${row.bagCount.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number" th:text="${row.totalKg.stripTrailingZeros().toPlainString()}"></td>
+                        <td th:text="${row.note}"></td>
+                        <td>
+                            <form th:action="@{/inventory/usages/{id}/delete(id=${row.id})}" method="post" onsubmit="return confirm('이 사용 기록을 삭제할까요?');">
+                                <button type="submit" class="danger-button compact-button">삭제</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+</main>
+</body>
+</html>

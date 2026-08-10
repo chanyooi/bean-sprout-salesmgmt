@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>납품 장부 업로드</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">매출 장부 관리</p>
+                <h1>input_data.xlsx 업로드</h1>
+                <p>
+                    엑셀을 검사하고 날짜·거래처·품목·수량 형태로 변환한 뒤
+                    MySQL에 저장할 수 있습니다.
+                </p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link" th:href="@{/admin/safety}">업로드 이력·복구</a>
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/input-template}">새 월 장부 다운로드</a>
+                <a class="secondary-link" th:href="@{/inventory}">콩 재고</a>
+                <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
+                <a class="secondary-link" th:href="@{/statements}">명세서 생성</a>
+                <a class="secondary-link" th:href="@{/reports/monthly}">월매출 현황</a>
+                <a class="secondary-link" th:href="@{/prices}">단가 관리</a>
+                <a class="secondary-link" th:href="@{/sales}">저장 데이터 보기</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <form th:action="@{/excel/import}"
+              method="post"
+              enctype="multipart/form-data"
+              class="upload-form">
+            <label for="file">엑셀 파일 선택</label>
+            <input id="file"
+                   name="file"
+                   type="file"
+                   accept=".xlsx"
+                   required>
+            <div class="button-row">
+                <button type="submit" name="action" value="preview" class="secondary-button">
+                    확인만 하기
+                </button>
+                <button type="submit" name="action" value="save">
+                    검사 후 DB 저장
+                </button>
+            </div>
+        </form>
+
+        <p class="helper">
+            같은 주문번호를 다시 올리면 해당 주문 행을 최신 상태로 동기화합니다.
+            수량이 달라진 품목은 수정되고, 기존 DB에는 있지만 이번 주문 행에서
+            빈칸이나 0이 된 품목은 삭제됩니다. 한 주문의 모든 품목을 전부
+            빈칸으로 만든 경우에는 기존 DB 주문 전체를 삭제합니다.
+        </p>
+    </section>
+
+    <div class="alert error"
+         th:if="${fatalError}"
+         th:text="${fatalError}">
+    </div>
+
+    <div class="alert error"
+         th:if="${saveError}"
+         th:text="${saveError}">
+    </div>
+
+    <section class="save-success" th:if="${saveResult != null}">
+        <h2>MySQL 저장·동기화 완료</h2>
+        <div class="save-grid">
+            <div><span>새 거래처</span><strong th:text="${saveResult.createdVendors}">0</strong></div>
+            <div><span>새 주문</span><strong th:text="${saveResult.createdOrders}">0</strong></div>
+            <div><span>신규 품목</span><strong th:text="${saveResult.savedItems}">0</strong></div>
+            <div><span>수정 품목</span><strong th:text="${saveResult.updatedItems}">0</strong></div>
+            <div><span>삭제 품목</span><strong th:text="${saveResult.deletedItems}">0</strong></div>
+            <div><span>삭제 주문</span><strong th:text="${saveResult.deletedOrders}">0</strong></div>
+            <div><span>동일 건너뜀</span><strong th:text="${saveResult.skippedDuplicateItems}">0</strong></div>
+        </div>
+        <a class="secondary-link" th:href="@{/sales}">저장된 내용 확인하기</a>
+    </section>
+
+    <section th:if="${result != null}">
+        <div class="summary-grid">
+            <article class="summary-card">
+                <span>처리 시트</span>
+                <strong th:text="${result.sheetCount}">0</strong>
+            </article>
+            <article class="summary-card">
+                <span>판매 입력 행</span>
+                <strong th:text="${result.salesRowCount}">0</strong>
+            </article>
+            <article class="summary-card">
+                <span>변환 데이터</span>
+                <strong th:text="${#lists.size(result.records)}">0</strong>
+            </article>
+            <article class="summary-card">
+                <span>거래처</span>
+                <strong th:text="${result.vendorCount()}">0</strong>
+            </article>
+            <article class="summary-card warning-card">
+                <span>경고</span>
+                <strong th:text="${result.warningCount()}">0</strong>
+            </article>
+            <article class="summary-card error-card">
+                <span>오류</span>
+                <strong th:text="${result.errorCount()}">0</strong>
+            </article>
+        </div>
+
+        <section class="panel"
+                 th:if="${!#lists.isEmpty(result.issues)}">
+            <h2>확인할 내용</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>구분</th>
+                        <th>위치</th>
+                        <th>내용</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="issue : ${result.issues}">
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${issue.level.name() == 'ERROR'} ? ' badge-error' : ' badge-warning'"
+                                  th:text="${issue.level.name() == 'ERROR'} ? '오류' : '경고'">
+                            </span>
+                        </td>
+                        <td th:text="${issue.location}"></td>
+                        <td th:text="${issue.message}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel"
+                 th:if="${#lists.isEmpty(result.records)}">
+            <h2>변환된 판매 데이터가 없습니다</h2>
+            <p>현재 파일의 모든 품목 수량이 빈칸입니다.</p>
+        </section>
+
+        <section class="panel"
+                 th:if="${!#lists.isEmpty(result.records)}">
+            <div class="panel-heading">
+                <div>
+                    <h2>변환 결과 미리보기</h2>
+                    <p>
+                        화면에는 최대
+                        <span th:text="${previewLimit}">300</span>건까지 표시합니다.
+                    </p>
+                </div>
+                <strong th:text="|총 ${#lists.size(result.records)}건|">총 0건</strong>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>주문번호</th>
+                        <th>날짜</th>
+                        <th>입력 거래처</th>
+                        <th>명세서 거래처</th>
+                        <th>품목</th>
+                        <th>수량</th>
+                        <th>회수통 단가</th>
+                        <th>전달방식</th>
+                        <th>비고</th>
+                        <th>원본 위치</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="record : ${previewRecords}">
+                        <td th:text="${record.orderNumber}"></td>
+                        <td th:text="${record.deliveryDate}"></td>
+                        <td th:text="${record.inputVendor}"></td>
+                        <td th:text="${record.statementVendor}"></td>
+                        <td th:text="${record.item}"></td>
+                        <td class="number" th:text="${record.quantity.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number"
+                            th:text="${record.returnContainerUnitPrice == null ? '' : record.returnContainerUnitPrice.stripTrailingZeros().toPlainString()}">
+                        </td>
+                        <td th:text="${record.deliveryMethod}"></td>
+                        <td th:text="${record.note}"></td>
+                        <td th:text="|${record.sourceSheet} / ${record.sourceRow}행|"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</main>
+</body>
+</html>

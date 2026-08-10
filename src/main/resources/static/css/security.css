@@ -1,0 +1,324 @@
+* {
+    box-sizing: border-box;
+}
+
+.security-page {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+        radial-gradient(
+            circle at top left,
+            #eef5ff 0,
+            transparent 36%
+        ),
+        #f3f5f8;
+    color: #172033;
+    font-family:
+        Pretendard,
+        "Noto Sans KR",
+        Arial,
+        sans-serif;
+}
+
+.security-card {
+    width: min(100%, 430px);
+    padding: 34px;
+    border: 1px solid #dfe4ea;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow:
+        0 18px 50px rgba(20, 34, 55, .10);
+}
+
+.security-card.wider {
+    width: min(100%, 520px);
+}
+
+.security-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.security-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 15px;
+    background: #1e5ed6;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.security-brand p {
+    margin: 0 0 3px;
+    color: #55708f;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.security-brand h1 {
+    margin: 0;
+    font-size: 25px;
+    line-height: 1.2;
+}
+
+.security-description {
+    margin: 22px 0;
+    color: #667386;
+    line-height: 1.65;
+}
+
+.security-form {
+    display: grid;
+    gap: 15px;
+}
+
+.security-form label {
+    display: grid;
+    gap: 7px;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.security-form label small {
+    color: #8892a0;
+    font-weight: 500;
+}
+
+.security-form input,
+.security-form select {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid #ccd4df;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #172033;
+    font: inherit;
+    outline: none;
+}
+
+.security-form input:focus,
+.security-form select:focus {
+    border-color: #3974dc;
+    box-shadow:
+        0 0 0 3px rgba(57, 116, 220, .12);
+}
+
+.security-primary-button,
+.security-primary-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 49px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 11px;
+    background: #1e5ed6;
+    color: #ffffff;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.security-alert {
+    margin: 14px 0;
+    padding: 11px 13px;
+    border-radius: 10px;
+    line-height: 1.5;
+}
+
+.security-alert.error {
+    border: 1px solid #efb6b6;
+    background: #fff3f3;
+    color: #a12c2c;
+}
+
+.security-alert.success {
+    border: 1px solid #b8dfc6;
+    background: #eff9f2;
+    color: #21623a;
+}
+
+.first-setup-link,
+.security-back-link {
+    display: block;
+    margin-top: 18px;
+    color: #1e5ed6;
+    font-weight: 800;
+    text-align: center;
+    text-decoration: none;
+}
+
+.security-footnote {
+    margin: 22px 0 0;
+    color: #929ba8;
+    font-size: 12px;
+    text-align: center;
+}
+
+.admin-user-create-form {
+    display: grid;
+    grid-template-columns:
+        1fr 1fr 140px 1fr 1fr auto;
+    gap: 9px;
+    align-items: end;
+}
+
+.admin-user-create-form label {
+    display: grid;
+    gap: 5px;
+    color: #667386;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.account-card-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.account-card {
+    padding: 16px;
+    border: 1px solid #dfe4ea;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.account-card-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.account-card-heading strong,
+.account-card-heading span {
+    display: block;
+}
+
+.account-card-heading span {
+    margin-top: 3px;
+    color: #7c8796;
+    font-size: 12px;
+}
+
+.account-role-badge {
+    height: fit-content;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eef3fb;
+    color: #305a98 !important;
+    font-size: 11px !important;
+    font-weight: 900;
+}
+
+.account-status-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 13px 0;
+}
+
+.account-enabled {
+    color: #19733d;
+    font-weight: 900;
+}
+
+.account-disabled {
+    color: #b43c3c;
+    font-weight: 900;
+}
+
+.account-status-row small {
+    color: #939ca9;
+}
+
+.account-password-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 9px;
+}
+
+.account-password-form button {
+    grid-column: 1 / -1;
+}
+
+.dashboard-login-area {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 9px;
+}
+
+.dashboard-current-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #526072;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.dashboard-current-user strong {
+    color: #172033;
+}
+
+.logout-form {
+    display: inline;
+    margin: 0;
+}
+
+.logout-button {
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid #cad3df;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #39475a;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+@media (max-width: 1000px) {
+    .admin-user-create-form {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .security-page {
+        padding: 14px;
+    }
+
+    .security-card {
+        padding: 24px 20px;
+    }
+
+    .admin-user-create-form,
+    .account-card-grid,
+    .account-password-form {
+        grid-template-columns: 1fr;
+    }
+
+    .account-password-form button {
+        grid-column: auto;
+    }
+
+    .dashboard-login-area {
+        align-items: stretch;
+    }
+}

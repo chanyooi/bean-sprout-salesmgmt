@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>새 월 장부 다운로드</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">월별 장부 준비</p>
+                <h1>새 input_data.xlsx 만들기</h1>
+                <p>
+                    사용할 달만 선택하면 그 달의 날짜 수에 맞춰
+                    빈 납품 장부를 자동으로 만들어 다운로드합니다.
+                </p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/upload}">엑셀 업로드</a>
+                <a class="secondary-link" th:href="@{/sales}">판매내역</a>
+                <a class="secondary-link" th:href="@{/reports/monthly}">월매출 현황</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <form th:action="@{/input-template}" method="get" class="upload-form">
+            <label for="month">장부를 만들 월</label>
+            <input id="month"
+                   type="month"
+                   name="month"
+                   th:value="${selectedMonth}"
+                   required>
+            <button type="submit" class="secondary-button">월 확인</button>
+        </form>
+
+        <div class="summary-grid" style="margin-top: 20px;">
+            <article class="summary-card">
+                <span>선택 월</span>
+                <strong th:text="${selectedMonth}">2026-08</strong>
+            </article>
+            <article class="summary-card">
+                <span>생성되는 날짜 시트</span>
+                <strong th:text="|${dayCount}개|">31개</strong>
+            </article>
+        </div>
+
+        <div class="button-row" style="margin-top: 20px;">
+            <a class="secondary-link"
+               th:href="@{/input-template/download(month=${selectedMonth})}">
+                이 달 input_data.xlsx 다운로드
+            </a>
+        </div>
+
+        <p class="helper">
+            거래처 목록·셀 서식·드롭다운은 기존 장부 형식을 유지하고,
+            판매 수량·회수통·예외단가·전달방식·비고는 모두 빈칸으로 생성합니다.
+            주문번호와 날짜는 선택한 달에 맞춰 자동으로 바뀝니다.
+        </p>
+    </section>
+
+    <section class="panel">
+        <h2>예시</h2>
+        <p>
+            2026-08을 선택하면 20260801부터 20260831까지 31개 시트가 생성됩니다.
+            2027-02를 선택하면 28개, 윤년 2028-02를 선택하면 29개 시트가 생성됩니다.
+        </p>
+    </section>
+</main>
+</body>
+</html>

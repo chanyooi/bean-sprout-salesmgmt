@@ -1,0 +1,28 @@
+
+spring:
+  application:
+    name: salesmgmt
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/bean_sprout?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: ${DB_PASSWORD}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+  thymeleaf:
+    cache: false
+  web:
+    error:
+      include-message: always

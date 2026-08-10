@@ -1,0 +1,51 @@
+.profit-card {
+    border-color: #a8d9bb;
+    background: #edfff4;
+}
+
+.loss-card {
+    border-color: #f0b6b6;
+    background: #fff0f0;
+}
+
+.expense-form {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.expense-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-weight: 700;
+}
+
+.expense-form input {
+    width: 100%;
+}
+
+.expense-form button {
+    align-self: end;
+    min-height: 42px;
+}
+
+.total-row {
+    background: #f3f6fb;
+}
+
+.vendor-profit-table-wrap {
+    max-height: 680px;
+}
+
+@media (max-width: 1000px) {
+    .expense-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .expense-form {
+        grid-template-columns: 1fr;
+    }
+}

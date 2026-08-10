@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>문자 명세서 발송관리</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/operations.css}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">월 명세서</p>
+                <h1>문자 명세서 발송관리</h1>
+                <p>
+                    매달 문자로 명세서를 보내는 거래처만 따로 관리하고 발송 여부를 체크합니다.
+                </p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/statement-export(month=${selectedMonth})}">명세서 만들기</a>
+                <a class="secondary-link" th:href="@{/statements}">엑셀 명세서</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="alert success"
+         th:if="${successMessage}"
+         th:text="${successMessage}"></div>
+
+    <section class="panel">
+        <div class="statement-send-toolbar">
+            <form th:action="@{/statement-send}" method="get">
+                <label>
+                    정산월
+                    <input type="month"
+                           name="month"
+                           th:value="${selectedMonth}"
+                           required>
+                </label>
+                <button type="submit">조회</button>
+            </form>
+
+            <form th:action="@{/statement-send/settings}"
+                  method="post"
+                  class="statement-recipient-add">
+                <input type="hidden"
+                       name="month"
+                       th:value="${selectedMonth}">
+
+                <select name="vendorId" required>
+                    <option value="">문자 명세서 거래처 추가</option>
+                    <option th:each="vendor : ${vendors}"
+                            th:value="${vendor.id}"
+                            th:text="${vendor.inputName}">
+                    </option>
+                </select>
+
+                <input type="text"
+                       name="phone"
+                       placeholder="전화번호 (거래처 정보에 있으면 생략 가능)">
+
+                <input type="text"
+                       name="memo"
+                       placeholder="메모">
+
+                <button type="submit">대상 추가</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2 th:text="|${selectedMonth} 문자 발송 목록|"></h2>
+                <p>
+                    ‘명세서 열기’ → ‘이미지로 바로 공유’ 순서로 사용하면
+                    사진을 따로 저장했다가 다시 첨부하는 과정을 줄일 수 있습니다.
+                </p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>거래처</th>
+                    <th>전화번호</th>
+                    <th>메모</th>
+                    <th>상태</th>
+                    <th>명세서</th>
+                    <th>관리</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${queue}">
+                    <td><strong th:text="${row.vendorName}"></strong></td>
+                    <td th:text="${row.phone == null ? '전화번호 미등록' : row.phone}"></td>
+                    <td th:text="${row.memo == null ? '-' : row.memo}"></td>
+                    <td>
+                        <span th:if="${row.sent}"
+                              class="payment-status status-paid">
+                            발송완료
+                        </span>
+                        <span th:unless="${row.sent}"
+                              class="payment-status status-pending">
+                            미발송
+                        </span>
+                        <small th:if="${row.sentAt != null}"
+                               th:text="${#temporals.format(row.sentAt, 'MM-dd HH:mm')}">
+                        </small>
+                    </td>
+
+                    <td>
+                        <a class="primary-link compact-link"
+                           th:href="@{/statement-export(month=${selectedMonth}, vendorId=${row.vendorId}, fromSendQueue=true)}">
+                            명세서 열기
+                        </a>
+                    </td>
+
+                    <td>
+                        <form th:if="${row.sent}"
+                              th:action="@{/statement-send/mark-unsent}"
+                              method="post"
+                              class="inline-form">
+                            <input type="hidden" name="vendorId" th:value="${row.vendorId}">
+                            <input type="hidden" name="month" th:value="${selectedMonth}">
+                            <button type="submit"
+                                    class="secondary-button compact-button">
+                                미발송으로
+                            </button>
+                        </form>
+
+                        <form th:action="@{/statement-send/settings/remove}"
+                              method="post"
+                              class="inline-form">
+                            <input type="hidden" name="vendorId" th:value="${row.vendorId}">
+                            <input type="hidden" name="month" th:value="${selectedMonth}">
+                            <button type="submit"
+                                    class="danger-outline-button compact-button"
+                                    onclick="return confirm('문자 명세서 대상에서 제외할까요?');">
+                                대상 제외
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(queue)}">
+                    <td colspan="6">
+                        문자로 명세서를 보내는 거래처를 위에서 추가해주세요.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

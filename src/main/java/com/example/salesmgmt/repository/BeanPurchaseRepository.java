@@ -1,0 +1,16 @@
+package com.example.salesmgmt.repository;
+
+import com.example.salesmgmt.entity.BeanPurchaseEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.time.LocalDate;
+import java.util.List;
+
+public interface BeanPurchaseRepository extends JpaRepository<BeanPurchaseEntity, Long> {
+
+    List<BeanPurchaseEntity> findAllByPurchaseDateLessThanEqualOrderByPurchaseDateAscIdAsc(
+            LocalDate purchaseDate
+    );
+
+    List<BeanPurchaseEntity> findTop50ByOrderByPurchaseDateDescIdDesc();
+}

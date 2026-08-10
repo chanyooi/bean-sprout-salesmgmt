@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>송천콩나물 로그인</title>
+    <link rel="stylesheet"
+          th:href="@{/css/security.css(v=20260810_1)}">
+</head>
+<body class="security-page">
+<main class="security-card">
+    <div class="security-brand">
+        <span class="security-logo">송천</span>
+        <div>
+            <p>송천콩나물</p>
+            <h1>매출 관리 로그인</h1>
+        </div>
+    </div>
+
+    <p class="security-description">
+        매출·입금·재고·배송코스 관리를 위해 로그인해주세요.
+    </p>
+
+    <div class="security-alert success"
+         th:if="${setupSuccess}"
+         th:text="${setupSuccess}">
+    </div>
+
+    <div class="security-alert error"
+         th:if="${param.error}">
+        아이디 또는 비밀번호가 올바르지 않습니다.
+    </div>
+
+    <div class="security-alert success"
+         th:if="${param.logout}">
+        로그아웃했습니다.
+    </div>
+
+    <form th:action="@{/login}"
+          method="post"
+          class="security-form">
+        <label>
+            아이디
+            <input type="text"
+                   name="username"
+                   autocomplete="username"
+                   autocapitalize="none"
+                   required
+                   autofocus>
+        </label>
+
+        <label>
+            비밀번호
+            <input type="password"
+                   name="password"
+                   autocomplete="current-password"
+                   required>
+        </label>
+
+        <button type="submit"
+                class="security-primary-button">
+            로그인
+        </button>
+    </form>
+
+    <a th:if="${setupRequired}"
+       class="first-setup-link"
+       th:href="@{/setup}">
+        처음 사용하시나요? 관리자 계정 만들기
+    </a>
+
+    <p class="security-footnote">
+        공용 컴퓨터에서는 사용 후 반드시 로그아웃해주세요.
+    </p>
+</main>
+</body>
+</html>

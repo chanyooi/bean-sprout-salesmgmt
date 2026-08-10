@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>거래처·배송코스 관리</title>
+
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/operations.css}">
+</head>
+<body>
+<main class="container" th:data-selected-route="${selectedRoute.name()}">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">거래처 운영</p>
+                <h1>거래처·배송코스</h1>
+                <p>
+                    주소·연락처·정산방식·A/B/김천 배송순서를 관리하고
+                    지도에서 방문순서대로 코스를 확인합니다.
+                </p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/payments}">입금·미수금</a>
+                <a class="secondary-link" th:href="@{/prices}">단가 관리</a>
+                <a class="secondary-link" th:href="@{/upload}">장부 업로드</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="alert success"
+         th:if="${successMessage}"
+         th:text="${successMessage}">
+    </div>
+    <div class="alert error"
+         th:if="${errorMessage}"
+         th:text="${errorMessage}">
+    </div>
+
+    <section class="summary-grid four">
+        <article class="summary-card">
+            <span>활성 거래처</span>
+            <strong th:text="${routeSummary.activeVendorCount}">0</strong>
+        </article>
+        <article class="summary-card">
+            <span>A코스</span>
+            <strong th:text="${routeSummary.routeACount}">0</strong>
+        </article>
+        <article class="summary-card">
+            <span>B코스</span>
+            <strong th:text="${routeSummary.routeBCount}">0</strong>
+        </article>
+        <article class="summary-card">
+            <span>김천코스</span>
+            <strong th:text="${routeSummary.kimcheonRouteCount}">0</strong>
+        </article>
+        <article class="summary-card warning-card">
+            <span>코스 미지정</span>
+            <strong th:text="${routeSummary.unassignedCount}">0</strong>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>배송코스 지도</h2>
+                <p>
+                    A/B/김천 버튼을 누르면 해당 코스만 표시됩니다.
+                    방문순서대로 빨간 선으로 연결됩니다.
+                </p>
+            </div>
+            <div class="route-map-buttons">
+                <button type="button" class="route-map-button active" data-route="A">A코스</button>
+                <button type="button" class="route-map-button" data-route="B">B코스</button>
+                <button type="button" class="route-map-button" data-route="KIMCHEON">김천코스</button>
+            </div>
+        </div>
+
+        <div id="routeMap"></div>
+        <div id="roadRouteInfo" class="road-route-info" hidden></div>
+
+
+        <div id="locationPickerNotice" class="map-picker-notice" hidden>
+            지도에서 거래처 위치를 클릭하세요.
+            <button type="button" id="cancelLocationPicker">취소</button>
+        </div>
+
+        <div id="geocodeStatus"
+             class="map-geocode-status"
+             aria-live="polite"
+             hidden>
+        </div>
+
+        <p class="helper">
+            네이버 지도를 사용합니다. ‘주소로 위치찾기’나 ‘지도에서 찍기’로 위치를 정하면 좌표가 자동 저장되어 다음 접속부터 마커와 빨간 선이 그대로 표시됩니다.
+        </p>
+
+        <div th:each="row : ${vendors}"
+             class="route-point-data"
+             th:if="${row.hasLocation() and row.active and row.routeCode.name() != 'NONE'}"
+             th:data-vendor-id="${row.vendorId}"
+             th:data-name="${row.vendorName}"
+             th:data-route="${row.routeCode.name()}"
+             th:data-order="${row.routeOrder}"
+             th:data-lat="${row.latitude}"
+             th:data-lng="${row.longitude}">
+        </div>
+    </section>
+
+    <section class="panel route-order-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>배송 순서 관리</h2>
+                <p>
+                    거래처를 잡아서 원하는 위치로 옮기면 1번부터 자동으로 다시 매겨지고
+                    DB와 지도 순서도 바로 저장됩니다.
+                </p>
+            </div>
+            <div class="route-order-tabs">
+                <button type="button"
+                        class="route-order-tab"
+                        data-route="A">
+                    A코스
+                </button>
+                <button type="button"
+                        class="route-order-tab"
+                        data-route="B">
+                    B코스
+                </button>
+                <button type="button"
+                        class="route-order-tab"
+                        data-route="KIMCHEON">
+                    김천코스
+                </button>
+            </div>
+        </div>
+
+        <div class="route-order-help">
+            <strong>사용법</strong>
+            새 거래처는 코스만 선택해서 저장하면 맨 뒤에 자동 추가됩니다.
+            이후 아래 목록에서 원하는 위치로 끌어다 놓으면 뒤 거래처 번호는 전부 자동으로 밀립니다.
+        </div>
+
+        <div class="route-optimize-bar">
+            <button type="button"
+                    id="optimizeRouteButton"
+                    class="secondary-button">
+                최적순서 추천
+            </button>
+            <span>
+                현재 1번 거래처는 출발점으로 고정하고 나머지 방문순서를 추천합니다.
+            </span>
+        </div>
+
+        <div id="routeOptimizationResult"
+             class="route-optimization-result"
+             hidden>
+        </div>
+
+        <div id="routeOrderList"
+             class="route-order-list"
+             aria-live="polite">
+        </div>
+
+        <div id="routeOrderEmpty"
+             class="route-order-empty"
+             hidden>
+            이 코스에 배정된 거래처가 없습니다.
+        </div>
+
+        <form id="routeOrderForm"
+              th:action="@{/vendors/routes/reorder}"
+              method="post">
+            <input type="hidden"
+                   id="routeOrderRouteCode"
+                   name="routeCode"
+                   th:value="${selectedRoute.name()}">
+            <input type="hidden"
+                   id="routeOrderVendorIds"
+                   name="vendorIds">
+        </form>
+
+        <div id="routeOrderStatus"
+             class="route-order-status"
+             aria-live="polite"
+             hidden>
+        </div>
+
+        <div th:each="row : ${vendors}"
+             class="route-order-source"
+             th:if="${row.routeCode.name() != 'NONE'}"
+             th:data-vendor-id="${row.vendorId}"
+             th:data-name="${row.vendorName}"
+             th:data-route="${row.routeCode.name()}"
+             th:data-order="${row.routeOrder}"
+             th:data-active="${row.active}">
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>거래처 정보</h2>
+                <p>코스·주소·정산방식 등을 저장합니다. 방문순서는 위의 ‘배송 순서 관리’에서 자동 관리합니다.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap vendor-table-wrap">
+            <table class="vendor-management-table">
+                <thead>
+                <tr>
+                    <th>사용</th>
+                    <th>거래처</th>
+                    <th>코스</th>
+                    <th>순서</th>
+                    <th>주소</th>
+                    <th>전화번호</th>
+                    <th>정산방식</th>
+                    <th>회수통 보증금</th>
+                    <th>지도 위치</th>
+                    <th>메모</th>
+                    <th>저장</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${vendors}">
+                    <td>
+                        <form th:id="${'vendor-form-' + row.vendorId}"
+                              th:action="@{/vendors/update}"
+                              method="post">
+                            <input type="hidden" name="vendorId" th:value="${row.vendorId}">
+                        </form>
+
+                        <input type="checkbox"
+                               name="active"
+                               value="true"
+                               th:checked="${row.active}"
+                               th:attr="form=${'vendor-form-' + row.vendorId}">
+                    </td>
+
+                    <td>
+                        <strong th:text="${row.vendorName}"></strong>
+                        <small th:if="${row.vendorName != row.statementName}"
+                               th:text="|명세서: ${row.statementName}|">
+                        </small>
+                    </td>
+
+                    <td>
+                        <select name="routeCode"
+                                th:attr="form=${'vendor-form-' + row.vendorId}">
+                            <option th:each="code : ${routeCodes}"
+                                    th:value="${code.name()}"
+                                    th:selected="${row.routeCode == code}"
+                                    th:text="${code.label}">
+                            </option>
+                        </select>
+                    </td>
+
+                    <td>
+                        <input type="hidden"
+                               name="routeOrder"
+                               th:value="${row.routeOrder}"
+                               th:attr="form=${'vendor-form-' + row.vendorId}">
+                        <span class="route-order-readonly"
+                              th:text="${row.routeOrder == null ? '-' : row.routeOrder}">
+                            -
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="address-controls">
+                            <input type="text"
+                                   name="address"
+                                   class="address-input"
+                                   th:id="${'address-' + row.vendorId}"
+                                   th:value="${row.address}"
+                                   placeholder="거래처 주소"
+                                   th:attr="form=${'vendor-form-' + row.vendorId}">
+                            <button type="button"
+                                    class="secondary-button compact-button find-address-location"
+                                    th:data-vendor-id="${row.vendorId}">
+                                주소로 위치찾기
+                            </button>
+                        </div>
+                    </td>
+
+                    <td>
+                        <input type="text"
+                               name="phone"
+                               class="phone-input"
+                               th:value="${row.phone}"
+                               placeholder="전화번호"
+                               th:attr="form=${'vendor-form-' + row.vendorId}">
+                    </td>
+
+                    <td>
+                        <select name="paymentCycle"
+                                th:attr="form=${'vendor-form-' + row.vendorId}">
+                            <option th:each="cycle : ${paymentCycles}"
+                                    th:value="${cycle.name()}"
+                                    th:selected="${row.paymentCycle == cycle}"
+                                    th:text="${cycle.label}">
+                            </option>
+                        </select>
+                    </td>
+
+                    <td class="number">
+                        <span th:if="${row.hasReturnContainerDeposit()}"
+                              class="deposit-badge"
+                              th:text="${#numbers.formatDecimal(row.returnContainerDepositPrice, 0, 'COMMA', 0, 'POINT') + '원'}">
+                        </span>
+                        <span th:unless="${row.hasReturnContainerDeposit()}"
+                              class="muted-badge">
+                            없음
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="location-controls">
+                            <input type="number"
+                                   step="0.0000001"
+                                   name="latitude"
+                                   th:id="${'lat-' + row.vendorId}"
+                                   th:value="${row.latitude}"
+                                   placeholder="위도"
+                                   th:attr="form=${'vendor-form-' + row.vendorId}">
+                            <input type="number"
+                                   step="0.0000001"
+                                   name="longitude"
+                                   th:id="${'lng-' + row.vendorId}"
+                                   th:value="${row.longitude}"
+                                   placeholder="경도"
+                                   th:attr="form=${'vendor-form-' + row.vendorId}">
+                            <button type="button"
+                                    class="secondary-button compact-button pick-location"
+                                    th:data-vendor-id="${row.vendorId}">
+                                지도에서 찍기
+                            </button>
+                        </div>
+                    </td>
+
+                    <td>
+                        <input type="text"
+                               name="memo"
+                               class="memo-input"
+                               th:value="${row.memo}"
+                               placeholder="배송 메모"
+                               th:attr="form=${'vendor-form-' + row.vendorId}">
+                    </td>
+
+                    <td>
+                        <button type="submit"
+                                class="compact-button"
+                                th:attr="form=${'vendor-form-' + row.vendorId}">
+                            저장
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="helper">
+            회수통 보증금 여부는 단가관리의 ‘회수통’ 단가를 기준으로 표시합니다. 배송순서는 숫자를 직접 수정하지 말고 위의 드래그 목록에서 변경하세요.
+        </p>
+    </section>
+</main>
+
+
+<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=iwii3ygty2&submodules=geocoder"></script>
+<script>
+(function () {
+    const mapElement = document.getElementById('routeMap');
+    const notice = document.getElementById('locationPickerNotice');
+    const statusElement = document.getElementById('geocodeStatus');
+
+    if (!window.naver || !naver.maps) {
+        mapElement.innerHTML =
+            '<div class="map-load-error">' +
+            '네이버 지도를 불러오지 못했습니다. ' +
+            '네이버 클라우드의 Web 서비스 URL에 http://localhost:8080 이 등록되어 있는지 확인해주세요.' +
+            '</div>';
+        return;
+    }
+
+    const ROUTE_LABELS = {
+        A: 'A코스',
+        B: 'B코스',
+        KIMCHEON: '김천코스'
+    };
+
+    const map = new naver.maps.Map('routeMap', {
+        center: new naver.maps.LatLng(36.1195, 128.3446),
+        zoom: 11,
+        mapTypeControl: true,
+        zoomControl: true,
+        zoomControlOptions: {
+            position: naver.maps.Position.TOP_LEFT
+        },
+        scaleControl: true,
+        logoControl: true,
+        mapDataControl: true
+    });
+
+    let points = Array.from(
+        document.querySelectorAll('.route-point-data')
+    ).map(el => ({
+        vendorId: String(el.dataset.vendorId),
+        name: el.dataset.name,
+        route: el.dataset.route,
+        order: Number(el.dataset.order || 9999),
+        lat: Number(el.dataset.lat),
+        lng: Number(el.dataset.lng)
+    })).filter(point =>
+        Number.isFinite(point.lat) &&
+        Number.isFinite(point.lng)
+    );
+
+    const pageRoot = document.querySelector('main.container');
+    const selectedRouteFromServer =
+        pageRoot && pageRoot.dataset.selectedRoute
+            ? pageRoot.dataset.selectedRoute
+            : null;
+
+    let activeRoute =
+        selectedRouteFromServer ||
+        firstRouteWithPoints() ||
+        'A';
+    let routeMarkers = [];
+    let routeLine = null;
+    let pickingVendorId = null;
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function firstRouteWithPoints() {
+        return ['A', 'B', 'KIMCHEON']
+            .find(route => points.some(point => point.route === route));
+    }
+
+    let roadRouteRequestToken = 0;
+
+    function formatDistance(meters) {
+        if (!meters) return '';
+        return meters >= 1000
+            ? `${(meters / 1000).toFixed(1)} km`
+            : `${meters} m`;
+    }
+
+    function formatDuration(milliseconds) {
+        if (!milliseconds) return '';
+        const minutes = Math.round(milliseconds / 60000);
+        const hours = Math.floor(minutes / 60);
+        const remain = minutes % 60;
+        return hours > 0
+            ? `${hours}시간 ${remain}분`
+            : `${minutes}분`;
+    }
+
+    async function drawRoadRoute(route, fallbackPath) {
+        const token = ++roadRouteRequestToken;
+        const info = document.getElementById('roadRouteInfo');
+
+        try {
+            const response = await fetch(
+                `/api/routes/directions?route=${encodeURIComponent(route)}`
+            );
+            const data = await response.json();
+
+            if (token !== roadRouteRequestToken) {
+                return;
+            }
+
+            if (!data.enabled || !Array.isArray(data.path) || data.path.length < 2) {
+                info.hidden = false;
+                info.textContent =
+                    data.message ||
+                    '실제 도로경로가 아직 비활성화되어 직선으로 표시합니다.';
+                return;
+            }
+
+            if (routeLine) {
+                routeLine.setMap(null);
+            }
+
+            const roadPath = data.path.map(
+                point => new naver.maps.LatLng(
+                    point.lat,
+                    point.lng
+                )
+            );
+
+            routeLine = new naver.maps.Polyline({
+                map,
+                path: roadPath,
+                strokeColor: '#d71920',
+                strokeWeight: 6,
+                strokeOpacity: 0.92,
+                strokeLineCap: 'round',
+                strokeLineJoin: 'round'
+            });
+
+            info.hidden = false;
+            info.textContent =
+                `${ROUTE_LABELS[route]} 실제 도로경로 · `
+                + `${formatDistance(data.distanceMeters)} · `
+                + `약 ${formatDuration(data.durationMillis)}`;
+        } catch (error) {
+            if (token !== roadRouteRequestToken) {
+                return;
+            }
+            info.hidden = false;
+            info.textContent =
+                '실제 도로경로 조회 실패 - 현재는 직선 연결로 표시합니다.';
+        }
+    }
+
+    function clearRouteOverlays() {
+        routeMarkers.forEach(marker => marker.setMap(null));
+        routeMarkers = [];
+
+        if (routeLine) {
+            routeLine.setMap(null);
+            routeLine = null;
+        }
+    }
+
+    function routePointsFor(route) {
+        return points
+            .filter(point => point.route === route)
+            .sort((a, b) => {
+                if (a.order !== b.order) {
+                    return a.order - b.order;
+                }
+                return a.name.localeCompare(b.name, 'ko');
+            });
+    }
+
+    function drawRoute(route) {
+        activeRoute = route;
+        clearRouteOverlays();
+
+        document.querySelectorAll('.route-map-button').forEach(button => {
+            button.classList.toggle(
+                'active',
+                button.dataset.route === route
+            );
+        });
+
+        const routePoints = routePointsFor(route);
+
+        if (routePoints.length === 0) {
+            showStatus(
+                `${ROUTE_LABELS[route]}에 저장된 지도 위치가 아직 없습니다. ` +
+                `거래처 주소에서 '주소로 위치찾기'를 누른 뒤 저장해주세요.`,
+                false
+            );
+            return;
+        }
+
+        const path = [];
+        const bounds = new naver.maps.LatLngBounds();
+
+        routePoints.forEach(point => {
+            const position = new naver.maps.LatLng(
+                point.lat,
+                point.lng
+            );
+
+            path.push(position);
+            bounds.extend(position);
+
+            const marker = new naver.maps.Marker({
+                position,
+                map,
+                title: `${point.order}. ${point.name}`,
+                icon: {
+                    content:
+                        '<div class="naver-route-marker">' +
+                        '<span class="naver-route-number">' +
+                        escapeHtml(point.order) +
+                        '</span>' +
+                        '<span class="naver-route-name">' +
+                        escapeHtml(point.name) +
+                        '</span>' +
+                        '</div>',
+                    anchor: new naver.maps.Point(18, 18)
+                }
+            });
+
+            routeMarkers.push(marker);
+        });
+
+        if (path.length >= 2) {
+            routeLine = new naver.maps.Polyline({
+                map,
+                path,
+                strokeColor: '#d71920',
+                strokeWeight: 6,
+                strokeOpacity: 0.9,
+                strokeLineCap: 'round',
+                strokeLineJoin: 'round'
+            });
+        }
+
+        if (path.length >= 2) {
+            drawRoadRoute(route, path);
+        }
+
+        if (path.length === 1) {
+            map.setCenter(path[0]);
+            map.setZoom(15);
+        } else {
+            map.fitBounds(bounds);
+        }
+
+        hideStatus();
+    }
+
+    function getVendorRow(vendorId) {
+        const form = document.getElementById(
+            `vendor-form-${vendorId}`
+        );
+        return form ? form.closest('tr') : null;
+    }
+
+    function readRouteInfo(vendorId) {
+        const row = getVendorRow(vendorId);
+        if (!row) {
+            return null;
+        }
+
+        const routeSelect =
+            row.querySelector('select[name="routeCode"]');
+        const orderInput =
+            row.querySelector('input[name="routeOrder"]');
+        const vendorName =
+            row.querySelector('td:nth-child(2) strong');
+
+        return {
+            route: routeSelect ? routeSelect.value : 'NONE',
+            order: orderInput
+                ? Number(orderInput.value || 9999)
+                : 9999,
+            name: vendorName
+                ? vendorName.textContent.trim()
+                : `거래처 ${vendorId}`
+        };
+    }
+
+    function upsertPoint(vendorId, lat, lng) {
+        const routeInfo = readRouteInfo(vendorId);
+
+        if (!routeInfo || routeInfo.route === 'NONE') {
+            showStatus(
+                '코스를 먼저 A코스/B코스/김천코스 중 하나로 선택해주세요.',
+                true
+            );
+            return;
+        }
+
+        const point = {
+            vendorId: String(vendorId),
+            name: routeInfo.name,
+            route: routeInfo.route,
+            order: Number.isFinite(routeInfo.order)
+                ? routeInfo.order
+                : 9999,
+            lat: Number(lat),
+            lng: Number(lng)
+        };
+
+        const index = points.findIndex(
+            existing =>
+                String(existing.vendorId) === String(vendorId)
+        );
+
+        if (index >= 0) {
+            points[index] = point;
+        } else {
+            points.push(point);
+        }
+
+        drawRoute(routeInfo.route);
+    }
+
+    function saveVendorRow(vendorId, message) {
+        const form = document.getElementById(
+            `vendor-form-${vendorId}`
+        );
+
+        if (!form) {
+            showStatus(
+                '거래처 저장 폼을 찾지 못했습니다.',
+                true
+            );
+            return;
+        }
+
+        showStatus(
+            message || '거래처 위치를 저장하고 있습니다...',
+            false
+        );
+
+        // 주소, 코스, 방문순서, 위도/경도 등 현재 행의 값을
+        // 기존 /vendors/update로 그대로 저장합니다.
+        window.setTimeout(() => {
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        }, 250);
+    }
+
+    function showStatus(message, isError) {
+        statusElement.textContent = message;
+        statusElement.hidden = false;
+        statusElement.classList.toggle(
+            'error-status',
+            Boolean(isError)
+        );
+    }
+
+    function hideStatus() {
+        statusElement.hidden = true;
+        statusElement.textContent = '';
+        statusElement.classList.remove('error-status');
+    }
+
+    const routeOrderSources = Array.from(
+        document.querySelectorAll('.route-order-source')
+    ).map(el => ({
+        vendorId: String(el.dataset.vendorId),
+        name: el.dataset.name,
+        route: el.dataset.route,
+        order: Number(el.dataset.order || 9999),
+        active: el.dataset.active === 'true'
+    }));
+
+    const routeOrderList =
+        document.getElementById('routeOrderList');
+    const routeOrderEmpty =
+        document.getElementById('routeOrderEmpty');
+    const routeOrderForm =
+        document.getElementById('routeOrderForm');
+    const routeOrderRouteCode =
+        document.getElementById('routeOrderRouteCode');
+    const routeOrderVendorIds =
+        document.getElementById('routeOrderVendorIds');
+    const routeOrderStatus =
+        document.getElementById('routeOrderStatus');
+
+    let routeOrderActiveRoute = activeRoute;
+    let draggedOrderItem = null;
+    let routeOrderChanged = false;
+
+    function routeLabel(route) {
+        return ROUTE_LABELS[route] || route;
+    }
+
+    function routeOrderItemsFor(route) {
+        return routeOrderSources
+            .filter(item => item.route === route)
+            .sort((a, b) => {
+                if (a.order !== b.order) {
+                    return a.order - b.order;
+                }
+                return a.name.localeCompare(b.name, 'ko');
+            });
+    }
+
+    function updateRouteOrderNumbers() {
+        Array.from(
+            routeOrderList.querySelectorAll('.route-sort-item')
+        ).forEach((item, index) => {
+            const number =
+                item.querySelector('.route-sort-number');
+
+            if (number) {
+                number.textContent = String(index + 1);
+            }
+        });
+    }
+
+    function makeMoveButton(label, direction) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'route-sort-move-button';
+        button.textContent = label;
+        button.dataset.direction = direction;
+        button.setAttribute(
+            'aria-label',
+            direction === 'up'
+                ? '한 칸 위로'
+                : '한 칸 아래로'
+        );
+        return button;
+    }
+
+    function renderRouteOrder(route) {
+        routeOrderActiveRoute = route;
+        routeOrderRouteCode.value = route;
+        routeOrderList.innerHTML = '';
+
+        document.querySelectorAll('.route-order-tab')
+            .forEach(button => {
+                button.classList.toggle(
+                    'active',
+                    button.dataset.route === route
+                );
+            });
+
+        const items = routeOrderItemsFor(route);
+
+        routeOrderEmpty.hidden = items.length !== 0;
+
+        items.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'route-sort-item';
+            row.draggable = true;
+            row.dataset.vendorId = item.vendorId;
+
+            if (!item.active) {
+                row.classList.add('inactive-route-item');
+            }
+
+            const handle = document.createElement('span');
+            handle.className = 'route-sort-handle';
+            handle.textContent = '☰';
+            handle.title = '잡아서 이동';
+
+            const number = document.createElement('span');
+            number.className = 'route-sort-number';
+            number.textContent = String(index + 1);
+
+            const name = document.createElement('span');
+            name.className = 'route-sort-name';
+            name.textContent = item.name;
+
+            if (!item.active) {
+                const state = document.createElement('small');
+                state.className = 'route-sort-state';
+                state.textContent = '거래중지';
+                name.appendChild(state);
+            }
+
+            const controls = document.createElement('span');
+            controls.className = 'route-sort-controls';
+            controls.appendChild(
+                makeMoveButton('↑', 'up')
+            );
+            controls.appendChild(
+                makeMoveButton('↓', 'down')
+            );
+
+            row.appendChild(handle);
+            row.appendChild(number);
+            row.appendChild(name);
+            row.appendChild(controls);
+
+            routeOrderList.appendChild(row);
+        });
+
+        bindRouteOrderItemEvents();
+        updateRouteOrderNumbers();
+    }
+
+    function moveRouteItem(item, direction) {
+        if (direction === 'up') {
+            const previous = item.previousElementSibling;
+            if (previous) {
+                routeOrderList.insertBefore(
+                    item,
+                    previous
+                );
+                routeOrderChanged = true;
+            }
+        } else {
+            const next = item.nextElementSibling;
+            if (next) {
+                routeOrderList.insertBefore(
+                    next,
+                    item
+                );
+                routeOrderChanged = true;
+            }
+        }
+
+        if (routeOrderChanged) {
+            updateRouteOrderNumbers();
+            saveRouteOrder();
+        }
+    }
+
+    function bindRouteOrderItemEvents() {
+        routeOrderList
+            .querySelectorAll('.route-sort-item')
+            .forEach(item => {
+                item.addEventListener(
+                    'dragstart',
+                    event => {
+                        draggedOrderItem = item;
+                        routeOrderChanged = false;
+                        item.classList.add('dragging');
+                        event.dataTransfer.effectAllowed =
+                            'move';
+                        event.dataTransfer.setData(
+                            'text/plain',
+                            item.dataset.vendorId
+                        );
+                    }
+                );
+
+                item.addEventListener(
+                    'dragend',
+                    () => {
+                        item.classList.remove('dragging');
+                        draggedOrderItem = null;
+
+                        if (routeOrderChanged) {
+                            updateRouteOrderNumbers();
+                            saveRouteOrder();
+                        }
+                    }
+                );
+
+                item.querySelectorAll(
+                    '.route-sort-move-button'
+                ).forEach(button => {
+                    button.addEventListener(
+                        'click',
+                        () => {
+                            moveRouteItem(
+                                item,
+                                button.dataset.direction
+                            );
+                        }
+                    );
+                });
+            });
+    }
+
+    routeOrderList.addEventListener(
+        'dragover',
+        event => {
+            event.preventDefault();
+
+            if (!draggedOrderItem) {
+                return;
+            }
+
+            const afterElement =
+                findDragAfterElement(
+                    routeOrderList,
+                    event.clientY
+                );
+
+            if (afterElement == null) {
+                if (
+                    routeOrderList.lastElementChild !==
+                    draggedOrderItem
+                ) {
+                    routeOrderList.appendChild(
+                        draggedOrderItem
+                    );
+                    routeOrderChanged = true;
+                }
+            } else if (
+                afterElement !== draggedOrderItem
+            ) {
+                routeOrderList.insertBefore(
+                    draggedOrderItem,
+                    afterElement
+                );
+                routeOrderChanged = true;
+            }
+
+            updateRouteOrderNumbers();
+        }
+    );
+
+    function findDragAfterElement(container, y) {
+        const draggableElements = Array.from(
+            container.querySelectorAll(
+                '.route-sort-item:not(.dragging)'
+            )
+        );
+
+        return draggableElements.reduce(
+            (closest, child) => {
+                const box =
+                    child.getBoundingClientRect();
+
+                const offset =
+                    y - box.top - box.height / 2;
+
+                if (
+                    offset < 0 &&
+                    offset > closest.offset
+                ) {
+                    return {
+                        offset,
+                        element: child
+                    };
+                }
+
+                return closest;
+            },
+            {
+                offset: Number.NEGATIVE_INFINITY,
+                element: null
+            }
+        ).element;
+    }
+
+    function saveRouteOrder() {
+        const ids = Array.from(
+            routeOrderList.querySelectorAll(
+                '.route-sort-item'
+            )
+        ).map(item => item.dataset.vendorId);
+
+        routeOrderVendorIds.value =
+            ids.join(',');
+
+        routeOrderStatus.hidden = false;
+        routeOrderStatus.classList.remove(
+            'error-status'
+        );
+        routeOrderStatus.textContent =
+            `${routeLabel(routeOrderActiveRoute)} 순서를 자동 저장하고 있습니다...`;
+
+        // 드래그를 끝낸 직후 DOM이 안정된 뒤 일반 POST로 저장합니다.
+        window.setTimeout(() => {
+            if (
+                typeof routeOrderForm.requestSubmit ===
+                'function'
+            ) {
+                routeOrderForm.requestSubmit();
+            } else {
+                routeOrderForm.submit();
+            }
+        }, 200);
+    }
+
+    function selectRouteEverywhere(route) {
+        drawRoute(route);
+        renderRouteOrder(route);
+
+        if (routeOptimizationResult) {
+            routeOptimizationResult.hidden = true;
+            routeOptimizationResult.innerHTML = '';
+        }
+    }
+
+    const optimizeRouteButton =
+        document.getElementById('optimizeRouteButton');
+
+    const routeOptimizationResult =
+        document.getElementById('routeOptimizationResult');
+
+    function routeDistanceText(meters) {
+        if (!meters) return '0 km';
+        return `${(meters / 1000).toFixed(1)} km`;
+    }
+
+    async function requestRouteOptimization() {
+        const route = routeOrderActiveRoute;
+
+        optimizeRouteButton.disabled = true;
+        optimizeRouteButton.textContent = '추천 계산 중...';
+
+        routeOptimizationResult.hidden = false;
+        routeOptimizationResult.innerHTML =
+            '<strong>배송순서를 계산하고 네이버 실제 도로거리로 비교하고 있습니다...</strong>';
+
+        try {
+            const response = await fetch(
+                `/api/routes/optimize?route=${encodeURIComponent(route)}`
+            );
+
+            const data = await response.json();
+
+            if (!data.available) {
+                routeOptimizationResult.innerHTML =
+                    `<div class="route-optimize-warning">${escapeHtml(data.message)}</div>`;
+                return;
+            }
+
+            const savingsClass =
+                data.savingsMeters > 0
+                    ? 'route-optimize-saving'
+                    : 'route-optimize-warning';
+
+            const stopHtml = (data.stops || [])
+                .map(stop =>
+                    `<span>${escapeHtml(stop.order)}. ${escapeHtml(stop.name)}</span>`
+                )
+                .join('');
+
+            const applyButton =
+                data.savingsMeters > 0
+                    ? '<button type="button" id="applyOptimizedRoute">추천순서 적용</button>'
+                    : '';
+
+            routeOptimizationResult.innerHTML = `
+                <div class="${savingsClass}">
+                    <strong>${escapeHtml(data.message)}</strong>
+                    <div class="route-optimize-distance">
+                        현재 ${routeDistanceText(data.currentDistanceMeters)}
+                        →
+                        추천 ${routeDistanceText(data.suggestedDistanceMeters)}
+                        ${data.savingsMeters > 0
+                            ? `(약 ${routeDistanceText(data.savingsMeters)} 절약)`
+                            : ''}
+                    </div>
+                </div>
+                <div class="route-optimize-stop-list">
+                    ${stopHtml}
+                </div>
+                <div class="route-optimize-actions">
+                    ${applyButton}
+                </div>
+            `;
+
+            const apply =
+                document.getElementById('applyOptimizedRoute');
+
+            if (apply) {
+                apply.addEventListener('click', () => {
+                    if (!confirm(
+                        '추천순서를 배송순서에 적용할까요? 적용 즉시 DB에 저장됩니다.'
+                    )) {
+                        return;
+                    }
+
+                    routeOrderRouteCode.value = route;
+                    routeOrderVendorIds.value =
+                        (data.vendorIds || []).join(',');
+
+                    apply.disabled = true;
+                    apply.textContent = '저장 중...';
+
+                    if (
+                        typeof routeOrderForm.requestSubmit ===
+                        'function'
+                    ) {
+                        routeOrderForm.requestSubmit();
+                    } else {
+                        routeOrderForm.submit();
+                    }
+                });
+            }
+        } catch (error) {
+            routeOptimizationResult.innerHTML =
+                '<div class="route-optimize-warning">최적순서 계산 중 오류가 발생했습니다.</div>';
+        } finally {
+            optimizeRouteButton.disabled = false;
+            optimizeRouteButton.textContent = '최적순서 추천';
+        }
+    }
+
+    optimizeRouteButton.addEventListener(
+        'click',
+        requestRouteOptimization
+    );
+
+    document.querySelectorAll('.route-order-tab')
+        .forEach(button => {
+            button.addEventListener(
+                'click',
+                () => {
+                    selectRouteEverywhere(
+                        button.dataset.route
+                    );
+                }
+            );
+        });
+
+    document.querySelectorAll('.route-map-button')
+        .forEach(button => {
+            button.addEventListener('click', () => {
+                selectRouteEverywhere(
+                    button.dataset.route
+                );
+            });
+        });
+
+    document.querySelectorAll('.find-address-location')
+        .forEach(button => {
+            button.addEventListener('click', () => {
+                const vendorId = button.dataset.vendorId;
+                const addressInput =
+                    document.getElementById(`address-${vendorId}`);
+                const address = addressInput
+                    ? addressInput.value.trim()
+                    : '';
+
+                if (!address) {
+                    showStatus(
+                        '주소를 먼저 입력해주세요.',
+                        true
+                    );
+                    return;
+                }
+
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = '찾는 중...';
+
+                showStatus(
+                    `"${address}" 주소를 네이버 지도에서 찾고 있습니다.`,
+                    false
+                );
+
+                naver.maps.Service.geocode(
+                    { query: address },
+                    function (status, response) {
+                        button.disabled = false;
+                        button.textContent = originalText;
+
+                        if (
+                            status !== naver.maps.Service.Status.OK
+                        ) {
+                            showStatus(
+                                '네이버 주소검색 호출에 실패했습니다. ' +
+                                'Geocoding API가 Application에 체크되어 있는지 확인해주세요.',
+                                true
+                            );
+                            return;
+                        }
+
+                        const addresses =
+                            response &&
+                            response.v2 &&
+                            Array.isArray(response.v2.addresses)
+                                ? response.v2.addresses
+                                : [];
+
+                        if (addresses.length === 0) {
+                            showStatus(
+                                `주소를 찾지 못했습니다: ${address}. ` +
+                                `주소를 더 정확하게 입력하거나 '지도에서 찍기'를 사용해주세요.`,
+                                true
+                            );
+                            return;
+                        }
+
+                        const result = addresses[0];
+                        const lng = Number(result.x);
+                        const lat = Number(result.y);
+
+                        if (
+                            !Number.isFinite(lat) ||
+                            !Number.isFinite(lng)
+                        ) {
+                            showStatus(
+                                '검색된 좌표가 올바르지 않습니다.',
+                                true
+                            );
+                            return;
+                        }
+
+                        document.getElementById(
+                            `lat-${vendorId}`
+                        ).value = lat.toFixed(7);
+
+                        document.getElementById(
+                            `lng-${vendorId}`
+                        ).value = lng.toFixed(7);
+
+                        const position =
+                            new naver.maps.LatLng(lat, lng);
+
+                        map.setCenter(position);
+                        map.setZoom(16);
+
+                        upsertPoint(vendorId, lat, lng);
+
+                        const matchedAddress =
+                            result.roadAddress ||
+                            result.jibunAddress ||
+                            address;
+
+                        saveVendorRow(
+                            vendorId,
+                            `위치를 찾았습니다: ${matchedAddress}. ` +
+                            `좌표와 거래처 정보를 자동 저장하고 있습니다...`
+                        );
+                    }
+                );
+            });
+        });
+
+    document.querySelectorAll('.pick-location')
+        .forEach(button => {
+            button.addEventListener('click', () => {
+                pickingVendorId = button.dataset.vendorId;
+                notice.hidden = false;
+                mapElement.classList.add('picking-location');
+
+                const lat = Number(
+                    document.getElementById(
+                        `lat-${pickingVendorId}`
+                    ).value
+                );
+                const lng = Number(
+                    document.getElementById(
+                        `lng-${pickingVendorId}`
+                    ).value
+                );
+
+                if (
+                    Number.isFinite(lat) &&
+                    Number.isFinite(lng)
+                ) {
+                    map.setCenter(
+                        new naver.maps.LatLng(lat, lng)
+                    );
+                    map.setZoom(16);
+                }
+
+                showStatus(
+                    '지도에서 거래처의 실제 위치를 클릭해주세요.',
+                    false
+                );
+            });
+        });
+
+    document.getElementById('cancelLocationPicker')
+        .addEventListener('click', () => {
+            pickingVendorId = null;
+            notice.hidden = true;
+            mapElement.classList.remove('picking-location');
+            hideStatus();
+        });
+
+    naver.maps.Event.addListener(
+        map,
+        'click',
+        function (event) {
+            if (!pickingVendorId) {
+                return;
+            }
+
+            const lat = event.coord.lat();
+            const lng = event.coord.lng();
+
+            document.getElementById(
+                `lat-${pickingVendorId}`
+            ).value = lat.toFixed(7);
+
+            document.getElementById(
+                `lng-${pickingVendorId}`
+            ).value = lng.toFixed(7);
+
+            const vendorId = pickingVendorId;
+
+            pickingVendorId = null;
+            notice.hidden = true;
+            mapElement.classList.remove('picking-location');
+
+            upsertPoint(vendorId, lat, lng);
+
+            saveVendorRow(
+                vendorId,
+                '지도 위치를 선택했습니다. ' +
+                '좌표와 거래처 정보를 자동 저장하고 있습니다...'
+            );
+        }
+    );
+
+    drawRoute(activeRoute);
+    renderRouteOrder(activeRoute);
+})();
+</script>
+
+</body>
+</html>

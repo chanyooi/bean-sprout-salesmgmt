@@ -1,0 +1,131 @@
+.inventory-date-form,
+.threshold-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.inventory-date-form label,
+.inventory-entry-form label {
+    font-weight: 700;
+}
+
+input[type="date"],
+input[type="text"] {
+    min-height: 42px;
+    padding: 9px 11px;
+    border: 1px solid #cfd6df;
+    border-radius: 9px;
+    background: #ffffff;
+    font: inherit;
+}
+
+.date-metric {
+    font-size: 20px !important;
+}
+
+.stock-table {
+    min-width: 1420px;
+}
+
+.low-stock-row {
+    background: #fff4f1;
+}
+
+.stock-badge {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.stock-badge.danger {
+    color: #a72f2f;
+    background: #ffdede;
+}
+
+.stock-badge.safe {
+    color: #17633a;
+    background: #e4f8eb;
+}
+
+.stock-badge.idle {
+    color: #5c6675;
+    background: #edf0f3;
+}
+
+.threshold-form input {
+    width: 84px;
+}
+
+.compact-button {
+    min-height: 38px;
+    padding: 8px 11px;
+    white-space: nowrap;
+}
+
+.danger-button {
+    background: #c83e3e;
+}
+
+.danger-button:hover {
+    background: #a92f2f;
+}
+
+.inventory-form-grid,
+.history-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.inventory-entry-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.inventory-entry-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.inventory-entry-form select,
+.inventory-entry-form input {
+    width: 100%;
+}
+
+.inventory-entry-form .wide-field {
+    grid-column: 1 / -1;
+}
+
+.history-table-wrap {
+    max-height: 500px;
+}
+
+.history-grid table {
+    min-width: 900px;
+}
+
+@media (max-width: 1000px) {
+    .inventory-form-grid,
+    .history-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 620px) {
+    .inventory-date-form,
+    .inventory-entry-form {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .inventory-entry-form .wide-field {
+        width: 100%;
+    }
+}
