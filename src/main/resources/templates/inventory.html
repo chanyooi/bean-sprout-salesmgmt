@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>콩 재고 관리</title>
+    <title>원가·이익 - 콩 재고 관리</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="stylesheet" th:href="@{/css/inventory.css}">
 </head>
@@ -12,7 +12,7 @@
     <section class="hero">
         <div class="hero-row">
             <div>
-                <p class="eyebrow">원재료 관리</p>
+                <p class="eyebrow">원가·이익 관리</p>
                 <h1>콩 재고 관리</h1>
                 <p>
                     매입과 일별 사용량을 기록하면 소립·중립·대립·녹두의
@@ -23,14 +23,19 @@
                 <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
                 <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
                 <a class="secondary-link" th:href="@{/reports/monthly}">월매출 현황</a>
-                <a class="secondary-link" th:href="@{/statements}">명세서 생성</a>
+                <a class="secondary-link" th:href="@{/statements}">거래명세서</a>
                 <a class="secondary-link" th:href="@{/sales}">판매내역</a>
                 <a class="secondary-link" th:href="@{/upload}">장부 업로드</a>
             </div>
         </div>
     </section>
 
-    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
+    <section class="panel">
+        <div class="button-row">
+            <a class="secondary-link" th:href="@{/profit}">수익 분석</a>
+            <a class="primary-link" th:href="@{/inventory}">콩 재고 관리</a>
+        </div>
+    </section>    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
     <div class="alert error" th:if="${inventoryError}" th:text="${inventoryError}"></div>
 
     <section class="panel inventory-date-panel">

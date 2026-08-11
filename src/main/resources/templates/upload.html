@@ -12,7 +12,7 @@
         <div class="hero-row">
             <div>
                 <p class="eyebrow">매출 장부 관리</p>
-                <h1>input_data.xlsx 업로드</h1>
+                <h1>장부 업로드</h1>
                 <p>
                     엑셀을 검사하고 날짜·거래처·품목·수량 형태로 변환한 뒤
                     MySQL에 저장할 수 있습니다.
@@ -21,18 +21,26 @@
             <div class="button-row">
                 <a class="secondary-link" th:href="@{/admin/safety}">업로드 이력·복구</a>
                 <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
-                <a class="secondary-link" th:href="@{/input-template}">새 월 장부 다운로드</a>
-                <a class="secondary-link" th:href="@{/inventory}">콩 재고</a>
+
+
                 <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
-                <a class="secondary-link" th:href="@{/statements}">명세서 생성</a>
+                <a class="secondary-link" th:href="@{/statements}">거래명세서</a>
                 <a class="secondary-link" th:href="@{/reports/monthly}">월매출 현황</a>
-                <a class="secondary-link" th:href="@{/prices}">단가 관리</a>
+                <a class="secondary-link" th:href="@{/prices}">거래처별 단가 관리</a>
                 <a class="secondary-link" th:href="@{/sales}">저장 데이터 보기</a>
             </div>
         </div>
     </section>
 
     <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>새 월 장부</h2>
+                <p>새 달 입력을 시작할 때 사용할 장부 파일을 여기에서 받습니다.</p>
+            </div>
+            <a class="primary-link" th:href="@{/input-template}">새 월 장부 다운로드</a>
+        </div>
+    </section>    <section class="panel">
         <form th:action="@{/excel/import}"
               method="post"
               enctype="multipart/form-data"
