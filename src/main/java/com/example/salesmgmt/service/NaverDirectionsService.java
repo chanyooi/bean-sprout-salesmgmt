@@ -267,6 +267,10 @@ public class NaverDirectionsService {
                 throw new IllegalStateException(
                         "네이버 Directions 응답 오류: "
                                 + response.statusCode()
+                                + " / 응답: "
+                                + response.body()
+                                + " / 요청 URL: "
+                                + url
                 );
             }
 
