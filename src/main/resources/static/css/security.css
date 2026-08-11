@@ -322,3 +322,19 @@
         align-items: stretch;
     }
 }
+
+/* ===== 2026-08-11 모바일 로그인 ===== */
+@media (max-width: 620px) {
+    .security-page { align-items: stretch; padding: 0; background: linear-gradient(180deg, #eef8f2 0, #f7f9f7 42%, #f7f9f7 100%); }
+    .security-card, .security-card.wider { width: 100%; min-height: 100vh; padding: max(48px, env(safe-area-inset-top)) 22px 34px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+    .security-brand { align-items: center; flex-direction: column; gap: 12px; margin-top: 5vh; text-align: center; }
+    .security-logo { width: 68px; height: 68px; border-radius: 22px; background: linear-gradient(135deg, #16875b, #31a775); box-shadow: 0 10px 24px rgba(22, 135, 91, .18); }
+    .security-brand p { color: #4f7665; }
+    .security-brand h1 { font-size: 27px; }
+    .security-description { margin: 18px 0 26px; text-align: center; }
+    .security-form { gap: 13px; }
+    .security-form input, .security-form select { min-height: 54px; border-color: #d9e3dd; border-radius: 14px; font-size: 16px; background: rgba(255,255,255,.92); }
+    .security-form input:focus, .security-form select:focus { border-color: #16875b; box-shadow: 0 0 0 3px rgba(22, 135, 91, .12); }
+    .security-primary-button, .security-primary-link { min-height: 54px; margin-top: 4px; border-radius: 14px; background: #16875b; font-size: 16px; }
+    .first-setup-link, .security-back-link { color: #16875b; }
+}

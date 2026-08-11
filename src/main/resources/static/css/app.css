@@ -547,3 +547,43 @@ input[type="month"] {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* ===== 2026-08-11 모바일 UI 1차 리디자인 ===== */
+@media (max-width: 760px) {
+    :root { color: #17241d; background: #f4f7f4; }
+    body { background: #f4f7f4; -webkit-text-size-adjust: 100%; }
+    .container { width: 100%; margin: 0; padding: 18px 14px 84px; }
+    .hero { margin-bottom: 14px; }
+    .hero-row { display: block; }
+    .eyebrow { margin-bottom: 5px; color: #16875b; font-size: 12px; letter-spacing: .02em; }
+    h1 { margin-bottom: 7px; font-size: 24px; line-height: 1.25; letter-spacing: -.03em; }
+    h2 { font-size: 18px; }
+    .hero p:not(.eyebrow) { margin: 0; font-size: 13px; line-height: 1.55; }
+    .button-row { width: calc(100vw - 28px); margin-top: 13px; padding-bottom: 2px; display: flex; flex-wrap: nowrap; gap: 7px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .button-row::-webkit-scrollbar { display: none; }
+    .secondary-link, .month-arrow { min-height: 40px; padding: 9px 12px; flex: 0 0 auto; border-color: #d8e2dc; border-radius: 12px; color: #345247; background: #fff; font-size: 13px; }
+    button, .primary-link { min-height: 46px; border-radius: 12px; background: #16875b; }
+    button:hover, .primary-link:hover { background: #116c49; }
+    .secondary-button { color: #245343; background: #e9f3ee; }
+    .panel { margin-top: 14px; padding: 16px; border-color: #e2e8e4; border-radius: 18px; box-shadow: 0 4px 16px rgba(28, 50, 38, .045); }
+    .panel-heading { align-items: flex-start; gap: 10px; }
+    .panel-heading p, .helper { font-size: 12px; line-height: 1.55; }
+    .summary-grid, .summary-grid.four, .summary-grid.five, .save-grid, .save-grid.five { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .summary-card { min-width: 0; padding: 14px; border-color: #e2e8e4; border-radius: 16px; box-shadow: 0 3px 12px rgba(27, 49, 37, .035); }
+    .summary-card span { margin-bottom: 7px; font-size: 12px; }
+    .summary-card strong { font-size: clamp(18px, 5.3vw, 23px); line-height: 1.15; overflow-wrap: anywhere; }
+    .primary-metric, .success-card { border-color: #cce5d8; background: #eef8f2; }
+    .warning-card { border-color: #f0ddaf; background: #fff8e9; }
+    .filter-form, .month-form, .sales-filter-form, .upload-form, .add-price-form { width: 100%; align-items: stretch; flex-direction: column; }
+    input[type="text"], input[type="number"], input[type="date"], input[type="month"], input[type="file"], input[type="password"], select, textarea { width: 100%; min-height: 46px; font-size: 16px; }
+    .table-wrap { margin-left: -2px; margin-right: -2px; border-color: #e4e9e6; border-radius: 14px; -webkit-overflow-scrolling: touch; }
+    table { font-size: 12px; }
+    th, td { padding: 10px 9px; }
+    .alert { margin-top: 12px; padding: 13px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; }
+    .report-columns, .inventory-form-grid, .history-grid { gap: 14px; }
+    .statement-export-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .statement-export-actions > * { width: 100%; }
+    .statement-paper { padding: 12px; border-radius: 14px; overflow-x: auto; }
+    .statement-title { font-size: 21px; letter-spacing: 5px; }
+    .statement-meta { flex-direction: column; gap: 5px; font-size: 12px; }
+}

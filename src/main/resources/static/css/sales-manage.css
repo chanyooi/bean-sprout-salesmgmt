@@ -168,3 +168,33 @@
         flex-direction: column;
     }
 }
+
+/* ===== 2026-08-11 모바일 판매내역 카드 ===== */
+@media (max-width: 760px) {
+    .sales-filter-toolbar { gap: 8px; }
+    .sales-filter-toolbar > .month-arrow { width: 100%; text-align: center; }
+    .sales-summary { margin-top: 12px; }
+    .sales-edit-table-wrap { max-height: none; overflow: visible; border: 0; }
+    .sales-edit-table { display: block; min-width: 0; white-space: normal; }
+    .sales-edit-table thead { display: none; }
+    .sales-edit-table tbody, .sales-edit-table tr, .sales-edit-table td { display: block; width: 100%; }
+    .sales-edit-table tr { margin-bottom: 12px; padding: 13px; border: 1px solid #e0e7e3; border-radius: 17px; background: #fff; box-shadow: 0 3px 12px rgba(29, 48, 38, .04); }
+    .sales-edit-table tr.missing-price-row { border-color: #efd99e; background: #fffaf0; }
+    .sales-edit-table td { position: relative; min-height: 34px; padding: 7px 0 7px 92px; border: 0; text-align: right; white-space: normal; }
+    .sales-edit-table td::before { position: absolute; left: 0; top: 9px; width: 82px; color: #75837c; font-size: 11px; font-weight: 800; text-align: left; }
+    .sales-edit-table td:nth-child(1)::before { content: "날짜"; }
+    .sales-edit-table td:nth-child(2)::before { content: "주문번호"; }
+    .sales-edit-table td:nth-child(3)::before { content: "거래처"; }
+    .sales-edit-table td:nth-child(4)::before { content: "품목"; }
+    .sales-edit-table td:nth-child(5)::before { content: "수량"; }
+    .sales-edit-table td:nth-child(6)::before { content: "판매단가"; }
+    .sales-edit-table td:nth-child(7)::before { content: "금액"; }
+    .sales-edit-table td:nth-child(8)::before { content: "전달방식"; }
+    .sales-edit-table td:nth-child(9)::before { content: "비고"; }
+    .sales-edit-table td:nth-child(10)::before { content: "수정"; }
+    .sales-edit-table td:nth-child(11)::before { content: "품목 삭제"; }
+    .sales-edit-table td:nth-child(12)::before { content: "주문 삭제"; }
+    .sales-edit-table .edit-number { width: min(170px, 100%); min-height: 42px; }
+    .sales-edit-table button { width: min(170px, 100%); }
+    .note-cell { max-width: none; overflow: visible; text-overflow: initial; }
+}

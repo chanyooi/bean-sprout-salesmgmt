@@ -1213,3 +1213,60 @@
         flex-direction: column;
     }
 }
+
+/* ===== 2026-08-11 모바일 운영화면 ===== */
+@media (max-width: 760px) {
+    .dashboard-login-area { margin-top: 12px; }
+    .dashboard-current-user { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; padding: 11px 12px; border: 1px solid #dce7e1; border-radius: 14px; background: #fff; }
+    .dashboard-current-user strong { color: #16875b; }
+    .logout-form { margin-left: auto; }
+    .logout-button { min-height: 34px; padding: 6px 10px; color: #53675e; background: #edf2ef; font-size: 12px; }
+    .dashboard-month-form { display: grid; grid-template-columns: 1fr auto; margin-top: 9px; }
+    .dashboard-month-form button { min-width: 72px; }
+    .dashboard-month-nav { margin: 8px 0 13px; font-size: 13px; }
+    .dashboard-month-nav a { color: #557066; }
+    .dashboard-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .dashboard-metrics .metric-card:first-child { grid-column: 1 / -1; padding: 18px; border: 0; color: #fff; background: linear-gradient(135deg, #16875b, #30a573); box-shadow: 0 8px 20px rgba(22, 135, 91, .2); }
+    .dashboard-metrics .metric-card:first-child span, .dashboard-metrics .metric-card:first-child small { color: rgba(255,255,255,.82); }
+    .dashboard-metrics .metric-card:first-child strong { color: #fff; font-size: 28px; }
+    .metric-card { padding: 14px; border-radius: 16px; }
+    .metric-card strong { font-size: 20px; }
+    .dashboard-grid { gap: 14px; margin-bottom: 14px; }
+    .quick-menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .quick-menu-grid a { min-height: 54px; padding: 9px; border-color: #e0e8e3; border-radius: 14px; background: #f7faf8; font-size: 13px; text-align: center; }
+    .route-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .route-summary-grid > div { padding: 13px; border-radius: 14px; }
+    .route-summary-grid strong { font-size: 19px; }
+    .payment-entry-form { grid-template-columns: 1fr; gap: 11px; }
+    .payment-entry-form button { width: 100%; }
+    #routeMap { height: 360px; border-radius: 16px; }
+    .route-map-buttons, .route-order-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
+    .route-map-button, .route-order-tab { width: 100%; min-width: 0; padding: 9px 6px; font-size: 12px; }
+    .route-map-button.active, .route-order-tab.active, .route-sort-number, .naver-route-number { background: #16875b; }
+    .route-sort-item { border-radius: 14px; }
+    .route-optimize-bar { gap: 8px; font-size: 12px; }
+    .vendor-table-wrap { max-height: none; overflow: visible; border: 0; }
+    .vendor-management-table { display: block; min-width: 0; white-space: normal; }
+    .vendor-management-table thead { display: none; }
+    .vendor-management-table tbody, .vendor-management-table tr, .vendor-management-table td { display: block; width: 100%; }
+    .vendor-management-table tr { margin-bottom: 12px; padding: 13px; border: 1px solid #e0e7e3; border-radius: 17px; background: #fff; box-shadow: 0 3px 12px rgba(29, 48, 38, .04); }
+    .vendor-management-table td { position: relative; min-height: 36px; padding: 8px 0 8px 92px; border: 0; white-space: normal; }
+    .vendor-management-table td::before { position: absolute; left: 0; top: 10px; width: 82px; color: #76847d; font-size: 11px; font-weight: 800; }
+    .vendor-management-table td:nth-child(1)::before { content: "사용"; }
+    .vendor-management-table td:nth-child(2)::before { content: "거래처"; }
+    .vendor-management-table td:nth-child(3)::before { content: "코스"; }
+    .vendor-management-table td:nth-child(4)::before { content: "순서"; }
+    .vendor-management-table td:nth-child(5)::before { content: "주소"; }
+    .vendor-management-table td:nth-child(6)::before { content: "전화번호"; }
+    .vendor-management-table td:nth-child(7)::before { content: "정산방식"; }
+    .vendor-management-table td:nth-child(8)::before { content: "보증금"; }
+    .vendor-management-table td:nth-child(9)::before { content: "지도 위치"; }
+    .vendor-management-table td:nth-child(10)::before { content: "메모"; }
+    .vendor-management-table td:nth-child(11)::before { content: "저장"; }
+    .vendor-management-table input:not([type="checkbox"]), .vendor-management-table select, .address-controls .address-input, .phone-input, .memo-input { width: 100%; min-width: 0; }
+    .address-controls, .location-controls { width: 100%; }
+    .location-controls { grid-template-columns: 1fr 1fr; }
+    .vendor-management-table td:last-child button { width: 100%; }
+    .statement-send-toolbar > form, .statement-recipient-add { align-items: stretch; flex-direction: column; }
+    .statement-send-toolbar input, .statement-send-toolbar select, .statement-send-toolbar button { width: 100%; }
+}
