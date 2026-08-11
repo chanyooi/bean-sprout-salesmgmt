@@ -3,119 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>원가·이익 - 콩 재고 관리</title>
+    <title>콩 사용량 · 원가</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="stylesheet" th:href="@{/css/inventory.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory.css(v=20260811_1)}">
 </head>
 <body>
 <main class="container">
-    <section class="hero">
+    <section class="hero usage-hero">
         <div class="hero-row">
             <div>
-                <p class="eyebrow">원가·이익 관리</p>
-                <h1>콩 재고 관리</h1>
+                <p class="eyebrow">원재료 원가 관리</p>
+                <h1>콩 사용량 · 원가</h1>
                 <p>
-                    매입과 일별 사용량을 기록하면 소립·중립·대립·녹두의
-                    원산지별 현재 재고를 자동 계산합니다. 1포대는 25kg으로 계산합니다.
+                    남은 재고보다 실제 생산에 몇 포대를 사용했는지 기록합니다.
+                    매입 기록의 평균 포대단가를 이용해 월별 콩 원가를 자동 계산합니다.
                 </p>
             </div>
             <div class="button-row">
                 <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
                 <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
                 <a class="secondary-link" th:href="@{/reports/monthly}">월매출 현황</a>
-                <a class="secondary-link" th:href="@{/statements}">거래명세서</a>
                 <a class="secondary-link" th:href="@{/sales}">판매내역</a>
-                <a class="secondary-link" th:href="@{/upload}">장부 업로드</a>
             </div>
         </div>
     </section>
 
-    <section class="panel">
-        <div class="button-row">
-            <a class="secondary-link" th:href="@{/profit}">수익 분석</a>
-            <a class="primary-link" th:href="@{/inventory}">콩 재고 관리</a>
-        </div>
-    </section>    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
+    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
     <div class="alert error" th:if="${inventoryError}" th:text="${inventoryError}"></div>
 
-    <section class="panel inventory-date-panel">
-        <form method="get" th:action="@{/inventory}" class="inventory-date-form">
-            <label for="asOf">재고 기준일</label>
-            <input id="asOf" name="asOf" type="date" th:value="${inventory.asOfDate}" required>
-            <button type="submit">기준일 조회</button>
-            <a class="secondary-link" th:href="@{/inventory}">오늘 기준</a>
-        </form>
-        <p class="helper">
-            기준일까지의 매입량 - 사용량으로 계산합니다. 사용량이 매입량보다 많으면 재고가 음수로 표시됩니다.
-        </p>
+    <section class="panel month-panel">
+        <div class="month-nav">
+            <a class="secondary-link" th:href="@{/inventory(month=${previousMonth})}">← 이전 달</a>
+            <form method="get" th:action="@{/inventory}" class="month-form">
+                <label for="month">조회 월</label>
+                <input id="month" name="month" type="month" th:value="${selectedMonth}" required>
+                <button type="submit">조회</button>
+            </form>
+            <a class="secondary-link" th:href="@{/inventory(month=${nextMonth})}">다음 달 →</a>
+        </div>
     </section>
 
-    <section class="summary-grid four inventory-summary">
-        <article class="summary-card">
-            <span>관리 품목 조합</span>
-            <strong th:text="|${#lists.size(inventory.stockRows)}개|">8개</strong>
+    <section class="summary-grid four usage-summary">
+        <article class="summary-card primary-card">
+            <span>이번 달 사용량</span>
+            <strong th:text="|${usageCost.totalUsageBags.stripTrailingZeros().toPlainString()}포|">0포</strong>
+            <small th:text="|${usageCost.totalUsageKg.stripTrailingZeros().toPlainString()}kg|">0kg</small>
         </article>
-        <article class="summary-card" th:classappend="${inventory.lowStockCount > 0} ? ' warning-card' : ' success-card'">
-            <span>재고 부족</span>
-            <strong th:text="|${inventory.lowStockCount}개|">0개</strong>
+        <article class="summary-card">
+            <span>이번 달 콩 원가</span>
+            <strong th:text="|${#numbers.formatDecimal(usageCost.knownUsageCost, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
+            <small>매입 평균단가 × 사용 포대</small>
+        </article>
+        <article class="summary-card" th:classappend="${usageCost.missingCostUsageCount > 0} ? ' warning-card' : ''">
+            <span>단가 계산 불가 기록</span>
+            <strong th:text="|${usageCost.missingCostUsageCount}건|">0건</strong>
+            <small>사용일 이전 매입 기록이 없으면 계산되지 않음</small>
         </article>
         <article class="summary-card">
             <span>포대당 중량</span>
             <strong>25kg</strong>
+            <small>0.5포 = 12.5kg</small>
         </article>
-        <article class="summary-card">
-            <span>기준일</span>
-            <strong class="date-metric" th:text="${inventory.asOfDate}">2026-08-07</strong>
+    </section>
+
+    <section class="usage-entry-layout">
+        <article class="panel usage-entry-card">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">매일 입력</p>
+                    <h2>오늘 사용한 콩 등록</h2>
+                    <p>아버지가 알려준 날짜별 사용 포대 수만 입력하면 됩니다.</p>
+                </div>
+            </div>
+
+            <form th:action="@{/inventory/usages}" method="post" class="inventory-entry-form usage-form">
+                <label>사용 날짜
+                    <input type="date" name="usageDate" th:value="${today}" required>
+                </label>
+                <label>콩 종류
+                    <select name="beanType" required>
+                        <option th:each="type : ${beanTypes}"
+                                th:value="${type.name()}"
+                                th:text="${type.label}"></option>
+                    </select>
+                </label>
+                <label>원산지
+                    <select name="origin" required>
+                        <option th:each="origin : ${beanOrigins}"
+                                th:value="${origin.name()}"
+                                th:text="${origin.label}"></option>
+                    </select>
+                </label>
+                <label>사용 포대 수
+                    <input type="number" name="bagCount" min="0.001" step="0.001" placeholder="예: 6" required>
+                </label>
+                <label class="wide-field">비고
+                    <input type="text" name="note" maxlength="500" placeholder="선택 입력">
+                </label>
+                <button type="submit" class="wide-field primary-save-button">사용량 저장</button>
+            </form>
+
+            <p class="helper usage-helper">
+                원가는 직접 입력하지 않습니다. 해당 날짜까지 등록된 같은 콩의 매입금액 ÷ 매입포대 수로 평균단가를 구한 뒤 사용 포대 수와 곱합니다.
+            </p>
+        </article>
+
+        <article class="panel purchase-card">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">단가 계산용</p>
+                    <h2>콩 매입 등록</h2>
+                    <p>콩을 새로 샀을 때만 입력합니다. 이 기록이 사용 원가의 기준단가가 됩니다.</p>
+                </div>
+            </div>
+
+            <form th:action="@{/inventory/purchases}" method="post" class="inventory-entry-form">
+                <label>매입 날짜
+                    <input type="date" name="purchaseDate" th:value="${today}" required>
+                </label>
+                <label>콩 종류
+                    <select name="beanType" required>
+                        <option th:each="type : ${beanTypes}"
+                                th:value="${type.name()}"
+                                th:text="${type.label}"></option>
+                    </select>
+                </label>
+                <label>원산지
+                    <select name="origin" required>
+                        <option th:each="origin : ${beanOrigins}"
+                                th:value="${origin.name()}"
+                                th:text="${origin.label}"></option>
+                    </select>
+                </label>
+                <label>구입 포대 수
+                    <input type="number" name="bagCount" min="0.001" step="0.001" placeholder="예: 100" required>
+                </label>
+                <label>포대당 매입단가
+                    <input type="number" name="unitPricePerBag" min="0" step="1" placeholder="예: 48000" required>
+                </label>
+                <label class="wide-field">비고
+                    <input type="text" name="note" maxlength="500" placeholder="선택 입력">
+                </label>
+                <button type="submit" class="wide-field secondary-save-button">매입 저장</button>
+            </form>
         </article>
     </section>
 
     <section class="panel">
         <div class="panel-heading">
             <div>
-                <h2>현재 재고</h2>
-                <p>부족 기준은 원산지별로 직접 변경할 수 있습니다. 기본값은 3포대입니다.</p>
+                <h2 th:text="|${selectedMonth.year}년 ${selectedMonth.monthValue}월 콩 사용 원가|">월 콩 사용 원가</h2>
+                <p>종류·원산지별 사용량과 실제 계산에 적용된 평균 포대단가입니다.</p>
             </div>
         </div>
 
         <div class="table-wrap">
-            <table class="stock-table">
+            <table class="usage-cost-table">
                 <thead>
                 <tr>
                     <th>콩 종류</th>
                     <th>원산지</th>
-                    <th>누적 매입</th>
-                    <th>누적 사용</th>
-                    <th>현재 재고</th>
-                    <th>현재 kg</th>
-                    <th>평균 매입단가/포대</th>
-                    <th>예상 재고가액</th>
-                    <th>부족 기준</th>
-                    <th>상태</th>
+                    <th>사용 포대</th>
+                    <th>사용 kg</th>
+                    <th>적용 평균단가/포</th>
+                    <th>사용 원가</th>
+                    <th>확인</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="row : ${inventory.stockRows}" th:classappend="${row.lowStock} ? ' low-stock-row'">
+                <tr th:if="${#lists.isEmpty(usageCost.rows)}">
+                    <td colspan="7" class="empty-row">이 달에 등록된 콩 사용량이 없습니다.</td>
+                </tr>
+                <tr th:each="row : ${usageCost.rows}">
                     <td><strong th:text="${row.beanTypeLabel}">소립</strong></td>
-                    <td th:text="${row.originLabel}">캐나다산</td>
-                    <td class="number" th:text="|${row.purchasedBags.stripTrailingZeros().toPlainString()}포 / ${row.purchasedKg.stripTrailingZeros().toPlainString()}kg|">0</td>
-                    <td class="number" th:text="|${row.usedBags.stripTrailingZeros().toPlainString()}포 / ${row.usedKg.stripTrailingZeros().toPlainString()}kg|">0</td>
-                    <td class="number strong-number" th:text="|${row.currentBags.stripTrailingZeros().toPlainString()}포|">0포</td>
-                    <td class="number strong-number" th:text="|${row.currentKg.stripTrailingZeros().toPlainString()}kg|">0kg</td>
-                    <td class="number" th:text="|${#numbers.formatDecimal(row.weightedAveragePricePerBag, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
-                    <td class="number" th:text="|${#numbers.formatDecimal(row.estimatedStockValue, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
+                    <td th:text="${row.originLabel}">중국산</td>
+                    <td class="number strong-number" th:text="|${row.usedBags.stripTrailingZeros().toPlainString()}포|">0포</td>
+                    <td class="number" th:text="|${row.usedKg.stripTrailingZeros().toPlainString()}kg|">0kg</td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.effectiveAveragePricePerBag, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
+                    <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.estimatedCost, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
                     <td>
-                        <form class="threshold-form" th:action="@{/inventory/threshold}" method="post">
-                            <input type="hidden" name="beanType" th:value="${row.beanType.name()}">
-                            <input type="hidden" name="origin" th:value="${row.origin.name()}">
-                            <input type="number" name="thresholdBags" min="0" step="0.1"
-                                   th:value="${row.lowStockThresholdBags.stripTrailingZeros().toPlainString()}" required>
-                            <button type="submit" class="secondary-button compact-button">저장</button>
-                        </form>
-                    </td>
-                    <td>
-                        <span th:if="${!row.active}" class="stock-badge idle">미사용</span>
-                        <span th:if="${row.active and row.lowStock}" class="stock-badge danger">부족</span>
-                        <span th:if="${row.active and !row.lowStock}" class="stock-badge safe">정상</span>
+                        <span th:if="${row.missingCostUsageCount == 0}" class="cost-badge ok">계산 완료</span>
+                        <span th:if="${row.missingCostUsageCount > 0}" class="cost-badge warning"
+                              th:text="|단가없음 ${row.missingCostUsageCount}건|">단가없음</span>
                     </td>
                 </tr>
                 </tbody>
@@ -123,99 +192,10 @@
         </div>
     </section>
 
-    <section class="inventory-form-grid">
-        <article class="panel">
-            <h2>콩 매입 등록</h2>
-            <form th:action="@{/inventory/purchases}" method="post" class="inventory-entry-form">
-                <label>매입 날짜
-                    <input type="date" name="purchaseDate" th:value="${today}" required>
-                </label>
-                <label>콩 종류
-                    <select name="beanType" required>
-                        <option th:each="type : ${beanTypes}" th:value="${type.name()}" th:text="${type.label}"></option>
-                    </select>
-                </label>
-                <label>원산지
-                    <select name="origin" required>
-                        <option th:each="origin : ${beanOrigins}" th:value="${origin.name()}" th:text="${origin.label}"></option>
-                    </select>
-                </label>
-                <label>구입 포대 수
-                    <input type="number" name="bagCount" min="0.001" step="0.001" placeholder="예: 20" required>
-                </label>
-                <label>포대당 매입단가
-                    <input type="number" name="unitPricePerBag" min="0" step="1" placeholder="예: 85000" required>
-                </label>
-                <label class="wide-field">비고
-                    <input type="text" name="note" maxlength="500" placeholder="선택 입력">
-                </label>
-                <button type="submit" class="wide-field">매입 저장</button>
-            </form>
-            <p class="helper">소립·중립·대립은 캐나다산/중국산, 녹두는 중국산/칠레산만 등록됩니다.</p>
-        </article>
-
-        <article class="panel">
-            <h2>일별 사용량 등록</h2>
-            <form th:action="@{/inventory/usages}" method="post" class="inventory-entry-form">
-                <label>사용 날짜
-                    <input type="date" name="usageDate" th:value="${today}" required>
-                </label>
-                <label>콩 종류
-                    <select name="beanType" required>
-                        <option th:each="type : ${beanTypes}" th:value="${type.name()}" th:text="${type.label}"></option>
-                    </select>
-                </label>
-                <label>원산지
-                    <select name="origin" required>
-                        <option th:each="origin : ${beanOrigins}" th:value="${origin.name()}" th:text="${origin.label}"></option>
-                    </select>
-                </label>
-                <label>사용 포대 수
-                    <input type="number" name="bagCount" min="0.001" step="0.001" placeholder="예: 4.5" required>
-                </label>
-                <label class="wide-field">비고
-                    <input type="text" name="note" maxlength="500" placeholder="예: 오전 생산 사용량">
-                </label>
-                <button type="submit" class="wide-field">사용량 저장</button>
-            </form>
-            <p class="helper">0.5포를 입력하면 12.5kg으로 자동 계산됩니다. 현재 재고보다 많이 사용하면 음수 재고와 부족 표시로 확인할 수 있습니다.</p>
-        </article>
-    </section>
-
-    <section class="history-grid">
-        <article class="panel">
-            <h2>최근 매입 기록</h2>
-            <div class="table-wrap history-table-wrap">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>날짜</th><th>종류</th><th>원산지</th><th>포대</th><th>kg</th><th>포대단가</th><th>총액</th><th>비고</th><th>삭제</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:if="${#lists.isEmpty(inventory.recentPurchases)}"><td colspan="9">매입 기록이 없습니다.</td></tr>
-                    <tr th:each="row : ${inventory.recentPurchases}">
-                        <td th:text="${row.purchaseDate}"></td>
-                        <td th:text="${row.beanTypeLabel}"></td>
-                        <td th:text="${row.originLabel}"></td>
-                        <td class="number" th:text="${row.bagCount.stripTrailingZeros().toPlainString()}"></td>
-                        <td class="number" th:text="${row.totalKg.stripTrailingZeros().toPlainString()}"></td>
-                        <td class="number" th:text="|${#numbers.formatDecimal(row.unitPricePerBag, 0, 'COMMA', 0, 'POINT')}원|"></td>
-                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.totalAmount, 0, 'COMMA', 0, 'POINT')}원|"></td>
-                        <td th:text="${row.note}"></td>
-                        <td>
-                            <form th:action="@{/inventory/purchases/{id}/delete(id=${row.id})}" method="post" onsubmit="return confirm('이 매입 기록을 삭제할까요?');">
-                                <button type="submit" class="danger-button compact-button">삭제</button>
-                            </form>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </article>
-
+    <section class="history-grid usage-history-grid">
         <article class="panel">
             <h2>최근 사용 기록</h2>
+            <p class="helper">잘못 입력한 기록은 삭제 후 다시 등록하면 됩니다.</p>
             <div class="table-wrap history-table-wrap">
                 <table>
                     <thead>
@@ -229,11 +209,43 @@
                         <td th:text="${row.usageDate}"></td>
                         <td th:text="${row.beanTypeLabel}"></td>
                         <td th:text="${row.originLabel}"></td>
-                        <td class="number" th:text="${row.bagCount.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number strong-number" th:text="${row.bagCount.stripTrailingZeros().toPlainString()}"></td>
                         <td class="number" th:text="${row.totalKg.stripTrailingZeros().toPlainString()}"></td>
                         <td th:text="${row.note}"></td>
                         <td>
-                            <form th:action="@{/inventory/usages/{id}/delete(id=${row.id})}" method="post" onsubmit="return confirm('이 사용 기록을 삭제할까요?');">
+                            <form th:action="@{/inventory/usages/{id}/delete(id=${row.id})}" method="post"
+                                  onsubmit="return confirm('이 사용 기록을 삭제할까요?');">
+                                <button type="submit" class="danger-button compact-button">삭제</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="panel">
+            <h2>최근 매입 기록</h2>
+            <p class="helper">사용 원가를 계산하기 위한 포대단가 기록입니다.</p>
+            <div class="table-wrap history-table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>날짜</th><th>종류</th><th>원산지</th><th>포대</th><th>포대단가</th><th>총액</th><th>삭제</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(inventory.recentPurchases)}"><td colspan="7">매입 기록이 없습니다.</td></tr>
+                    <tr th:each="row : ${inventory.recentPurchases}">
+                        <td th:text="${row.purchaseDate}"></td>
+                        <td th:text="${row.beanTypeLabel}"></td>
+                        <td th:text="${row.originLabel}"></td>
+                        <td class="number" th:text="${row.bagCount.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number" th:text="|${#numbers.formatDecimal(row.unitPricePerBag, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.totalAmount, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                        <td>
+                            <form th:action="@{/inventory/purchases/{id}/delete(id=${row.id})}" method="post"
+                                  onsubmit="return confirm('이 매입 기록을 삭제할까요?');">
                                 <button type="submit" class="danger-button compact-button">삭제</button>
                             </form>
                         </td>

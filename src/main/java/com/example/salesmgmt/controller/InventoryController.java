@@ -4,6 +4,7 @@ import com.example.salesmgmt.domain.BeanCatalog;
 import com.example.salesmgmt.domain.BeanInventoryView;
 import com.example.salesmgmt.domain.BeanOrigin;
 import com.example.salesmgmt.domain.BeanType;
+import com.example.salesmgmt.domain.BeanUsageCostResult;
 import com.example.salesmgmt.service.BeanInventoryService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 @Controller
 public class InventoryController {
@@ -31,10 +33,18 @@ public class InventoryController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate asOf,
+            @RequestParam(required = false) String month,
             Model model
     ) {
         BeanInventoryView inventory = beanInventoryService.getInventory(asOf);
+        YearMonth selectedMonth = parseMonth(month);
+        BeanUsageCostResult usageCost = beanInventoryService.calculateUsageCost(selectedMonth);
+
         model.addAttribute("inventory", inventory);
+        model.addAttribute("usageCost", usageCost);
+        model.addAttribute("selectedMonth", selectedMonth);
+        model.addAttribute("previousMonth", selectedMonth.minusMonths(1));
+        model.addAttribute("nextMonth", selectedMonth.plusMonths(1));
         model.addAttribute("beanTypes", BeanType.values());
         model.addAttribute("beanOrigins", BeanOrigin.values());
         model.addAttribute("allowedCombinations", BeanCatalog.ALLOWED_COMBINATIONS);
@@ -89,7 +99,7 @@ public class InventoryController {
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute("inventoryError", exception.getMessage());
         }
-        return "redirect:/inventory";
+        return "redirect:/inventory?month=" + YearMonth.from(usageDate);
     }
 
     @PostMapping("/inventory/purchases/{purchaseId}/delete")
@@ -134,5 +144,17 @@ public class InventoryController {
             redirectAttributes.addFlashAttribute("inventoryError", exception.getMessage());
         }
         return "redirect:/inventory";
+    }
+
+    private YearMonth parseMonth(String month) {
+        if (month == null || month.isBlank()) {
+            return YearMonth.now();
+        }
+
+        try {
+            return YearMonth.parse(month.trim());
+        } catch (RuntimeException ignored) {
+            return YearMonth.now();
+        }
     }
 }
