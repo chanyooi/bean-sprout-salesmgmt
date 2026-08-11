@@ -15,6 +15,7 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 @Service
 public class StatementWorkbookService {
@@ -47,6 +47,7 @@ public class StatementWorkbookService {
 
     private static final String SUNSAN_STATEMENT_NAME = "선산식자재마트";
     private static final String WARNING_SHEET_NAME = "생성확인";
+    private static final String DEFAULT_TEMPLATE_PATH = "template.xlsx";
 
     private final SalesItemRepository salesItemRepository;
     private final DataFormatter dataFormatter = new DataFormatter(Locale.KOREA);
@@ -63,8 +64,6 @@ public class StatementWorkbookService {
             YearMonth month,
             boolean includeEmptySheets
     ) {
-        validateTemplate(templateFile);
-
         LocalDate normalStart = month.atDay(1);
         LocalDate normalEnd = month.atEndOfMonth();
         LocalDate sunsanStart = month.minusMonths(1).atDay(26);
@@ -78,7 +77,7 @@ public class StatementWorkbookService {
         Map<String, List<SalesItemEntity>> itemsByStatementName =
                 groupByStatementName(allItems);
 
-        try (InputStream inputStream = templateFile.getInputStream();
+        try (InputStream inputStream = openTemplate(templateFile);
              XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
@@ -255,8 +254,6 @@ public class StatementWorkbookService {
 
         Map<LocalDate, Map<String, BigDecimal>> quantityPivot =
                 createQuantityPivot(items);
-        Map<LocalDate, BigDecimal> returnContainerAmountByDate =
-                createReturnContainerAmountByDate(items);
 
         List<LocalDate> dates = period.startDate()
                 .datesUntil(period.endDate().plusDays(1))
@@ -293,25 +290,11 @@ public class StatementWorkbookService {
                 quantityCell.setCellValue(quantity.doubleValue());
             }
 
-            BigDecimal returnQuantity = quantities.get("회수통");
-            Integer returnColumn = itemColumns.get("회수통");
-
-            if (returnColumn != null
-                    && returnQuantity != null
-                    && returnQuantity.signum() != 0) {
-                BigDecimal returnAmount = returnContainerAmountByDate
-                        .getOrDefault(date, BigDecimal.ZERO);
-
-                applyReturnContainerAmountToFormula(
-                        sheet,
-                        row,
-                        returnColumn,
-                        returnAmount,
-                        date,
-                        returnQuantity,
-                        warnings
-                );
-            }
+            // 중요:
+            // 회수통도 다른 품목과 똑같이 "수량만" 템플릿 셀에 기록합니다.
+            // template.xlsx에 들어 있는 -F33*3000 같은 원래 수식은 건드리지 않습니다.
+            // 따라서 특정 날짜의 회수통 금액을 -21000/-33000 같은 상수로
+            // 수식에 박아 넣지 않으며, 빈 행에서도 음수 금액이 반복되는 문제가 없습니다.
         }
     }
 
@@ -490,133 +473,6 @@ public class StatementWorkbookService {
         }
     }
 
-    private Map<LocalDate, BigDecimal> createReturnContainerAmountByDate(
-            List<SalesItemEntity> items
-    ) {
-        Map<LocalDate, BigDecimal> amounts = new LinkedHashMap<>();
-
-        for (SalesItemEntity item : items) {
-            if (!"회수통".equals(normalizeItemName(item.getItemName()))) {
-                continue;
-            }
-
-            BigDecimal lineAmount = item.getLineAmount();
-            if (lineAmount == null) {
-                continue;
-            }
-
-            LocalDate date = item.getSalesOrder().getDeliveryDate();
-            amounts.merge(date, lineAmount, BigDecimal::add);
-        }
-
-        return amounts;
-    }
-
-    /**
-     * template.xlsx에 잘못 남아 있는 회수통 수식도 생성 시점에 바로잡습니다.
-     *
-     * 기존 수식의 F33*3000 같은 회수통 항을 제거한 뒤, DB에 실제 저장된
-     * 해당 날짜의 회수통 금액을 상수로 더하거나 뺍니다. 그래서 거래처별
-     * 기본단가가 다르거나 주문별 예외 단가가 있어도 실제 매출과 일치합니다.
-     */
-    private void applyReturnContainerAmountToFormula(
-            XSSFSheet sheet,
-            Row row,
-            int returnColumn,
-            BigDecimal returnAmount,
-            LocalDate date,
-            BigDecimal returnQuantity,
-            List<GenerationWarning> warnings
-    ) {
-        Cell returnCell = getOrCreateCell(row, returnColumn);
-        String returnReference =
-                returnCell.getAddress().formatAsString();
-
-        List<Cell> changedFormulaCells = new ArrayList<>();
-        Cell nearestFormulaCell = null;
-        int lastCell = Math.max(row.getLastCellNum(), returnColumn + 1);
-
-        for (int column = returnColumn + 1;
-             column < lastCell;
-             column++) {
-            Cell cell = row.getCell(column);
-            if (cell == null || cell.getCellType() != CellType.FORMULA) {
-                continue;
-            }
-
-            if (nearestFormulaCell == null) {
-                nearestFormulaCell = cell;
-            }
-
-            String originalFormula = cell.getCellFormula();
-            String cleanedFormula = removeReturnContainerTerm(
-                    originalFormula,
-                    returnReference
-            );
-
-            if (!cleanedFormula.equals(originalFormula)) {
-                cell.setCellFormula(cleanedFormula);
-                changedFormulaCells.add(cell);
-            }
-        }
-
-        List<Cell> targetCells;
-        if (!changedFormulaCells.isEmpty()) {
-            targetCells = changedFormulaCells;
-        } else if (nearestFormulaCell != null) {
-            targetCells = List.of(nearestFormulaCell);
-        } else {
-            warnings.add(new GenerationWarning(
-                    "회수통 합계 수식 없음",
-                    sheet.getSheetName(),
-                    date,
-                    "회수통",
-                    returnQuantity,
-                    "회수통 수량은 있으나 오른쪽에서 합계 수식을 찾지 못해 "
-                            + "회수통 금액을 명세서 합계에 반영하지 못했습니다."
-            ));
-            return;
-        }
-
-        for (Cell targetCell : targetCells) {
-            targetCell.setCellFormula(appendAmountToFormula(
-                    targetCell.getCellFormula(),
-                    returnAmount
-            ));
-        }
-    }
-
-    private String removeReturnContainerTerm(
-            String formula,
-            String returnReference
-    ) {
-        String reference = Pattern.quote(returnReference);
-
-        String cleaned = formula.replaceAll(
-                "(?i)([+-])\\s*" + reference
-                        + "\\s*\\*\\s*-?\\d+(?:\\.\\d+)?",
-                ""
-        );
-
-        return cleaned;
-    }
-
-    private String appendAmountToFormula(
-            String formula,
-            BigDecimal amount
-    ) {
-        if (amount == null || amount.signum() == 0) {
-            return formula;
-        }
-
-        BigDecimal normalized = amount.stripTrailingZeros();
-        String sign = normalized.signum() < 0 ? "-" : "+";
-
-        return formula
-                + sign
-                + normalized.abs().toPlainString();
-    }
-
     private Map<LocalDate, Map<String, BigDecimal>> createQuantityPivot(
             List<SalesItemEntity> items
     ) {
@@ -691,21 +547,26 @@ public class StatementWorkbookService {
                 : cell;
     }
 
-    private void validateTemplate(MultipartFile templateFile) {
-        if (templateFile == null || templateFile.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "template.xlsx 파일을 선택해주세요."
-            );
+    private InputStream openTemplate(MultipartFile templateFile) throws IOException {
+        if (templateFile != null && !templateFile.isEmpty()) {
+            String originalFilename = templateFile.getOriginalFilename();
+            if (originalFilename == null
+                    || !originalFilename.toLowerCase(Locale.ROOT).endsWith(".xlsx")) {
+                throw new IllegalArgumentException(
+                        ".xlsx 형식의 템플릿만 사용할 수 있습니다."
+                );
+            }
+            return templateFile.getInputStream();
         }
 
-        String originalFilename = templateFile.getOriginalFilename();
-        if (originalFilename == null
-                || !originalFilename.toLowerCase(Locale.ROOT)
-                .endsWith(".xlsx")) {
+        ClassPathResource resource = new ClassPathResource(DEFAULT_TEMPLATE_PATH);
+        if (!resource.exists()) {
             throw new IllegalArgumentException(
-                    ".xlsx 형식의 템플릿만 사용할 수 있습니다."
+                    "기본 template.xlsx 파일을 찾을 수 없습니다. "
+                            + "src/main/resources/template.xlsx를 확인해주세요."
             );
         }
+        return resource.getInputStream();
     }
 
     private String normalizeName(String value) {

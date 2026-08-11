@@ -53,7 +53,7 @@ public class StatementController {
 
     @PostMapping("/download")
     public ResponseEntity<byte[]> download(
-            @RequestParam("templateFile") MultipartFile templateFile,
+            @RequestParam(value = "templateFile", required = false) MultipartFile templateFile,
             @RequestParam String month,
             @RequestParam(defaultValue = "false") boolean includeEmpty
     ) {
