@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>입금·미수금 관리</title>
+
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="stylesheet" th:href="@{/css/operations.css}">
-    <link rel="stylesheet" th:href="@{/css/payments-improved.css(v=20260812_1)}">
+    <link rel="stylesheet" th:href="@{/css/payments-improved.css(v=20260812_3)}">
 </head>
 <body>
 <main class="container">
+
     <section class="hero">
         <div class="hero-row">
             <div>
@@ -20,11 +22,24 @@
                     거래처별 미수금을 확인합니다.
                 </p>
             </div>
+
             <div class="button-row">
-                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
-                <a class="secondary-link" th:href="@{/vendor-management}">거래처 관리</a>
-                <a class="secondary-link" th:href="@{/reports/monthly(month=${selectedMonth})}">월매출</a>
-                <a class="secondary-link" th:href="@{/upload}">주문 업로드</a>
+                <a class="secondary-link home-dashboard-link"
+                   th:href="@{/}">
+                    홈(대시보드)
+                </a>
+                <a class="secondary-link"
+                   th:href="@{/vendor-management}">
+                    거래처 관리
+                </a>
+                <a class="secondary-link"
+                   th:href="@{/reports/monthly(month=${selectedMonth})}">
+                    월매출
+                </a>
+                <a class="secondary-link"
+                   th:href="@{/upload}">
+                    주문 업로드
+                </a>
             </div>
         </div>
     </section>
@@ -49,12 +64,15 @@
             <form class="sales-filter-form"
                   th:action="@{/payments}"
                   method="get">
+
                 <label for="month">정산월</label>
+
                 <input id="month"
                        name="month"
                        type="month"
                        th:value="${selectedMonth}"
                        required>
+
                 <button type="submit">조회</button>
             </form>
 
@@ -155,13 +173,48 @@
     </section>
 
     <section class="panel">
-        <div class="panel-heading">
+        <div class="panel-heading payment-list-heading">
             <div>
                 <h2>거래처별 미수금</h2>
                 <p>
-                    전액 입금된 거래처는 금액을 입력하지 않고
-                    ‘입금 완료’ 버튼만 누르면 남은 미수금 전액이 자동 등록됩니다.
+                    개별 처리하거나 모든 미수 거래처를 한 번에 입금 완료 처리할 수 있습니다.
                 </p>
+            </div>
+
+            <div class="bulk-payment-actions">
+                <form th:if="${autoCompleteSummary.count > 0}"
+                      th:action="@{/payments/delete-auto-completions}"
+                      method="post"
+                      th:attr="data-count=${autoCompleteSummary.count},
+                               data-total=${autoCompleteSummary.totalAmount.stripTrailingZeros().toPlainString()}"
+                      onsubmit="return confirmDeleteAllCompleted(this);">
+
+                    <input type="hidden"
+                           name="month"
+                           th:value="${selectedMonth}">
+
+                    <button type="submit"
+                            class="payment-delete-all-button">
+                        전체 입금완료 삭제
+                    </button>
+                </form>
+
+                <form th:if="${report.outstandingVendorCount > 0}"
+                      th:action="@{/payments/complete-all}"
+                      method="post"
+                      th:attr="data-count=${report.outstandingVendorCount},
+                               data-total=${report.outstandingAmount.stripTrailingZeros().toPlainString()}"
+                      onsubmit="return confirmCompleteAll(this);">
+
+                    <input type="hidden"
+                           name="month"
+                           th:value="${selectedMonth}">
+
+                    <button type="submit"
+                            class="payment-complete-all-button">
+                        전체 입금 완료
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -178,6 +231,7 @@
                     <th class="action-column">관리</th>
                 </tr>
                 </thead>
+
                 <tbody>
                 <tr th:each="row : ${report.vendorRows}"
                     th:classappend="${row.outstandingAmount.signum() > 0}
@@ -194,19 +248,13 @@
                     </td>
 
                     <td class="money-column"
-                        th:text="${#numbers.formatDecimal(row.billedAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
-                        0원
-                    </td>
+                        th:text="${#numbers.formatDecimal(row.billedAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td>
 
                     <td class="money-column"
-                        th:text="${#numbers.formatDecimal(row.paidAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
-                        0원
-                    </td>
+                        th:text="${#numbers.formatDecimal(row.paidAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td>
 
                     <td class="money-column outstanding-money"
-                        th:text="${#numbers.formatDecimal(row.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
-                        0원
-                    </td>
+                        th:text="${#numbers.formatDecimal(row.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td>
 
                     <td class="status-column">
                         <span class="payment-status"
@@ -246,8 +294,7 @@
                 </tr>
 
                 <tr th:if="${#lists.isEmpty(report.vendorRows)}">
-                    <td colspan="7"
-                        class="payment-empty-row">
+                    <td colspan="7" class="payment-empty-row">
                         해당 월의 판매 또는 입금 기록이 없습니다.
                     </td>
                 </tr>
@@ -275,6 +322,7 @@
                     <th>삭제</th>
                 </tr>
                 </thead>
+
                 <tbody>
                 <tr th:each="payment : ${report.paymentRows}">
                     <td th:text="${payment.paymentDate}"></td>
@@ -298,8 +346,7 @@
                 </tr>
 
                 <tr th:if="${#lists.isEmpty(report.paymentRows)}">
-                    <td colspan="5"
-                        class="payment-empty-row">
+                    <td colspan="5" class="payment-empty-row">
                         등록된 입금 기록이 없습니다.
                     </td>
                 </tr>
@@ -329,6 +376,33 @@ function confirmCompletePayment(form) {
         + '남은 미수금 ' + formatWon(amount)
         + '을 전액 입금 처리할까요?\n\n'
         + '입금 내역에도 자동으로 기록됩니다.'
+    );
+}
+
+function confirmCompleteAll(form) {
+    const count = form.dataset.count || '0';
+    const total = form.dataset.total || '0';
+
+    return confirm(
+        '전체 입금 완료 처리\n\n'
+        + '미수 거래처: ' + count + '곳\n'
+        + '총 미수금: ' + formatWon(total) + '\n\n'
+        + '모든 미수 거래처의 남은 금액을\n'
+        + '오늘 날짜 입금으로 한 번에 등록할까요?'
+    );
+}
+
+function confirmDeleteAllCompleted(form) {
+    const count = form.dataset.count || '0';
+    const total = form.dataset.total || '0';
+
+    return confirm(
+        '전체 입금완료 삭제\n\n'
+        + '자동 처리 기록: ' + count + '건\n'
+        + '삭제 금액: ' + formatWon(total) + '\n\n'
+        + '자동으로 생성된 입금 완료 기록을 모두 삭제합니다.\n'
+        + '수동으로 입력한 입금 기록은 삭제되지 않습니다.\n\n'
+        + '정말 삭제할까요?'
     );
 }
 </script>

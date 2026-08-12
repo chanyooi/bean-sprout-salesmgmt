@@ -60,6 +60,10 @@ public class PaymentController {
                 "today",
                 LocalDate.now().toString()
         );
+        model.addAttribute(
+                "autoCompleteSummary",
+                paymentService.getAutoCompleteSummary(selectedMonth)
+        );
 
         return "payments";
     }
@@ -119,6 +123,72 @@ public class PaymentController {
                     "입금 완료 처리했습니다. "
                             + completedAmount.stripTrailingZeros().toPlainString()
                             + "원이 자동 등록되었습니다."
+            );
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    exception.getMessage()
+            );
+        }
+
+        return "redirect:/payments?month=" + month;
+    }
+
+    @PostMapping("/payments/complete-all")
+    public String completeAllPayments(
+            @RequestParam String month,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            YearMonth settlementMonth = YearMonth.parse(month);
+
+            PaymentService.BulkCompleteResult result =
+                    paymentService.completeAllOutstandingPayments(
+                            settlementMonth,
+                            LocalDate.now()
+                    );
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    result.vendorCount()
+                            + "개 거래처 전체 입금 완료 처리했습니다. "
+                            + result.totalAmount()
+                                .stripTrailingZeros()
+                                .toPlainString()
+                            + "원이 자동 등록되었습니다."
+            );
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    exception.getMessage()
+            );
+        }
+
+        return "redirect:/payments?month=" + month;
+    }
+
+    @PostMapping("/payments/delete-auto-completions")
+    public String deleteAllAutoCompletions(
+            @RequestParam String month,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            YearMonth settlementMonth = YearMonth.parse(month);
+
+            PaymentService.BulkDeleteResult result =
+                    paymentService.deleteAllAutoCompletionPayments(
+                            settlementMonth
+                    );
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "자동 입금 완료 기록 "
+                            + result.deletedCount()
+                            + "건을 삭제했습니다. "
+                            + result.totalAmount()
+                                .stripTrailingZeros()
+                                .toPlainString()
+                            + "원이 다시 미수금으로 복원됩니다."
             );
         } catch (RuntimeException exception) {
             redirectAttributes.addFlashAttribute(

@@ -27,6 +27,10 @@ import java.util.Map;
 public class PaymentService {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO;
+    private static final String INDIVIDUAL_COMPLETE_NOTE =
+            "입금 완료 자동 처리";
+    private static final String BULK_COMPLETE_NOTE =
+            "전체 입금 완료 자동 처리";
 
     private final PaymentRepository paymentRepository;
     private final VendorRepository vendorRepository;
@@ -120,10 +124,142 @@ public class PaymentService {
                 settlementMonth.toString(),
                 paymentDate == null ? LocalDate.now() : paymentDate,
                 outstanding,
-                "입금 완료 자동 처리"
+                INDIVIDUAL_COMPLETE_NOTE
         ));
 
         return money(outstanding);
+    }
+
+    @Transactional
+    public BulkCompleteResult completeAllOutstandingPayments(
+            YearMonth settlementMonth,
+            LocalDate paymentDate
+    ) {
+        MonthlyReceivableReport report =
+                createMonthlyReport(settlementMonth);
+
+        LocalDate actualPaymentDate =
+                paymentDate == null ? LocalDate.now() : paymentDate;
+
+        long completedCount = 0;
+        BigDecimal completedTotal = ZERO;
+
+        for (MonthlyReceivableReport.VendorRow row
+                : report.vendorRows()) {
+
+            BigDecimal outstanding =
+                    safe(row.outstandingAmount());
+
+            if (outstanding.signum() <= 0) {
+                continue;
+            }
+
+            VendorEntity vendor =
+                    vendorRepository.findById(row.vendorId())
+                            .orElse(null);
+
+            if (vendor == null) {
+                continue;
+            }
+
+            paymentRepository.save(new PaymentEntity(
+                    vendor,
+                    settlementMonth.toString(),
+                    actualPaymentDate,
+                    outstanding,
+                    BULK_COMPLETE_NOTE
+            ));
+
+            completedCount++;
+            completedTotal =
+                    completedTotal.add(outstanding);
+        }
+
+        if (completedCount == 0) {
+            throw new IllegalArgumentException(
+                    "입금 완료 처리할 미수 거래처가 없습니다."
+            );
+        }
+
+        return new BulkCompleteResult(
+                completedCount,
+                money(completedTotal)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public AutoCompleteSummary getAutoCompleteSummary(
+            YearMonth settlementMonth
+    ) {
+        List<PaymentEntity> payments =
+                paymentRepository.findForSettlementMonth(
+                        settlementMonth.toString()
+                );
+
+        long count = 0;
+        BigDecimal total = ZERO;
+
+        for (PaymentEntity payment : payments) {
+            if (!isAutoCompletionPayment(payment)) {
+                continue;
+            }
+
+            count++;
+            total = total.add(safe(payment.getAmount()));
+        }
+
+        return new AutoCompleteSummary(
+                count,
+                money(total)
+        );
+    }
+
+    @Transactional
+    public BulkDeleteResult deleteAllAutoCompletionPayments(
+            YearMonth settlementMonth
+    ) {
+        List<PaymentEntity> payments =
+                paymentRepository.findForSettlementMonth(
+                        settlementMonth.toString()
+                );
+
+        List<PaymentEntity> targets = new ArrayList<>();
+        BigDecimal total = ZERO;
+
+        for (PaymentEntity payment : payments) {
+            if (!isAutoCompletionPayment(payment)) {
+                continue;
+            }
+
+            targets.add(payment);
+            total = total.add(safe(payment.getAmount()));
+        }
+
+        if (targets.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "삭제할 자동 입금 완료 기록이 없습니다."
+            );
+        }
+
+        paymentRepository.deleteAll(targets);
+
+        return new BulkDeleteResult(
+                targets.size(),
+                money(total)
+        );
+    }
+
+    private boolean isAutoCompletionPayment(
+            PaymentEntity payment
+    ) {
+        if (payment == null || payment.getNote() == null) {
+            return false;
+        }
+
+        String note = payment.getNote().trim();
+
+        return INDIVIDUAL_COMPLETE_NOTE.equals(note)
+                || BULK_COMPLETE_NOTE.equals(note);
     }
 
     @Transactional
@@ -307,5 +443,23 @@ public class PaymentService {
         }
 
         return value.stripTrailingZeros();
+    }
+
+    public record BulkCompleteResult(
+            long vendorCount,
+            BigDecimal totalAmount
+    ) {
+    }
+
+    public record AutoCompleteSummary(
+            long count,
+            BigDecimal totalAmount
+    ) {
+    }
+
+    public record BulkDeleteResult(
+            long deletedCount,
+            BigDecimal totalAmount
+    ) {
     }
 }

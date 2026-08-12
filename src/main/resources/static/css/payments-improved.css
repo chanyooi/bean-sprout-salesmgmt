@@ -4,6 +4,56 @@
     border-radius: 13px;
 }
 
+.payment-list-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.bulk-payment-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-complete-all-button,
+.payment-delete-all-button {
+    min-height: 42px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 850;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .12s ease, background .12s ease;
+}
+
+.payment-complete-all-button {
+    border: 1px solid #17683a;
+    background: #17683a;
+    color: #ffffff;
+    box-shadow: 0 7px 18px rgba(23,104,58,.14);
+}
+
+.payment-complete-all-button:hover {
+    background: #10572f;
+    transform: translateY(-1px);
+}
+
+.payment-delete-all-button {
+    border: 1px solid #e3a3a3;
+    background: #fff7f7;
+    color: #b53838;
+}
+
+.payment-delete-all-button:hover {
+    border-color: #d77878;
+    background: #fdeaea;
+    transform: translateY(-1px);
+}
+
 .receivable-table {
     width: 100%;
     min-width: 1040px;
@@ -32,14 +82,6 @@
 
 .receivable-table tbody tr:last-child td {
     border-bottom: 0;
-}
-
-.receivable-table tbody tr {
-    transition: background .12s ease;
-}
-
-.receivable-table tbody tr:hover td {
-    background: rgba(238, 244, 251, .72);
 }
 
 .receivable-table .vendor-column {
@@ -105,22 +147,6 @@
     font-weight: 850;
     cursor: pointer;
     white-space: nowrap;
-    transition:
-        background .12s ease,
-        color .12s ease,
-        border-color .12s ease,
-        transform .12s ease;
-}
-
-.payment-complete-button:hover {
-    border-color: #58a77a;
-    background: #1f7a49;
-    color: #ffffff;
-    transform: translateY(-1px);
-}
-
-.payment-complete-button:active {
-    transform: translateY(0);
 }
 
 .complete-check {
@@ -154,12 +180,30 @@
 }
 
 @media (max-width: 800px) {
-    .receivable-table {
-        min-width: 940px;
+    .payment-list-heading {
+        display: block;
     }
 
-    .payment-complete-button {
-        min-width: 86px;
-        padding: 7px 9px;
+    .bulk-payment-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        margin-top: 12px;
+    }
+
+    .bulk-payment-actions form {
+        min-width: 0;
+    }
+
+    .payment-complete-all-button,
+    .payment-delete-all-button {
+        width: 100%;
+        min-height: 48px;
+        padding: 9px 10px;
+        border-radius: 13px;
+        font-size: 12px;
+    }
+
+    .receivable-table {
+        min-width: 940px;
     }
 }
