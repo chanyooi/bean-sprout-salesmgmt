@@ -1,0 +1,737 @@
+/* ============================================================
+   SONGCHEON MOBILE UI 2026
+   - Desktop untouched as much as possible
+   - Mobile-first enhancement below 768px
+   - Designed for Spring/Thymeleaf pages already using app.css
+   ============================================================ */
+
+@media (max-width: 768px) {
+    :root {
+        --m-bg: #f4f6f4;
+        --m-surface: rgba(255, 255, 255, .86);
+        --m-surface-solid: #ffffff;
+        --m-line: rgba(25, 46, 37, .09);
+        --m-text: #13231b;
+        --m-muted: #738078;
+        --m-green: #226846;
+        --m-green-2: #3f8a64;
+        --m-green-soft: #eaf4ee;
+        --m-red: #b84141;
+        --m-red-soft: #fff0f0;
+        --m-amber: #9c6808;
+        --m-amber-soft: #fff6df;
+        --m-radius-xl: 24px;
+        --m-radius-lg: 18px;
+        --m-radius-md: 14px;
+        --m-shadow: 0 10px 34px rgba(18, 41, 31, .07);
+    }
+
+    * {
+        -webkit-tap-highlight-color: transparent;
+        box-sizing: border-box;
+    }
+
+    html {
+        background: var(--m-bg);
+        scroll-behavior: smooth;
+    }
+
+    body {
+        margin: 0;
+        min-width: 0;
+        overflow-x: hidden;
+        background:
+            radial-gradient(circle at 0% 0%, rgba(67, 139, 101, .08), transparent 34%),
+            radial-gradient(circle at 100% 8%, rgba(123, 151, 184, .06), transparent 30%),
+            var(--m-bg) !important;
+        color: var(--m-text);
+        font-size: 14px;
+        letter-spacing: -.01em;
+    }
+
+    body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -10;
+        pointer-events: none;
+        background: linear-gradient(to bottom, rgba(255,255,255,.15), transparent 18%);
+    }
+
+    /* ---------- Main spacing ---------- */
+
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 16px 14px 96px !important;
+    }
+
+    main.container {
+        min-height: 100dvh;
+    }
+
+    /* ---------- Hero / page title ---------- */
+
+    .hero,
+    .inventory-hero,
+    .dashboard-hero {
+        position: relative;
+        margin: 0 0 14px !important;
+        padding: 20px 18px !important;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.74) !important;
+        border-radius: var(--m-radius-xl) !important;
+        background:
+            linear-gradient(145deg, rgba(255,255,255,.90), rgba(255,255,255,.68)) !important;
+        box-shadow: var(--m-shadow) !important;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .hero::before,
+    .inventory-hero::before,
+    .dashboard-hero::before {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        right: -65px;
+        top: -72px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(70,142,103,.18), rgba(70,142,103,0) 70%);
+        pointer-events: none;
+    }
+
+    .hero-row,
+    .inventory-hero {
+        display: block !important;
+    }
+
+    .eyebrow,
+    .section-kicker {
+        margin-bottom: 6px !important;
+        color: var(--m-green) !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        letter-spacing: .02em;
+    }
+
+    h1,
+    .hero h1,
+    .inventory-hero h1 {
+        margin: 0 !important;
+        color: var(--m-text) !important;
+        font-size: 27px !important;
+        line-height: 1.14 !important;
+        letter-spacing: -.045em !important;
+    }
+
+    .hero p:not(.eyebrow),
+    .hero-description,
+    .inventory-hero .hero-description {
+        margin: 10px 0 0 !important;
+        color: var(--m-muted) !important;
+        font-size: 13px !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Secondary links in page header become compact chips */
+    .button-row,
+    .top-links {
+        display: flex !important;
+        width: 100%;
+        margin-top: 16px !important;
+        padding-bottom: 2px;
+        gap: 7px !important;
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        scrollbar-width: none;
+    }
+
+    .button-row::-webkit-scrollbar,
+    .top-links::-webkit-scrollbar {
+        display: none;
+    }
+
+    .secondary-link,
+    .month-arrow {
+        flex: 0 0 auto;
+        min-height: 39px;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px !important;
+        border: 1px solid var(--m-line) !important;
+        border-radius: 999px !important;
+        background: rgba(255,255,255,.76) !important;
+        color: #33453c !important;
+        font-size: 12px !important;
+        font-weight: 750 !important;
+        text-decoration: none !important;
+        box-shadow: none !important;
+    }
+
+    .home-dashboard-link {
+        color: var(--m-green) !important;
+        background: var(--m-green-soft) !important;
+        border-color: rgba(42,112,76,.11) !important;
+    }
+
+    /* ---------- Panels ---------- */
+
+    .panel,
+    .summary-card,
+    .metric-card,
+    .final-menu-card,
+    .vendor-hub-card,
+    .side-action-card {
+        border: 1px solid var(--m-line) !important;
+        border-radius: var(--m-radius-lg) !important;
+        background: var(--m-surface) !important;
+        box-shadow: 0 6px 22px rgba(18, 40, 31, .045) !important;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+
+    .panel {
+        margin-bottom: 12px !important;
+        padding: 16px !important;
+    }
+
+    .panel-heading {
+        margin-bottom: 14px !important;
+    }
+
+    .panel-heading h2 {
+        margin: 0 0 5px !important;
+        font-size: 18px !important;
+        line-height: 1.25 !important;
+        letter-spacing: -.03em;
+    }
+
+    .panel-heading p {
+        margin: 0 !important;
+        color: var(--m-muted) !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+    }
+
+    .split-heading {
+        display: block !important;
+    }
+
+    .split-heading > .secondary-link,
+    .split-heading > .button-row {
+        margin-top: 12px !important;
+    }
+
+    /* ---------- Summary / KPI cards ---------- */
+
+    .summary-grid,
+    .summary-grid.four,
+    .dashboard-metrics,
+    .final-dashboard-metrics {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 9px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .summary-card,
+    .metric-card {
+        min-width: 0 !important;
+        min-height: 116px !important;
+        padding: 15px !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: space-between;
+        text-decoration: none !important;
+    }
+
+    .summary-card > span,
+    .metric-card > span {
+        color: var(--m-muted) !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+    }
+
+    .summary-card strong,
+    .metric-card strong {
+        margin-top: 9px !important;
+        color: var(--m-text) !important;
+        font-size: clamp(19px, 5.2vw, 24px) !important;
+        line-height: 1.15 !important;
+        letter-spacing: -.045em;
+        overflow-wrap: anywhere;
+    }
+
+    .summary-card small,
+    .metric-card small {
+        margin-top: 7px !important;
+        color: var(--m-muted) !important;
+        font-size: 10.5px !important;
+        line-height: 1.35;
+    }
+
+    .warning-card,
+    .warning-metric {
+        background: linear-gradient(145deg, #fffdf7, #fff8e8) !important;
+        border-color: rgba(164,108,15,.12) !important;
+    }
+
+    .danger-metric {
+        background: linear-gradient(145deg, #fffafa, #fff0f0) !important;
+        border-color: rgba(184,65,65,.11) !important;
+    }
+
+    /* ---------- Main dashboard menu ---------- */
+
+    .final-menu-panel {
+        padding: 16px !important;
+    }
+
+    .final-menu-grid,
+    .vendor-hub-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 9px !important;
+    }
+
+    .final-menu-card,
+    .vendor-hub-card {
+        min-width: 0 !important;
+        min-height: 116px !important;
+        padding: 15px !important;
+        border-radius: 17px !important;
+    }
+
+    .final-menu-card .menu-icon {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 11px !important;
+        color: var(--m-green) !important;
+        background: var(--m-green-soft) !important;
+        font-size: 16px !important;
+    }
+
+    .final-menu-card strong,
+    .vendor-hub-card strong {
+        margin-top: 3px !important;
+        font-size: 15px !important;
+        letter-spacing: -.025em;
+    }
+
+    .final-menu-card small,
+    .vendor-hub-card p {
+        color: var(--m-muted) !important;
+        font-size: 10.5px !important;
+        line-height: 1.42 !important;
+    }
+
+    /* ---------- Filter / month toolbar ---------- */
+
+    .sales-filter-toolbar,
+    .month-toolbar,
+    .compact-month-toolbar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 9px !important;
+        align-items: center;
+    }
+
+    .sales-filter-toolbar > form,
+    .month-toolbar > form,
+    .month-form {
+        grid-column: 1 / -1 !important;
+        grid-row: 1 !important;
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        gap: 8px !important;
+        width: 100%;
+    }
+
+    .sales-filter-toolbar > form label,
+    .month-form label {
+        grid-column: 1 / -1;
+        font-size: 11px !important;
+        color: var(--m-muted) !important;
+    }
+
+    .sales-filter-toolbar > .month-arrow:first-child,
+    .month-toolbar > :first-child {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        justify-self: stretch !important;
+    }
+
+    .sales-filter-toolbar > .month-arrow:last-child,
+    .month-toolbar > :last-child {
+        grid-column: 2 !important;
+        grid-row: 2 !important;
+        justify-self: stretch !important;
+    }
+
+    input,
+    select,
+    textarea {
+        min-height: 46px !important;
+        width: 100%;
+        border: 1px solid rgba(26,52,40,.13) !important;
+        border-radius: 13px !important;
+        background: rgba(255,255,255,.92) !important;
+        color: var(--m-text) !important;
+        font-size: 14px !important;
+        outline: none !important;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: rgba(42,112,76,.36) !important;
+        box-shadow: 0 0 0 4px rgba(50,124,83,.08) !important;
+    }
+
+    button,
+    .primary-action,
+    .security-primary-button {
+        min-height: 46px;
+        border-radius: 13px !important;
+        font-weight: 800 !important;
+        touch-action: manipulation;
+    }
+
+    /* ---------- Forms ---------- */
+
+    .payment-entry-form,
+    .simple-entry-form,
+    .sales-filter-form {
+        grid-template-columns: 1fr !important;
+        gap: 11px !important;
+    }
+
+    .payment-entry-form > *,
+    .simple-entry-form > *,
+    .simple-entry-form .wide-field,
+    .payment-note-field {
+        grid-column: auto !important;
+    }
+
+    .single-form-layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    .side-action-card {
+        display: none !important;
+    }
+
+    /* ---------- Tabs ---------- */
+
+    .inventory-tabs {
+        position: sticky;
+        top: 8px;
+        z-index: 35;
+        margin: 0 0 12px !important;
+        padding: 6px !important;
+        overflow-x: auto;
+        gap: 5px !important;
+        border: 1px solid rgba(255,255,255,.82) !important;
+        border-radius: 17px !important;
+        background: rgba(245,248,246,.88) !important;
+        box-shadow: 0 7px 24px rgba(18,40,31,.08) !important;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        scrollbar-width: none;
+    }
+
+    .inventory-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .inventory-tabs a {
+        min-height: 40px;
+        padding: 9px 12px !important;
+        white-space: nowrap;
+        border-radius: 12px !important;
+        font-size: 11.5px !important;
+    }
+
+    .inventory-tabs a.active {
+        background: var(--m-text) !important;
+        color: #fff !important;
+    }
+
+    /* ---------- Tables: usable horizontal sheet ---------- */
+
+    .table-wrap,
+    .receivable-table-wrap,
+    .history-page-table,
+    .stock-table-wrap {
+        width: calc(100% + 8px);
+        margin-left: -4px;
+        padding: 0 4px 5px;
+        overflow-x: auto !important;
+        border: 0 !important;
+        scrollbar-width: thin;
+        scroll-snap-type: x proximity;
+    }
+
+    table {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        font-size: 12px !important;
+    }
+
+    table th,
+    table td {
+        padding: 11px 10px !important;
+        border-bottom: 1px solid rgba(25,46,37,.075) !important;
+        white-space: nowrap;
+    }
+
+    table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: #f0f3f1 !important;
+        color: #56635c !important;
+        font-size: 10.5px !important;
+        font-weight: 800 !important;
+    }
+
+    table tbody tr:last-child td {
+        border-bottom: 0 !important;
+    }
+
+    table .number,
+    .money-column {
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Freeze first column for long admin tables */
+    .receivable-table th:first-child,
+    .receivable-table td:first-child,
+    .stock-table th:first-child,
+    .stock-table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #fff !important;
+        box-shadow: 7px 0 12px -12px rgba(18,40,31,.45);
+    }
+
+    .receivable-table thead th:first-child,
+    .stock-table thead th:first-child {
+        z-index: 5;
+        background: #f0f3f1 !important;
+    }
+
+    /* ---------- Payment table detail ---------- */
+
+    .payment-complete-button,
+    .danger-outline-button,
+    .compact-button,
+    .secondary-button {
+        min-height: 38px !important;
+        padding: 7px 11px !important;
+        font-size: 11px !important;
+        border-radius: 11px !important;
+    }
+
+    .payment-complete-button {
+        box-shadow: 0 5px 12px rgba(36,114,71,.10);
+    }
+
+    /* ---------- Calendar ---------- */
+
+    .dashboard-calendar-section {
+        padding: 14px !important;
+    }
+
+    .dashboard-calendar-heading {
+        display: block !important;
+    }
+
+    .calendar-heading-summary {
+        width: fit-content !important;
+        min-width: 0 !important;
+        margin-top: 11px;
+        padding: 8px 11px !important;
+        text-align: left !important;
+        border-radius: 12px !important;
+    }
+
+    .sales-calendar-panel,
+    .dashboard-calendar-panel {
+        width: calc(100% + 10px);
+        margin-left: -5px !important;
+        overflow-x: auto;
+        padding: 0 5px 6px;
+    }
+
+    .sales-calendar-weekdays,
+    .sales-calendar-week {
+        min-width: 660px;
+    }
+
+    .dashboard-calendar-section .sales-calendar-day {
+        min-height: 94px !important;
+        padding: 8px !important;
+        border-radius: 12px !important;
+    }
+
+    .dashboard-calendar-section .calendar-day-sales strong {
+        font-size: 12px !important;
+    }
+
+    .dashboard-calendar-section .calendar-day-sales small {
+        font-size: 9.5px !important;
+    }
+
+    .daily-detail-summary {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .daily-detail-summary > div {
+        min-width: 0;
+        padding: 12px !important;
+        border-radius: 14px !important;
+        background: #f7f9f8;
+        border: 1px solid var(--m-line);
+    }
+
+    .daily-detail-summary span {
+        display: block;
+        color: var(--m-muted);
+        font-size: 10px;
+    }
+
+    .daily-detail-summary strong {
+        display: block;
+        margin-top: 5px;
+        font-size: 15px;
+        letter-spacing: -.025em;
+    }
+
+    /* ---------- Alerts ---------- */
+
+    .alert {
+        margin: 0 0 10px !important;
+        padding: 12px 14px !important;
+        border-radius: 14px !important;
+        font-size: 12px !important;
+        line-height: 1.5;
+    }
+
+    .alert.success {
+        background: var(--m-green-soft) !important;
+        color: #17613a !important;
+        border-color: rgba(36,112,69,.11) !important;
+    }
+
+    .alert.warning {
+        background: var(--m-amber-soft) !important;
+        color: #81570b !important;
+        border-color: rgba(158,105,9,.11) !important;
+    }
+
+    .alert.error {
+        background: var(--m-red-soft) !important;
+        color: #a33c3c !important;
+        border-color: rgba(184,65,65,.11) !important;
+    }
+
+    /* ---------- Statement export / share ---------- */
+
+    .statement-export-actions {
+        position: sticky;
+        bottom: 12px;
+        z-index: 30;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px !important;
+        padding: 8px !important;
+        margin: 12px 0 !important;
+        border: 1px solid rgba(255,255,255,.86);
+        border-radius: 18px;
+        background: rgba(247,249,248,.88);
+        box-shadow: 0 12px 32px rgba(18,40,31,.13);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .statement-export-actions button {
+        min-width: 0;
+        min-height: 44px !important;
+        font-size: 11.5px !important;
+    }
+
+    .share-statement-button {
+        grid-column: 1 / -1;
+        color: #fff !important;
+        background: linear-gradient(135deg, #1e6744, #438963) !important;
+        border: 0 !important;
+    }
+
+    .statement-paper {
+        transform-origin: top left;
+        overflow-x: auto;
+    }
+
+    /* ---------- Mobile utility details ---------- */
+
+    .status-badge,
+    .payment-status {
+        border-radius: 999px !important;
+        padding: 5px 8px !important;
+        font-size: 10px !important;
+    }
+
+    .info-strip,
+    .form-note,
+    .statement-share-guide {
+        border-radius: 14px !important;
+        font-size: 11.5px !important;
+        line-height: 1.55 !important;
+    }
+
+    /* Bottom safe area breathing space for iPhone */
+    @supports (padding: max(0px)) {
+        .container {
+            padding-bottom: max(96px, calc(76px + env(safe-area-inset-bottom))) !important;
+        }
+
+        .statement-export-actions {
+            bottom: max(12px, env(safe-area-inset-bottom)) !important;
+        }
+    }
+}
+
+/* Very narrow phones */
+@media (max-width: 390px) {
+    .summary-grid,
+    .summary-grid.four,
+    .dashboard-metrics,
+    .final-dashboard-metrics {
+        gap: 7px !important;
+    }
+
+    .summary-card,
+    .metric-card,
+    .final-menu-card,
+    .vendor-hub-card {
+        padding: 13px !important;
+    }
+
+    .summary-card strong,
+    .metric-card strong {
+        font-size: 19px !important;
+    }
+
+    .final-menu-grid,
+    .vendor-hub-grid {
+        gap: 7px !important;
+    }
+}
