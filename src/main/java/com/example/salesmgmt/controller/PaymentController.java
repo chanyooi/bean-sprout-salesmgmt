@@ -75,6 +75,7 @@ public class PaymentController {
     ) {
         try {
             YearMonth month = YearMonth.parse(settlementMonth);
+
             paymentService.addPayment(
                     month,
                     vendorId,
@@ -82,6 +83,7 @@ public class PaymentController {
                     amount,
                     note
             );
+
             redirectAttributes.addFlashAttribute(
                     "successMessage",
                     "입금 기록을 저장했습니다."
@@ -96,6 +98,38 @@ public class PaymentController {
         return "redirect:/payments?month=" + settlementMonth;
     }
 
+    @PostMapping("/payments/{vendorId}/complete")
+    public String completePayment(
+            @PathVariable Long vendorId,
+            @RequestParam String month,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            YearMonth settlementMonth = YearMonth.parse(month);
+
+            BigDecimal completedAmount =
+                    paymentService.completeOutstandingPayment(
+                            settlementMonth,
+                            vendorId,
+                            LocalDate.now()
+                    );
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "입금 완료 처리했습니다. "
+                            + completedAmount.stripTrailingZeros().toPlainString()
+                            + "원이 자동 등록되었습니다."
+            );
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    exception.getMessage()
+            );
+        }
+
+        return "redirect:/payments?month=" + month;
+    }
+
     @PostMapping("/payments/{paymentId}/delete")
     public String deletePayment(
             @PathVariable Long paymentId,
@@ -104,6 +138,7 @@ public class PaymentController {
     ) {
         try {
             paymentService.deletePayment(paymentId);
+
             redirectAttributes.addFlashAttribute(
                     "successMessage",
                     "입금 기록을 삭제했습니다."

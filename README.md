@@ -1,57 +1,35 @@
-# salesmgmt MySQL 저장 버전
+# 콩 재고 → 콩 사용량·원가 중심 화면 패치
 
-## 구현된 기능
+현재 GitHub main 브랜치의 `InventoryController`, `BeanInventoryService`, `BeanUsageCostResult` 구조에 맞춘 패치입니다.
 
-1. `input_data.xlsx` 업로드 및 검사
-2. 가로형 판매 입력을 세로형 판매 데이터로 변환
-3. MySQL에 거래처, 주문, 주문품목 저장
-4. 같은 `주문번호 + 품목` 재업로드 시 중복 저장 방지
-5. `/sales`에서 최근 저장 데이터 확인
-6. `명희네해장` → 명세서명 `명희네` 연결
-7. `산동빅` 데이터 저장 허용, 명세서 템플릿 없음 경고
+## 바뀌는 점
 
-## 1. MySQL 데이터베이스 만들기
+- `/inventory` 화면 제목을 `콩 사용량 · 원가`로 변경
+- 남은 재고/재고부족 표를 메인 화면에서 제거
+- `오늘 사용한 콩 등록`을 최우선 입력 폼으로 배치
+- 콩 매입 등록은 평균 포대단가 계산용으로 유지
+- 조회 월별 총 사용 포대, 총 kg, 콩 사용 원가 표시
+- 종류/원산지별 사용 포대, 적용 평균단가, 사용 원가 표시
+- 기존 `BeanInventoryService.calculateUsageCost(YearMonth)`를 그대로 사용하므로 DB 스키마 변경 없음
+- 기존 매입/사용 데이터 그대로 사용
 
-MySQL Workbench에서 `database/create_database.sql`을 실행하거나 아래 SQL을 실행합니다.
+## 적용
 
-```sql
-CREATE DATABASE IF NOT EXISTS bean_sprout
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
+압축을 프로젝트 루트에 풀어 `src` 폴더를 덮어쓰거나, 아래 PowerShell 스크립트를 사용하세요.
+
+```powershell
+cd F:\bean_sprout\salesmgmt
+powershell -ExecutionPolicy Bypass -File .\apply-bean-usage-cost.ps1
+.\gradlew.bat clean compileJava
+.\gradlew.bat bootRun
 ```
 
-## 2. 비밀번호 설정
+## 원가 계산 방식
 
-`src/main/resources/application.yml`에서 다음 값을 본인의 MySQL 비밀번호로 변경합니다.
+현재 프로젝트의 기존 계산 로직을 그대로 사용합니다.
 
-```yaml
-password: ${DB_PASSWORD:YOUR_MYSQL_PASSWORD}
-```
+- 사용일 이전까지 같은 `콩 종류 + 원산지`의 누적 매입금액 / 누적 매입포대 = 평균 포대단가
+- 해당 사용기록의 포대 수 × 평균 포대단가 = 사용 원가
+- 월간 사용기록을 합쳐 월 콩 원가 계산
 
-예를 들어 비밀번호가 `1234`라면:
-
-```yaml
-password: ${DB_PASSWORD:1234}
-```
-
-실제 배포 단계에서는 비밀번호를 GitHub에 올리지 말고 환경변수 `DB_PASSWORD`로 설정해야 합니다.
-
-## 3. 실행
-
-`SalesMgmtApplication.java`를 실행한 뒤 접속합니다.
-
-- 업로드: http://localhost:8080
-- 저장 데이터: http://localhost:8080/sales
-
-처음 실행하면 Hibernate가 아래 테이블을 자동 생성합니다.
-
-- `vendors`
-- `sales_orders`
-- `sales_items`
-
-## 저장 규칙
-
-- 엑셀 오류가 한 건이라도 있으면 저장하지 않음
-- 같은 주문번호가 기존과 다른 날짜 또는 거래처로 들어오면 전체 저장 취소
-- 같은 주문번호와 품목은 중복 저장하지 않음
-- 기존 주문에 없는 새 품목만 추가 저장 가능
+사용일 이전에 매입 기록이 하나도 없으면 해당 사용기록은 `단가 계산 불가`로 표시됩니다.

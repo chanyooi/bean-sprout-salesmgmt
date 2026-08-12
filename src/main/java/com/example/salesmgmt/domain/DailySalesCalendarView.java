@@ -10,6 +10,7 @@ public record DailySalesCalendarView(
         YearMonth previousMonth,
         YearMonth nextMonth,
         BigDecimal monthlySales,
+        BigDecimal monthlyBoxCount,
         long salesDayCount,
         BigDecimal averageSalesPerSalesDay,
         long monthlyOrderCount,
@@ -24,6 +25,7 @@ public record DailySalesCalendarView(
             LocalDate date,
             boolean inCurrentMonth,
             BigDecimal salesAmount,
+            BigDecimal boxCount,
             long orderCount,
             long vendorCount,
             long missingPriceCount,
@@ -41,9 +43,12 @@ public record DailySalesCalendarView(
     public record DaySummary(
             LocalDate date,
             BigDecimal salesAmount,
+            BigDecimal dailyBoxCount,
+            BigDecimal weeklyBoxCount,
             long orderCount,
             long vendorCount,
             long itemCount,
             long missingPriceCount
-    ) {}
+    ) {
+    }
 }

@@ -3,676 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>콩나물 매출 관리</title>
+    <title>송천 매출 관리 대시보드</title>
 
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="stylesheet" th:href="@{/css/operations.css}">
     <link rel="stylesheet" th:href="@{/css/security.css(v=20260810_1)}">
+    <link rel="stylesheet" th:href="@{/css/sales-calendar.css(v=20260810_2)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-final.css(v=20260812_2)}">
 </head>
-
 <body>
+<main class="container final-dashboard">
 
-<!-- ============================= -->
-<!-- PC 대시보드 -->
-<!-- ============================= -->
-
-<div class="desktop-dashboard">
-
-    <main class="container">
-
-        <section class="hero dashboard-hero">
-            <div class="hero-row">
-
-                <div>
-                    <p class="eyebrow">사업 현황</p>
-
-                    <h1>콩나물 매출 관리 대시보드</h1>
-
-                    <p>
-                        매출·예상이익·미수금·배송코스를 한 화면에서 확인합니다.
-                    </p>
-                </div>
-
-
-                <div class="dashboard-login-area">
-
-                    <div class="dashboard-current-user">
-
-                        <span th:text="|${currentUserDisplayName}님|">
-                            사용자님
-                        </span>
-
-                        <strong th:text="${isAdmin ? '관리자' : '업무용'}">
-                            관리자
-                        </strong>
-
-
-                        <form class="logout-form"
-                              th:action="@{/logout}"
-                              method="post">
-
-                            <button type="submit"
-                                    class="logout-button">
-                                로그아웃
-                            </button>
-
-                        </form>
-
-                    </div>
-
-
-                    <form class="dashboard-month-form"
-                          th:action="@{/}"
-                          method="get">
-
-                        <input type="month"
-                               name="month"
-                               th:value="${selectedMonth}"
-                               required>
-
-                        <button type="submit">
-                            조회
-                        </button>
-
-                    </form>
-
-                </div>
-
+    <section class="hero dashboard-hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">사업 현황</p>
+                <h1>송천</h1>
+                <p>
+                    매출·예상이익·미수금·콩 재고와 일별 매출을
+                    한 화면에서 확인합니다.
+                </p>
             </div>
-        </section>
 
+            <div class="dashboard-login-area">
+                <div class="dashboard-current-user">
+                    <span th:text="|${currentUserDisplayName}님|">사용자님</span>
+                    <strong th:text="${isAdmin ? '관리자' : '업무용'}">관리자</strong>
 
-        <div class="dashboard-month-nav">
+                    <form class="logout-form"
+                          th:action="@{/logout}"
+                          method="post">
+                        <button type="submit" class="logout-button">로그아웃</button>
+                    </form>
+                </div>
 
-            <a th:href="@{/(month=${previousMonth})}">
-                ← 이전 달
-            </a>
-
-            <strong th:text="|${selectedMonth} 현황|">
-                월 현황
-            </strong>
-
-            <a th:href="@{/(month=${nextMonth})}">
-                다음 달 →
-            </a>
-
+                <form class="dashboard-month-form"
+                      th:action="@{/}"
+                      method="get">
+                    <input type="month"
+                           name="month"
+                           th:value="${selectedMonth}"
+                           required>
+                    <button type="submit">조회</button>
+                </form>
+            </div>
         </div>
-
-
-        <section class="dashboard-metrics">
-
-            <a class="metric-card"
-               th:href="@{/reports/monthly(month=${selectedMonth})}">
-
-                <span>월매출</span>
-
-                <strong th:text="${#numbers.formatDecimal(
-                    sales.confirmedSales,
-                    0,
-                    'COMMA',
-                    0,
-                    'POINT'
-                ) + '원'}">
-                    0원
-                </strong>
-
-                <small th:text="|주문 ${sales.orderCount}건 · 거래처 ${sales.vendorCount}곳|">
-                </small>
-
-            </a>
-
-
-            <a class="metric-card"
-               th:href="@{/profit(month=${selectedMonth})}">
-
-                <span>예상이익</span>
-
-                <strong th:text="${#numbers.formatDecimal(
-                    profit.estimatedProfit,
-                    0,
-                    'COMMA',
-                    0,
-                    'POINT'
-                ) + '원'}">
-                    0원
-                </strong>
-
-                <small th:text="|예상이익률 ${profit.estimatedProfitMarginPercent}%|">
-                </small>
-
-            </a>
-
-
-            <a class="metric-card warning-metric"
-               th:href="@{/payments(month=${selectedMonth})}">
-
-                <span>미수금</span>
-
-                <strong th:text="${#numbers.formatDecimal(
-                    receivables.outstandingAmount,
-                    0,
-                    'COMMA',
-                    0,
-                    'POINT'
-                ) + '원'}">
-                    0원
-                </strong>
-
-                <small th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳|">
-                </small>
-
-            </a>
-
-
-            <a class="metric-card mobile-hide-missing-price-card"
-               th:classappend="${sales.missingPriceCount > 0}
-                    ? ' danger-metric'
-                    : ''"
-               th:href="@{/sales(
-                    month=${selectedMonth},
-                    missingPriceOnly=true
-               )}">
-
-                <span>단가 미등록</span>
-
-                <strong th:text="|${sales.missingPriceCount}건|">
-                    0건
-                </strong>
-
-                <small>
-                    눌러서 바로 확인
-                </small>
-
-            </a>
-
-        </section>
-
-
-        <section class="dashboard-grid">
-
-            <article class="panel">
-
-                <div class="panel-heading">
-
-                    <div>
-                        <h2>빠른 메뉴</h2>
-                        <p>자주 쓰는 기능으로 바로 이동합니다.</p>
-                    </div>
-
-                </div>
-
-
-                <div class="quick-menu-grid">
-
-                    <a th:if="${isAdmin}"
-                       th:href="@{/upload}">
-                        장부 관리
-                    </a>
-
-                    <a th:href="@{/statements}">
-                        거래명세서
-                    </a>
-
-                    <a th:href="@{/sales(month=${selectedMonth})}">
-                        판매내역
-                    </a>
-
-                    <a th:href="@{/sales-calendar(month=${selectedMonth})}">
-                        일별 매출 캘린더
-                    </a>
-
-                    <a th:if="${isAdmin}"
-                       th:href="@{/prices}">
-                        거래처별 단가 관리
-                    </a>
-
-                    <a th:if="${isAdmin}"
-                       th:href="@{/promotions}">
-                        행사·임시단가
-                    </a>
-
-                    <a th:href="@{/profit(month=${selectedMonth})}">
-                        원가·이익 · 콩 재고
-                    </a>
-
-                    <a th:href="@{/payments(month=${selectedMonth})}">
-                        입금·미수금
-                    </a>
-
-                    <a th:href="@{/vendors}">
-                        거래처·배송코스
-                    </a>
-
-                    <a th:if="${isAdmin}"
-                       th:href="@{/admin/safety}">
-                        업로드 이력·월마감
-                    </a>
-
-                    <a th:if="${isAdmin}"
-                       th:href="@{/admin/users}">
-                        사용자 계정관리
-                    </a>
-
-                </div>
-
-            </article>
-
-
-            <article class="panel">
-
-                <div class="panel-heading">
-
-                    <div>
-                        <h2>A/B/김천 배송코스</h2>
-                        <p>활성 거래처 기준</p>
-                    </div>
-
-                    <a class="secondary-link"
-                       th:href="@{/vendors}">
-                        코스 지도 보기
-                    </a>
-
-                </div>
-
-
-                <div class="route-summary-grid">
-
-                    <div>
-                        <span>A코스</span>
-                        <strong th:text="|${routeSummary.routeACount}곳|">
-                            0곳
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>B코스</span>
-                        <strong th:text="|${routeSummary.routeBCount}곳|">
-                            0곳
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>김천코스</span>
-                        <strong th:text="|${routeSummary.kimcheonRouteCount}곳|">
-                            0곳
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>코스 미지정</span>
-                        <strong th:text="|${routeSummary.unassignedCount}곳|">
-                            0곳
-                        </strong>
-                    </div>
-
-                </div>
-
-            </article>
-
-        </section>
-
-
-        <div class="alert warning mobile-hide-missing-price-alert"
-             th:if="${sales.missingPriceCount > 0}">
-
-            현재 월에 단가 미등록 판매가 있습니다.
-            월매출·미수금은 단가가 등록된 판매금액만 기준으로 계산됩니다.
-
-        </div>
-
-    </main>
-
-</div>
-
-
-<!-- ============================= -->
-<!-- 모바일 대시보드 -->
-<!-- ============================= -->
-
-<div class="mobile-dashboard">
-
-    <header class="mobile-header">
-
-        <div>
-
-            <p class="mobile-greeting"
-               th:text="|안녕하세요, ${currentUserDisplayName}님|">
-                안녕하세요
-            </p>
-
-            <h1>콩나물 판매관리</h1>
-
-        </div>
-
-
-        <form th:action="@{/logout}"
-              method="post">
-
-            <button class="mobile-logout"
-                    type="submit">
-                로그아웃
-            </button>
-
-        </form>
-
-    </header>
-
-
-    <!-- 월 선택 -->
-
-    <section class="mobile-month">
-
-        <a th:href="@{/(month=${previousMonth})}">
-            ‹
-        </a>
-
-        <strong th:text="${selectedMonth}">
-            2026-08
-        </strong>
-
-        <a th:href="@{/(month=${nextMonth})}">
-            ›
-        </a>
-
     </section>
 
+    <div class="dashboard-month-nav">
+        <a th:href="@{/(month=${previousMonth})}">← 이전 달</a>
+        <strong th:text="|${selectedMonth} 현황|">월 현황</strong>
+        <a th:href="@{/(month=${nextMonth})}">다음 달 →</a>
+    </div>
 
-    <!-- 핵심 요약 -->
-
-    <section class="mobile-summary-grid">
-
-        <a class="mobile-summary-card"
+    <section class="dashboard-metrics final-dashboard-metrics">
+        <a class="metric-card"
            th:href="@{/reports/monthly(month=${selectedMonth})}">
-
-            <span>월 매출</span>
-
-            <strong th:text="${#numbers.formatDecimal(
-                sales.confirmedSales,
-                0,
-                'COMMA',
-                0,
-                'POINT'
-            ) + '원'}">
+            <span>월매출</span>
+            <strong th:text="${#numbers.formatDecimal(sales.confirmedSales, 0, 'COMMA', 0, 'POINT') + '원'}">
                 0원
             </strong>
-
-            <small th:text="|주문 ${sales.orderCount}건|">
-                주문 0건
+            <small>
+                <span th:text="|주문 ${sales.orderCount}건 · 거래처 ${sales.vendorCount}곳|"></span>
+                <span class="box-inline"
+                      th:text="|📦 ${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
+                </span>
             </small>
-
         </a>
 
-
-        <a class="mobile-summary-card"
+        <a class="metric-card"
            th:href="@{/profit(month=${selectedMonth})}">
-
-            <span>예상 이익</span>
-
-            <strong th:text="${#numbers.formatDecimal(
-                profit.estimatedProfit,
-                0,
-                'COMMA',
-                0,
-                'POINT'
-            ) + '원'}">
+            <span>예상이익</span>
+            <strong th:text="${#numbers.formatDecimal(profit.estimatedProfit, 0, 'COMMA', 0, 'POINT') + '원'}">
                 0원
             </strong>
-
-            <small th:text="|이익률 ${profit.estimatedProfitMarginPercent}%|">
-                이익률 0%
-            </small>
-
+            <small th:text="|예상이익률 ${profit.estimatedProfitMarginPercent}%|"></small>
         </a>
 
-
-        <a class="mobile-summary-card mobile-summary-wide mobile-receivable-card"
+        <a class="metric-card warning-metric"
            th:href="@{/payments(month=${selectedMonth})}">
+            <span>미수금</span>
+            <strong th:text="${#numbers.formatDecimal(receivables.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                0원
+            </strong>
+            <small th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳|"></small>
+        </a>
+
+        <a class="metric-card"
+           th:classappend="${inventory.lowStockCount > 0} ? ' danger-metric' : ''"
+           th:href="@{/inventory}">
+            <span>콩 재고 부족</span>
+            <strong th:text="|${inventory.lowStockCount}종|">0종</strong>
+            <small>현재 재고 기준</small>
+        </a>
+    </section>
+
+    <section class="panel final-menu-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>주요 메뉴</h2>
+            </div>
+        </div>
+
+        <div class="final-menu-grid">
+            <a th:if="${isAdmin}"
+               class="final-menu-card"
+               th:href="@{/upload}">
+                <span class="menu-icon">↑</span>
+                <strong>주문 업로드</strong>
+                <small>주문 엑셀 검사·저장</small>
+            </a>
+
+            <a class="final-menu-card"
+               th:href="@{/statements}">
+                <span class="menu-icon">▤</span>
+                <strong>거래명세서</strong>
+                <small>명세서 생성·다운로드</small>
+            </a>
+
+            <a class="final-menu-card"
+               th:href="@{/vendor-management}">
+                <span class="menu-icon">◎</span>
+                <strong>거래처 관리</strong>
+                <small>판매·입금·행사·배송·월마감</small>
+            </a>
+
+            <a class="final-menu-card"
+               th:href="@{/profit(month=${selectedMonth})}">
+                <span class="menu-icon">₩</span>
+                <strong>원가·이익</strong>
+                <small>월 원가와 예상이익</small>
+            </a>
+
+            <a class="final-menu-card"
+               th:href="@{/inventory}">
+                <span class="menu-icon">◆</span>
+                <strong>콩 재고</strong>
+                <small>재고·사용·매입·콩 원가</small>
+            </a>
+
+            <a th:if="${isAdmin}"
+               class="final-menu-card"
+               th:href="@{/admin/users}">
+                <span class="menu-icon">♙</span>
+                <strong>사용자 관리</strong>
+                <small>계정·권한 관리</small>
+            </a>
+        </div>
+    </section>
+
+    <section class="panel dashboard-calendar-section">
+        <div class="panel-heading dashboard-calendar-heading">
+            <div>
+                <p class="eyebrow">일별 매출</p>
+                <h2>매출 캘린더</h2>
+                <p>
+                    날짜를 누르면 당일 판매내역을 바로 확인합니다.
+                    3.5kg일반·3.5kg곱슬·숙주는 수량 1개당 박스 1개로 계산합니다.
+                </p>
+            </div>
+
+            <div class="calendar-heading-summary">
+                <span>이번 달 박스</span>
+                <strong th:text="|📦 ${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
+                </strong>
+            </div>
+        </div>
+
+        <div class="sales-calendar-panel dashboard-calendar-panel">
+            <div class="sales-calendar-weekdays">
+                <div class="calendar-sunday">일</div>
+                <div>월</div>
+                <div>화</div>
+                <div>수</div>
+                <div>목</div>
+                <div>금</div>
+                <div class="calendar-saturday">토</div>
+            </div>
+
+            <div class="sales-calendar-weeks">
+                <div class="sales-calendar-week"
+                     th:each="week : ${calendar.weeks}">
+
+                    <th:block th:each="day : ${week}">
+                        <a th:if="${day.inCurrentMonth}"
+                           class="sales-calendar-day"
+                           th:classappend="${(day.hasSales ? ' has-sales' : '') +
+                                            (calendar.selectedDate != null and calendar.selectedDate.equals(day.date) ? ' selected-calendar-day' : '')}"
+                           th:href="@{/(month=${calendar.month}, date=${day.date})} + '#daily-detail'">
+
+                            <div class="calendar-day-top">
+                                <strong th:text="${day.date.dayOfMonth}">1</strong>
+                            </div>
+
+                            <div th:if="${day.hasSales}"
+                                 class="calendar-day-sales">
+                                <strong th:text="${#numbers.formatDecimal(day.salesAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                                    0원
+                                </strong>
+                                <small th:text="|📦 ${day.boxCount.stripTrailingZeros().toPlainString()}박스|">
+                                    📦 0박스
+                                </small>
+                                <small th:text="|주문 ${day.orderCount} · 거래처 ${day.vendorCount}|"></small>
+                            </div>
+
+                            <span th:if="${!day.hasSales}"
+                                  class="calendar-no-sales">
+                                -
+                            </span>
+                        </a>
+
+                        <div th:if="${!day.inCurrentMonth}"
+                             class="sales-calendar-day outside-month">
+                            <div class="calendar-day-top">
+                                <strong th:text="${day.date.dayOfMonth}">1</strong>
+                            </div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="daily-detail"
+             class="panel daily-sales-detail dashboard-daily-detail"
+             th:if="${calendar.selectedDate != null}">
+        <div class="panel-heading split-heading">
+            <div>
+                <p class="eyebrow">선택 날짜</p>
+                <h2 th:text="|${calendar.selectedDate} 판매내역|">
+                    일별 판매내역
+                </h2>
+            </div>
+        </div>
+
+        <div class="daily-detail-summary"
+             th:if="${calendar.selectedDay != null}">
+            <div>
+                <span>일 매출</span>
+                <strong th:text="${#numbers.formatDecimal(calendar.selectedDay.salesAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+            </div>
 
             <div>
-                <span>미수금</span>
-
-                <strong th:text="${#numbers.formatDecimal(
-                    receivables.outstandingAmount,
-                    0,
-                    'COMMA',
-                    0,
-                    'POINT'
-                ) + '원'}">
-                    0원
+                <span>일 박스 사용</span>
+                <strong th:text="|📦 ${calendar.selectedDay.dailyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
                 </strong>
             </div>
 
-            <div class="mobile-summary-arrow">
-                →
+            <div>
+                <span>해당 주 박스 사용</span>
+                <strong th:text="|📦 ${calendar.selectedDay.weeklyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
+                </strong>
             </div>
 
-        </a>
-
-    </section>
-
-
-    <!-- 빠른 메뉴 -->
-
-    <section class="mobile-section">
-
-        <div class="mobile-section-header">
-            <h2>빠른 메뉴</h2>
-        </div>
-
-
-        <div class="mobile-quick-grid">
-
-            <a th:href="@{/sales(month=${selectedMonth})}"
-               class="mobile-quick-item">
-
-                <span>▥</span>
-                <strong>매출내역</strong>
-
-            </a>
-
-
-            <a th:href="@{/vendors}"
-               class="mobile-quick-item">
-
-                <span>♙</span>
-                <strong>거래처</strong>
-
-            </a>
-
-
-            <a th:href="@{/payments(month=${selectedMonth})}"
-               class="mobile-quick-item">
-
-                <span>₩</span>
-                <strong>입금관리</strong>
-
-            </a>
-
-
-            <a th:href="@{/statements}"
-               class="mobile-quick-item">
-
-                <span>▤</span>
-                <strong>거래명세서</strong>
-
-            </a>
-
-        </div>
-
-    </section>
-
-
-    <!-- 배송코스 -->
-
-    <section class="mobile-section">
-
-        <div class="mobile-section-header">
-
-            <h2>배송코스</h2>
-
-            <a th:href="@{/vendors}">
-                지도보기
-            </a>
-
-        </div>
-
-
-        <div class="mobile-route-summary">
-
-            <a th:href="@{/vendors}">
-
-                <span>A코스</span>
-
-                <strong th:text="|${routeSummary.routeACount}곳|">
-                    0곳
+            <div>
+                <span>주문 · 거래처</span>
+                <strong th:text="|${calendar.selectedDay.orderCount}건 · ${calendar.selectedDay.vendorCount}곳|">
+                    0건
                 </strong>
-
-            </a>
-
-
-            <a th:href="@{/vendors}">
-
-                <span>B코스</span>
-
-                <strong th:text="|${routeSummary.routeBCount}곳|">
-                    0곳
-                </strong>
-
-            </a>
-
-
-            <a th:href="@{/vendors}">
-
-                <span>김천</span>
-
-                <strong th:text="|${routeSummary.kimcheonRouteCount}곳|">
-                    0곳
-                </strong>
-
-            </a>
-
+            </div>
         </div>
 
+        <div class="table-wrap">
+            <table class="dashboard-daily-table">
+                <thead>
+                <tr>
+                    <th>주문번호</th>
+                    <th>거래처</th>
+                    <th>품목</th>
+                    <th>수량</th>
+                    <th>단가</th>
+                    <th>금액</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(calendar.selectedRows)}">
+                    <td colspan="6" class="empty-cell">해당 날짜의 판매내역이 없습니다.</td>
+                </tr>
+
+                <tr th:each="row : ${calendar.selectedRows}">
+                    <td th:text="${row.orderNumber}">20260812-001</td>
+                    <td th:text="${row.inputVendor}">거래처</td>
+                    <td><strong th:text="${row.item}">3.5kg일반</strong></td>
+                    <td class="number"
+                        th:text="${row.quantity != null ? row.quantity.stripTrailingZeros().toPlainString() : '-'}">
+                        0
+                    </td>
+                    <td class="number"
+                        th:text="${row.unitPrice != null
+                            ? #numbers.formatDecimal(row.unitPrice, 0, 'COMMA', 0, 'POINT') + '원'
+                            : '-'}">
+                        -
+                    </td>
+                    <td class="number strong-number"
+                        th:text="${row.lineAmount != null
+                            ? #numbers.formatDecimal(row.lineAmount, 0, 'COMMA', 0, 'POINT') + '원'
+                            : '-'}">
+                        -
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
-
-
-    <!-- 더보기 -->
-
-    <section class="mobile-section"
-             id="mobile-menu">
-
-        <div class="mobile-section-header">
-            <h2>메뉴</h2>
-        </div>
-
-
-        <div class="mobile-menu-list">
-
-            <a th:if="${isAdmin}"
-               th:href="@{/upload}">
-                <span>장부 관리</span>
-                <strong>›</strong>
-            </a>
-
-
-            <a th:href="@{/statements}">
-                <span>거래명세서</span>
-                <strong>›</strong>
-            </a>
-
-
-            <a th:href="@{/sales-calendar(month=${selectedMonth})}">
-                <span>판매 캘린더</span>
-                <strong>›</strong>
-            </a>
-
-
-            <a th:if="${isAdmin}"
-               th:href="@{/prices}">
-                <span>거래처별 단가 관리</span>
-                <strong>›</strong>
-            </a>
-
-
-            <a th:if="${isAdmin}"
-               th:href="@{/promotions}">
-                <span>행사·임시단가</span>
-                <strong>›</strong>
-            </a>
-
-
-            <a th:href="@{/profit(month=${selectedMonth})}">
-                <span>원가·이익 / 콩 재고</span>
-                <strong>›</strong>
-            </a>
-
-
-            <a th:if="${isAdmin}"
-               th:href="@{/admin/safety}">
-                <span>업로드 이력·월마감</span>
-                <strong>›</strong>
-            </a>
-
-
-            <a th:if="${isAdmin}"
-               th:href="@{/admin/users}">
-                <span>사용자 계정관리</span>
-                <strong>›</strong>
-            </a>
-
-        </div>
-
-    </section>
-
-
-    <!-- 하단 네비게이션 -->
-
-    <nav class="mobile-bottom-nav">
-
-        <a th:href="@{/}"
-           class="active">
-
-            <span>⌂</span>
-            <small>홈</small>
-
-        </a>
-
-
-        <a th:href="@{/sales(month=${selectedMonth})}">
-
-            <span>▥</span>
-            <small>매출</small>
-
-        </a>
-
-
-        <a th:href="@{/vendors}">
-
-            <span>♙</span>
-            <small>거래처</small>
-
-        </a>
-
-
-        <a th:href="@{/payments(month=${selectedMonth})}">
-
-            <span>₩</span>
-            <small>입금</small>
-
-        </a>
-
-
-        <a href="#mobile-menu">
-
-            <span>☰</span>
-            <small>메뉴</small>
-
-        </a>
-
-    </nav>
-
-</div>
-
+</main>
 </body>
 </html>

@@ -216,11 +216,7 @@
 
                 await navigator.share({
                     title: `${safeName} ${month} 명세서`,
-                    text:
-                        `${safeName} ${month} 명세서입니다.`
-                        + (recipientPhone
-                            ? ' 전화번호는 클립보드에 복사했습니다.'
-                            : ''),
+                    text: `안녕하세요 송천 콩나물입니다. ${safeName} ${month} 명세서입니다. 감사합니다.`,
                     files: [file]
                 });
 
@@ -230,6 +226,7 @@
                     managedSmsRecipient
                         ? '공유 완료 · 발송기록 저장됨'
                         : '공유 완료';
+
                 return;
             }
 

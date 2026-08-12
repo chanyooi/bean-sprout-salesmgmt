@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>콩 사용 기록</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory.css}">
+</head>
+<body>
+<main class="container inventory-shell">
+    <section class="inventory-hero compact-hero">
+        <div>
+            <p class="eyebrow">원재료 원가 관리</p>
+            <h1>콩 사용 기록</h1>
+            <p class="hero-description">입력한 콩 사용량을 최신 날짜순으로 확인합니다.</p>
+        </div>
+        <div class="top-links">
+            <a class="secondary-link" th:href="@{/}">홈(대시보드)</a>
+            <a class="secondary-link" th:href="@{/inventory/usages/new}">+ 사용 등록</a>
+        </div>
+    </section>
+
+    <nav class="inventory-tabs" aria-label="콩 원가 메뉴">
+        <a th:href="@{/inventory}">원가 현황</a>
+        <a th:href="@{/inventory/usages/new}">콩 사용 등록</a>
+        <a class="active" th:href="@{/inventory/usages}">사용 기록</a>
+        <a th:href="@{/inventory/purchases/new}">콩 매입 등록</a>
+        <a th:href="@{/inventory/purchases}">매입 기록</a>
+    </nav>
+
+    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
+    <div class="alert error" th:if="${inventoryError}" th:text="${inventoryError}"></div>
+
+    <section class="panel">
+        <div class="panel-heading split-heading">
+            <div>
+                <h2>전체 사용 기록</h2>
+                <p>잘못 입력한 기록은 삭제한 뒤 다시 등록하면 됩니다.</p>
+            </div>
+            <a class="secondary-link" th:href="@{/inventory/usages/new}">콩 사용 등록</a>
+        </div>
+
+        <div class="table-wrap history-page-table">
+            <table>
+                <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>콩 종류</th>
+                    <th>원산지</th>
+                    <th>사용 포대</th>
+                    <th>사용 kg</th>
+                    <th>관리</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(usageHistory)}">
+                    <td colspan="6" class="empty-cell">사용 기록이 없습니다.</td>
+                </tr>
+                <tr th:each="row : ${usageHistory}">
+                    <td th:text="${row.usageDate}">2026-08-12</td>
+                    <td><strong th:text="${row.beanTypeLabel}">소립</strong></td>
+                    <td th:text="${row.originLabel}">캐나다산</td>
+                    <td class="number" th:text="|${row.bagCount.stripTrailingZeros().toPlainString()}포|">0포</td>
+                    <td class="number" th:text="|${row.totalKg.stripTrailingZeros().toPlainString()}kg|">0kg</td>
+                    <td>
+                        <form th:action="@{/inventory/usages/{id}/delete(id=${row.id})}"
+                              method="post"
+                              onsubmit="return confirm('이 사용 기록을 삭제할까요?');">
+                            <button type="submit" class="danger-button compact-button">삭제</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

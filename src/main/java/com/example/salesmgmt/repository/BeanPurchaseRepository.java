@@ -12,5 +12,12 @@ public interface BeanPurchaseRepository extends JpaRepository<BeanPurchaseEntity
             LocalDate purchaseDate
     );
 
+    List<BeanPurchaseEntity> findAllByPurchaseDateBetweenOrderByPurchaseDateAscIdAsc(
+            LocalDate startDate,
+            LocalDate endDate
+    );
+
+    List<BeanPurchaseEntity> findAllByOrderByPurchaseDateDescIdDesc();
+
     List<BeanPurchaseEntity> findTop50ByOrderByPurchaseDateDescIdDesc();
 }

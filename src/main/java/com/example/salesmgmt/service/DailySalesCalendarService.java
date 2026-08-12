@@ -9,7 +9,13 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class DailySalesCalendarService {
@@ -44,6 +50,7 @@ public class DailySalesCalendarService {
         }
 
         BigDecimal monthlySales = BigDecimal.ZERO;
+        BigDecimal monthlyBoxCount = BigDecimal.ZERO;
         Set<Long> monthlyOrders = new HashSet<>();
         Set<Long> monthlyVendors = new HashSet<>();
         long missingPriceCount = 0;
@@ -52,16 +59,18 @@ public class DailySalesCalendarService {
         for (Map.Entry<LocalDate, List<EditableSaleRow>> entry
                 : rowsByDate.entrySet()) {
 
-            boolean hasAnySale =
-                    !entry.getValue().isEmpty();
-
-            if (hasAnySale) {
+            if (!entry.getValue().isEmpty()) {
                 salesDayCount++;
             }
 
             for (EditableSaleRow row : entry.getValue()) {
                 monthlyOrders.add(row.orderId());
                 monthlyVendors.add(row.vendorId());
+
+                if (isBoxItem(row.item())) {
+                    monthlyBoxCount =
+                            monthlyBoxCount.add(safeQuantity(row));
+                }
 
                 if (row.lineAmount() == null) {
                     missingPriceCount++;
@@ -114,20 +123,27 @@ public class DailySalesCalendarService {
                     );
 
             BigDecimal daySales = BigDecimal.ZERO;
+            BigDecimal dayBoxCount = BigDecimal.ZERO;
+
             Set<Long> orderIds = new HashSet<>();
             Set<Long> vendorIds = new HashSet<>();
+
             long dayMissing = 0;
 
             for (EditableSaleRow row : dayRows) {
                 orderIds.add(row.orderId());
                 vendorIds.add(row.vendorId());
 
+                if (isBoxItem(row.item())) {
+                    dayBoxCount =
+                            dayBoxCount.add(safeQuantity(row));
+                }
+
                 if (row.lineAmount() == null) {
                     dayMissing++;
                 } else {
-                    daySales = daySales.add(
-                            row.lineAmount()
-                    );
+                    daySales =
+                            daySales.add(row.lineAmount());
                 }
             }
 
@@ -136,6 +152,7 @@ public class DailySalesCalendarService {
                             date,
                             YearMonth.from(date).equals(month),
                             daySales,
+                            normalized(dayBoxCount),
                             orderIds.size(),
                             vendorIds.size(),
                             dayMissing,
@@ -166,15 +183,9 @@ public class DailySalesCalendarService {
                         .stream()
                         .sorted(
                                 Comparator
-                                        .comparing(
-                                                EditableSaleRow::inputVendor
-                                        )
-                                        .thenComparing(
-                                                EditableSaleRow::orderNumber
-                                        )
-                                        .thenComparing(
-                                                EditableSaleRow::item
-                                        )
+                                        .comparing(EditableSaleRow::inputVendor)
+                                        .thenComparing(EditableSaleRow::orderNumber)
+                                        .thenComparing(EditableSaleRow::item)
                         )
                         .toList();
 
@@ -183,7 +194,8 @@ public class DailySalesCalendarService {
                         ? null
                         : createDaySummary(
                                 selectedDate,
-                                selectedRows
+                                selectedRows,
+                                rowsByDate
                         );
 
         return new DailySalesCalendarView(
@@ -191,6 +203,7 @@ public class DailySalesCalendarService {
                 month.minusMonths(1),
                 month.plusMonths(1),
                 monthlySales,
+                normalized(monthlyBoxCount),
                 salesDayCount,
                 averageSales,
                 monthlyOrders.size(),
@@ -234,33 +247,100 @@ public class DailySalesCalendarService {
 
     private DailySalesCalendarView.DaySummary createDaySummary(
             LocalDate date,
-            List<EditableSaleRow> rows
+            List<EditableSaleRow> rows,
+            Map<LocalDate, List<EditableSaleRow>> rowsByDate
     ) {
         BigDecimal sales = BigDecimal.ZERO;
+        BigDecimal dailyBoxCount = BigDecimal.ZERO;
+
         Set<Long> orders = new HashSet<>();
         Set<Long> vendors = new HashSet<>();
+
         long missing = 0;
 
         for (EditableSaleRow row : rows) {
             orders.add(row.orderId());
             vendors.add(row.vendorId());
 
+            if (isBoxItem(row.item())) {
+                dailyBoxCount =
+                        dailyBoxCount.add(safeQuantity(row));
+            }
+
             if (row.lineAmount() == null) {
                 missing++;
             } else {
-                sales = sales.add(
-                        row.lineAmount()
-                );
+                sales = sales.add(row.lineAmount());
+            }
+        }
+
+        int daysBackToSunday =
+                date.getDayOfWeek().getValue() % 7;
+
+        LocalDate weekStart =
+                date.minusDays(daysBackToSunday);
+
+        BigDecimal weeklyBoxCount = BigDecimal.ZERO;
+
+        for (int i = 0; i < 7; i++) {
+            LocalDate weekDate =
+                    weekStart.plusDays(i);
+
+            for (EditableSaleRow row
+                    : rowsByDate.getOrDefault(
+                            weekDate,
+                            List.of()
+                    )) {
+
+                if (isBoxItem(row.item())) {
+                    weeklyBoxCount =
+                            weeklyBoxCount.add(
+                                    safeQuantity(row)
+                            );
+                }
             }
         }
 
         return new DailySalesCalendarView.DaySummary(
                 date,
                 sales,
+                normalized(dailyBoxCount),
+                normalized(weeklyBoxCount),
                 orders.size(),
                 vendors.size(),
                 rows.size(),
                 missing
         );
+    }
+
+    private boolean isBoxItem(String item) {
+        if (item == null) {
+            return false;
+        }
+
+        String normalized =
+                item.replaceAll("\\s+", "");
+
+        return "3.5kg일반".equals(normalized)
+                || "3.5kg곱슬".equals(normalized)
+                || "숙주".equals(normalized);
+    }
+
+    private BigDecimal safeQuantity(
+            EditableSaleRow row
+    ) {
+        return row.quantity() == null
+                ? BigDecimal.ZERO
+                : row.quantity();
+    }
+
+    private BigDecimal normalized(
+            BigDecimal value
+    ) {
+        if (value == null || value.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return value.stripTrailingZeros();
     }
 }

@@ -1,26 +1,43 @@
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-    <title>송천콩나물 로그인</title>
-    <link rel="stylesheet"
-          th:href="@{/css/security.css(v=20260810_1)}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송천 로그인</title>
+
+    <!-- 기존 공통 보안 스타일은 유지하고 로그인 전용 스타일만 추가 -->
+    <link rel="stylesheet" th:href="@{/css/security.css(v=20260810_1)}">
+    <link rel="stylesheet" th:href="@{/css/login-aurora.css(v=20260812_1)}">
 </head>
-<body class="security-page">
-<main class="security-card">
-    <div class="security-brand">
-        <span class="security-logo">송천</span>
+<body class="security-page login-aurora-page">
+
+<!-- 로그인 화면에서만 보이는 인터랙티브 배경 -->
+<div class="aurora-background" aria-hidden="true">
+    <div class="aurora-base"></div>
+    <div class="aurora-orb aurora-orb-cursor"></div>
+    <div class="aurora-orb aurora-orb-pink"></div>
+    <div class="aurora-orb aurora-orb-blue"></div>
+    <div class="aurora-light"></div>
+    <div class="aurora-grain"></div>
+</div>
+
+<div class="login-ambient-copy" aria-hidden="true">
+    <span>SONGCHEON</span>
+    <strong>SALES MANAGEMENT</strong>
+</div>
+
+<main class="security-card aurora-login-card">
+    <div class="security-brand aurora-brand">
+        <span class="security-logo aurora-logo">송천</span>
+
         <div>
-            <p>송천콩나물</p>
-            <h1>매출 관리 로그인</h1>
+            <p>SONGCHEON</p>
+            <h1>로그인</h1>
         </div>
     </div>
 
-    <p class="security-description">
-        매출·입금·재고·배송코스 관리를 위해 로그인해주세요.
+    <p class="security-description aurora-description">
+        송천 매출 관리 시스템
     </p>
 
     <div class="security-alert success"
@@ -40,40 +57,129 @@
 
     <form th:action="@{/login}"
           method="post"
-          class="security-form">
+          class="security-form aurora-login-form">
+
         <label>
-            아이디
+            <span>아이디</span>
             <input type="text"
                    name="username"
                    autocomplete="username"
                    autocapitalize="none"
+                   placeholder="아이디를 입력하세요"
                    required
                    autofocus>
         </label>
 
         <label>
-            비밀번호
-            <input type="password"
-                   name="password"
-                   autocomplete="current-password"
-                   required>
+            <span>비밀번호</span>
+
+            <div class="password-field">
+                <input id="loginPassword"
+                       type="password"
+                       name="password"
+                       autocomplete="current-password"
+                       placeholder="비밀번호를 입력하세요"
+                       required>
+
+                <button type="button"
+                        class="password-toggle"
+                        id="passwordToggle"
+                        aria-label="비밀번호 표시">
+                    보기
+                </button>
+            </div>
         </label>
 
         <button type="submit"
-                class="security-primary-button">
+                class="security-primary-button aurora-login-button">
             로그인
+            <span aria-hidden="true">→</span>
         </button>
     </form>
 
     <a th:if="${setupRequired}"
-       class="first-setup-link"
+       class="first-setup-link aurora-setup-link"
        th:href="@{/setup}">
         처음 사용하시나요? 관리자 계정 만들기
     </a>
 
-    <p class="security-footnote">
+    <p class="security-footnote aurora-footnote">
         공용 컴퓨터에서는 사용 후 반드시 로그아웃해주세요.
     </p>
 </main>
+
+<div class="cursor-hint" aria-hidden="true">
+    MOVE YOUR CURSOR
+</div>
+
+<script>
+(function () {
+    const root = document.documentElement;
+    const cursorOrb = document.querySelector('.aurora-orb-cursor');
+
+    if (!cursorOrb) {
+        return;
+    }
+
+    const reduceMotion =
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let targetX = window.innerWidth * 0.26;
+    let targetY = window.innerHeight * 0.58;
+
+    let currentX = targetX;
+    let currentY = targetY;
+
+    function setTarget(x, y) {
+        targetX = x;
+        targetY = y;
+        root.style.setProperty('--pointer-x', x + 'px');
+        root.style.setProperty('--pointer-y', y + 'px');
+    }
+
+    window.addEventListener('pointermove', function (event) {
+        if (event.pointerType === 'touch') {
+            return;
+        }
+
+        setTarget(event.clientX, event.clientY);
+    }, { passive: true });
+
+    if (!reduceMotion) {
+        function animate() {
+            currentX += (targetX - currentX) * 0.055;
+            currentY += (targetY - currentY) * 0.055;
+
+            cursorOrb.style.transform =
+                'translate3d(' +
+                (currentX - cursorOrb.offsetWidth / 2) + 'px,' +
+                (currentY - cursorOrb.offsetHeight / 2) + 'px,0)';
+
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+    } else {
+        cursorOrb.style.left = '18%';
+        cursorOrb.style.top = '48%';
+    }
+
+    const password = document.getElementById('loginPassword');
+    const toggle = document.getElementById('passwordToggle');
+
+    if (password && toggle) {
+        toggle.addEventListener('click', function () {
+            const hidden = password.type === 'password';
+
+            password.type = hidden ? 'text' : 'password';
+            toggle.textContent = hidden ? '숨기기' : '보기';
+            toggle.setAttribute(
+                'aria-label',
+                hidden ? '비밀번호 숨기기' : '비밀번호 표시'
+            );
+        });
+    }
+})();
+</script>
 </body>
 </html>

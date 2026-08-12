@@ -1,0 +1,225 @@
+.final-dashboard {
+    padding-bottom: 52px;
+}
+
+.final-dashboard-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.metric-card small {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.box-inline {
+    color: #40516b;
+    font-weight: 800;
+}
+
+.final-menu-panel {
+    margin-top: 18px;
+}
+
+.final-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 11px;
+}
+
+.final-menu-card {
+    display: flex;
+    min-height: 128px;
+    padding: 17px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 7px;
+    color: #172033;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid #dfe4ea;
+    border-radius: 14px;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.final-menu-card:hover {
+    transform: translateY(-2px);
+    border-color: #b7c5d6;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .07);
+}
+
+.final-menu-card .menu-icon {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    color: #356bd8;
+    background: #eef4ff;
+    border-radius: 9px;
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.final-menu-card strong {
+    font-size: 16px;
+}
+
+.final-menu-card small {
+    color: #6b7584;
+    line-height: 1.45;
+}
+
+.dashboard-calendar-section {
+    margin-top: 18px;
+}
+
+.dashboard-calendar-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.calendar-heading-summary {
+    flex: 0 0 auto;
+    min-width: 150px;
+    padding: 12px 15px;
+    text-align: right;
+    background: #f4f7fb;
+    border-radius: 11px;
+}
+
+.calendar-heading-summary span {
+    display: block;
+    color: #6c7788;
+    font-size: 12px;
+}
+
+.calendar-heading-summary strong {
+    display: block;
+    margin-top: 5px;
+    color: #172033;
+    font-size: 18px;
+}
+
+.dashboard-calendar-panel {
+    margin-top: 12px;
+}
+
+.dashboard-calendar-section .sales-calendar-day {
+    min-height: 112px !important;
+}
+
+.dashboard-calendar-section .calendar-day-sales {
+    margin-top: 12px !important;
+}
+
+.dashboard-calendar-section .calendar-day-sales strong {
+    font-size: 15px !important;
+}
+
+.dashboard-daily-detail {
+    margin-top: 18px !important;
+}
+
+.dashboard-daily-table {
+    min-width: 760px;
+}
+
+.empty-cell {
+    padding: 26px 12px !important;
+    text-align: center !important;
+    color: #7a8493;
+}
+
+.vendor-hub-hero {
+    margin-bottom: 18px;
+}
+
+.vendor-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 48px;
+}
+
+.vendor-hub-card {
+    display: block;
+    min-height: 155px;
+    padding: 22px;
+    color: #172033;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid #dfe4ea;
+    border-radius: 15px;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .035);
+}
+
+.vendor-hub-card:hover {
+    border-color: #b7c6d8;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .07);
+}
+
+.vendor-hub-card > span {
+    display: block;
+    margin-bottom: 8px;
+    color: #356bd8;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.vendor-hub-card strong {
+    display: block;
+    font-size: 20px;
+}
+
+.vendor-hub-card p {
+    margin: 9px 0 0;
+    color: #6b7584;
+    line-height: 1.6;
+    font-size: 13px;
+}
+
+@media (max-width: 1150px) {
+    .final-menu-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .final-dashboard-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .vendor-hub-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-calendar-heading {
+        flex-direction: column;
+    }
+
+    .calendar-heading-summary {
+        text-align: left;
+    }
+}
+
+@media (max-width: 620px) {
+    .final-dashboard-metrics {
+        grid-template-columns: 1fr !important;
+    }
+
+    .final-menu-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .final-menu-card {
+        min-height: 112px;
+    }
+
+    .vendor-hub-grid {
+        grid-template-columns: 1fr;
+    }
+}

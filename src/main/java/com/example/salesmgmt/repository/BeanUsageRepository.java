@@ -17,5 +17,7 @@ public interface BeanUsageRepository extends JpaRepository<BeanUsageEntity, Long
             LocalDate endDate
     );
 
+    List<BeanUsageEntity> findAllByOrderByUsageDateDescIdDesc();
+
     List<BeanUsageEntity> findTop50ByOrderByUsageDateDescIdDesc();
 }
