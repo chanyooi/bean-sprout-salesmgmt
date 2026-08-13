@@ -1,34 +1,44 @@
-﻿송천 모바일 UI 2026
+﻿송천 모바일 일관형 관리자 UI
 
-목적
-- 데스크톱 화면은 최대한 유지
-- 화면 폭 768px 이하에서만 모바일 UI를 현대적으로 개선
-- 기존 Java/DB 로직 변경 없음
+이번 ZIP에는 아래가 들어 있습니다.
 
-주요 변화
-- 페이지 상단을 부드러운 glass card 형태로 정리
-- KPI/요약카드를 2열 Bento grid로 변경
-- 버튼/입력창 터치 영역 확대
-- 모바일에서 긴 상단 링크를 가로 스크롤 chip 형태로 변경
-- 콩 재고 탭 sticky 처리
-- 긴 표는 첫 열 고정 + 부드러운 가로스크롤
-- 일별 매출 캘린더 모바일 최적화
-- 거래명세서 이미지 공유 버튼을 하단 sticky action panel 형태로 개선
-- iPhone safe area 대응
-- 화면 폭 390px 이하 추가 보정
+1) 대시보드 모바일 수정
+- 재고부족 KPI 제거
+- KPI 3개(월매출 / 예상이익 / 미수금)로 정리
 
-적용방법
-1. 이 폴더(songcheon-mobile-modern)를 salesmgmt 프로젝트 루트에 넣습니다.
-2. PowerShell:
-   powershell -ExecutionPolicy Bypass -File .\songcheon-mobile-modern\apply-mobile-modern.ps1
-3. 서버 재실행 후 모바일에서 확인합니다.
+2) 다른 주요 화면 모바일 통일
+- 거래처 관리
+- 콩 재고·원가 현황
+- 콩 사용 등록
+- 콩 사용 기록
+- 콩 매입 등록
+- 콩 매입 기록
 
-왜 src를 바로 덮어쓰지 않나요?
-현재 app.css 전체 내용을 바꾸면 기존 데스크톱 디자인이 사라질 수 있어서,
-기존 app.css는 그대로 보존하고 @import 한 줄만 안전하게 추가합니다.
-mobile-modern.css 자체는 src 안으로 복사됩니다.
+디자인 방향
+- 연한 회색 배경
+- 흰색 카드
+- 파란색 포인트
+- 12~16px radius
+- 큰 터치 영역
+- 모바일 390~430px 기준 최적화
 
-원복
-프로젝트 루트에 자동 생성되는
-backup-before-mobile-ui-날짜시간\app.css
-를 원래 위치로 다시 복사하면 됩니다.
+변경 파일
+- src/main/resources/templates/dashboard.html
+- src/main/resources/static/css/dashboard-mobile-390.css
+- src/main/resources/static/css/admin-mobile-unified.css
+- src/main/resources/templates/inventory.html
+- src/main/resources/templates/inventory-usage-form.html
+- src/main/resources/templates/inventory-usage-history.html
+- src/main/resources/templates/inventory-purchase-form.html
+- src/main/resources/templates/inventory-purchase-history.html
+- src/main/resources/templates/vendor-management.html
+
+적용 방법
+1. 압축 해제
+2. 프로젝트 루트의 src 폴더와 병합/덮어쓰기
+3. 빌드 확인
+   .\gradlew.bat clean build -x test
+
+참고
+- 데스크톱 레이아웃은 최대한 유지
+- 모바일 폭 600px 이하에서만 새 디자인이 강하게 적용됨

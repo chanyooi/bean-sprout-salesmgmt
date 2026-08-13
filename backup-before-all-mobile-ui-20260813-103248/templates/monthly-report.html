@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>월매출 현황</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">매출 분석</p>
+                <h1>월매출 현황</h1>
+                <p>거래처별·품목별·날짜별 매출과 단가 미등록 내역을 확인합니다.</p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/inventory}">콩 재고</a>
+                <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
+                <a class="secondary-link" th:href="@{/statements}">명세서 생성</a>
+                <a class="secondary-link" th:href="@{/upload}">장부 업로드</a>
+                <a class="secondary-link" th:href="@{/prices}">단가 관리</a>
+                <a class="secondary-link" th:href="@{/sales}">판매 데이터</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="alert error"
+         th:if="${reportError}"
+         th:text="${reportError}">
+    </div>
+
+    <section class="panel month-toolbar">
+        <a class="month-arrow"
+           th:href="@{/reports/monthly(month=${previousMonth})}">이전 달</a>
+
+        <form method="get"
+              th:action="@{/reports/monthly}"
+              class="month-form">
+            <label for="month">조회 월</label>
+            <input id="month"
+                   name="month"
+                   type="month"
+                   th:value="${monthValue}"
+                   required>
+            <button type="submit">조회</button>
+        </form>
+
+        <a class="month-arrow"
+           th:href="@{/reports/monthly(month=${nextMonth})}">다음 달</a>
+    </section>
+
+    <section class="report-heading">
+        <div>
+            <p class="eyebrow" th:text="${monthLabel}">2026년 7월</p>
+            <h2>월간 요약</h2>
+        </div>
+        <p th:text="|${report.startDate} ~ ${report.endDate}|">기간</p>
+    </section>
+
+    <div class="summary-grid five report-summary">
+        <article class="summary-card primary-metric">
+            <span>확정 매출</span>
+            <strong th:text="|${#numbers.formatDecimal(report.confirmedSales, 0, 'COMMA', 0, 'POINT')}원|">
+                0원
+            </strong>
+        </article>
+        <article class="summary-card">
+            <span>주문</span>
+            <strong th:text="|${report.orderCount}건|">0건</strong>
+        </article>
+        <article class="summary-card">
+            <span>거래처</span>
+            <strong th:text="|${report.vendorCount}곳|">0곳</strong>
+        </article>
+        <article class="summary-card">
+            <span>전체 수량</span>
+            <strong th:text="${report.totalQuantity.stripTrailingZeros().toPlainString()}">0</strong>
+        </article>
+        <article class="summary-card"
+                 th:classappend="${report.hasMissingPrices()} ? ' warning-card' : ' success-card'">
+            <span>단가 미등록</span>
+            <strong th:text="|${report.missingPriceCount}건|">0건</strong>
+        </article>
+    </div>
+
+    <div class="report-notice warning"
+         th:if="${report.hasMissingPrices()}">
+        단가 미등록 판매가 <strong th:text="|${report.missingPriceCount}건|">0건</strong> 있습니다.
+        확정 매출에는 단가가 등록된 품목만 포함했습니다.
+        <a th:href="@{/sales}">미등록 판매 확인하기</a>
+    </div>
+
+    <div class="report-notice success"
+         th:if="${!report.hasMissingPrices() and !report.isEmpty()}">
+        이 달의 판매 품목에는 모두 단가가 적용되어 있습니다.
+    </div>
+
+    <section class="panel" th:if="${report.isEmpty()}">
+        <h2>이 달에는 저장된 판매 데이터가 없습니다</h2>
+        <p>다른 월을 선택하거나 장부 파일을 먼저 저장해주세요.</p>
+    </section>
+
+    <section class="report-columns" th:if="${!report.isEmpty()}">
+        <article class="panel report-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>거래처별 매출</h2>
+                    <p>확정 매출이 큰 순서입니다.</p>
+                </div>
+                <strong th:text="|${#lists.size(report.vendorRows)}곳|">0곳</strong>
+            </div>
+            <div class="table-wrap report-table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>순위</th>
+                        <th>거래처</th>
+                        <th>매출</th>
+                        <th>수량</th>
+                        <th>주문</th>
+                        <th>단가 미등록</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="row, status : ${report.vendorRows}">
+                        <td class="rank" th:text="${status.count}">1</td>
+                        <td th:text="${row.vendorName}"></td>
+                        <td class="number strong-number"
+                            th:text="|${#numbers.formatDecimal(row.confirmedSales, 0, 'COMMA', 0, 'POINT')}원|">
+                        </td>
+                        <td class="number" th:text="${row.totalQuantity.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number" th:text="|${row.orderCount}건|"></td>
+                        <td class="number"
+                            th:classappend="${row.missingPriceCount > 0} ? ' warning-text'"
+                            th:text="|${row.missingPriceCount}건|">
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="panel report-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>품목별 판매</h2>
+                    <p>품목별 수량과 확정 매출입니다.</p>
+                </div>
+                <strong th:text="|${#lists.size(report.itemRows)}개 품목|">0개</strong>
+            </div>
+            <div class="table-wrap report-table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>품목</th>
+                        <th>판매 수량</th>
+                        <th>매출</th>
+                        <th>거래처</th>
+                        <th>단가 미등록</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="row : ${report.itemRows}">
+                        <td th:text="${row.itemName}"></td>
+                        <td class="number strong-number"
+                            th:text="${row.totalQuantity.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number"
+                            th:text="|${#numbers.formatDecimal(row.confirmedSales, 0, 'COMMA', 0, 'POINT')}원|">
+                        </td>
+                        <td class="number" th:text="|${row.vendorCount}곳|"></td>
+                        <td class="number"
+                            th:classappend="${row.missingPriceCount > 0} ? ' warning-text'"
+                            th:text="|${row.missingPriceCount}건|">
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    <section class="panel" th:if="${!report.isEmpty()}">
+        <div class="panel-heading">
+            <div>
+                <h2>날짜별 매출</h2>
+                <p>판매 기록이 있는 날짜만 표시합니다.</p>
+            </div>
+            <strong th:text="|${#lists.size(report.dailyRows)}일|">0일</strong>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>확정 매출</th>
+                    <th>판매 수량</th>
+                    <th>주문</th>
+                    <th>거래처</th>
+                    <th>판매 품목 행</th>
+                    <th>단가 미등록</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${report.dailyRows}">
+                    <td th:text="${row.deliveryDate}"></td>
+                    <td class="number strong-number"
+                        th:text="|${#numbers.formatDecimal(row.confirmedSales, 0, 'COMMA', 0, 'POINT')}원|">
+                    </td>
+                    <td class="number" th:text="${row.totalQuantity.stripTrailingZeros().toPlainString()}"></td>
+                    <td class="number" th:text="|${row.orderCount}건|"></td>
+                    <td class="number" th:text="|${row.vendorCount}곳|"></td>
+                    <td class="number" th:text="|${row.itemRecordCount}건|"></td>
+                    <td class="number"
+                        th:classappend="${row.missingPriceCount > 0} ? ' warning-text'"
+                        th:text="|${row.missingPriceCount}건|">
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

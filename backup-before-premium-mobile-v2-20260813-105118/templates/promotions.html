@@ -1,0 +1,207 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>행사 단가 관리</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/operations.css}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">행사 기록</p>
+                <h1>행사 · 임시단가 관리</h1>
+                <p>
+                    평소 거래처 단가는 그대로 두고 행사기간에만 적용되는 단가를 따로 기록합니다.
+                </p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/prices}">기본 단가</a>
+                <a class="secondary-link" th:href="@{/sales}">판매내역</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="alert success"
+         th:if="${successMessage}"
+         th:text="${successMessage}"></div>
+    <div class="alert error"
+         th:if="${errorMessage}"
+         th:text="${errorMessage}"></div>
+
+    <section class="panel promotion-guide">
+        <strong>추천 사용법</strong>
+        <span>
+            행사 발생 → 여기 기록 → 행사단가가 나중에 확정되면 단가 입력 →
+            ‘기존 판매에 반영’. 이후 같은 기간 장부를 재업로드해도 행사단가가 자동 적용됩니다.
+            평소 기본단가는 바꾸지 않는 것이 안전합니다.
+        </span>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>새 행사 기록</h2>
+                <p>행사 단가를 아직 모르면 비워둬도 됩니다.</p>
+            </div>
+        </div>
+
+        <form th:action="@{/promotions}"
+              method="post"
+              class="promotion-create-form">
+            <label>
+                거래처
+                <select name="vendorId" required>
+                    <option value="">선택</option>
+                    <option th:each="vendor : ${vendors}"
+                            th:value="${vendor.id}"
+                            th:text="${vendor.inputName}">
+                    </option>
+                </select>
+            </label>
+
+            <label>
+                품목
+                <input type="text"
+                       name="itemName"
+                       placeholder="예: 곱슬이, 일반"
+                       required>
+            </label>
+
+            <label>
+                시작일
+                <input type="date"
+                       name="startDate"
+                       th:value="${today}"
+                       required>
+            </label>
+
+            <label>
+                종료일
+                <input type="date"
+                       name="endDate"
+                       th:value="${today}"
+                       required>
+            </label>
+
+            <label>
+                행사단가
+                <input type="number"
+                       name="promotionUnitPrice"
+                       min="0"
+                       step="1"
+                       placeholder="미확정이면 비워두기">
+            </label>
+
+            <label class="promotion-memo-field">
+                메모
+                <input type="text"
+                       name="memo"
+                       placeholder="예: 오픈행사 / 3일간 / 담당자 요청">
+            </label>
+
+            <button type="submit">행사 기록</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>행사 이력</h2>
+                <p>단가가 확정되면 저장한 뒤 판매자료에 일괄 반영할 수 있습니다.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>거래처</th>
+                    <th>품목</th>
+                    <th>기간</th>
+                    <th>행사단가</th>
+                    <th>메모</th>
+                    <th>저장</th>
+                    <th>판매 반영</th>
+                    <th>삭제</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="promotion : ${promotions}">
+                    <td th:text="${promotion.vendorName}"></td>
+                    <td th:text="${promotion.itemName}"></td>
+                    <td>
+                        <span th:text="${promotion.startDate}"></span>
+                        ~
+                        <span th:text="${promotion.endDate}"></span>
+                    </td>
+
+                    <td>
+                        <input type="number"
+                               min="0"
+                               step="1"
+                               name="promotionUnitPrice"
+                               th:value="${promotion.promotionUnitPrice == null ? '' : promotion.promotionUnitPrice.stripTrailingZeros().toPlainString()}"
+                               th:attr="form=${'promotion-update-' + promotion.id}"
+                               placeholder="미확정">
+                    </td>
+
+                    <td>
+                        <input type="text"
+                               name="memo"
+                               th:value="${promotion.memo}"
+                               th:attr="form=${'promotion-update-' + promotion.id}">
+                    </td>
+
+                    <td>
+                        <form th:id="${'promotion-update-' + promotion.id}"
+                              th:action="@{/promotions/{id}/update(id=${promotion.id})}"
+                              method="post">
+                            <button type="submit"
+                                    class="compact-button">
+                                저장
+                            </button>
+                        </form>
+                    </td>
+
+                    <td>
+                        <form th:action="@{/promotions/{id}/apply(id=${promotion.id})}"
+                              method="post">
+                            <button type="submit"
+                                    class="compact-button"
+                                    th:disabled="${!promotion.hasPrice()}"
+                                    onclick="return confirm('이 행사기간의 기존 판매단가를 행사단가로 일괄 변경할까요?');">
+                                기존 판매에 반영
+                            </button>
+                        </form>
+                    </td>
+
+                    <td>
+                        <form th:action="@{/promotions/{id}/delete(id=${promotion.id})}"
+                              method="post">
+                            <button type="submit"
+                                    class="danger-outline-button compact-button"
+                                    onclick="return confirm('행사 기록을 삭제할까요? 이미 판매에 반영된 단가는 자동 복구되지 않습니다.');">
+                                삭제
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(promotions)}">
+                    <td colspan="8">아직 행사 기록이 없습니다.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/admin-mobile-unified.css(v=20260813_1)}">
+    <title>콩 사용 등록</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory.css}">
+</head>
+<body>
+<main class="container inventory-shell">
+    <section class="inventory-hero compact-hero">
+        <div>
+            <p class="eyebrow">원재료 원가 관리</p>
+            <h1>콩 사용 등록</h1>
+            <p class="hero-description">아버지가 알려준 날짜와 사용 포대 수만 빠르게 등록하면 됩니다.</p>
+        </div>
+        <div class="top-links">
+            <a class="secondary-link" th:href="@{/}">홈(대시보드)</a>
+            <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
+        </div>
+    </section>
+
+    <nav class="inventory-tabs" aria-label="콩 원가 메뉴">
+        <a th:href="@{/inventory}">원가 현황</a>
+        <a class="active" th:href="@{/inventory/usages/new}">콩 사용 등록</a>
+        <a th:href="@{/inventory/usages}">사용 기록</a>
+        <a th:href="@{/inventory/purchases/new}">콩 매입 등록</a>
+        <a th:href="@{/inventory/purchases}">매입 기록</a>
+    </nav>
+
+    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
+    <div class="alert error" th:if="${inventoryError}" th:text="${inventoryError}"></div>
+
+    <section class="single-form-layout">
+        <article class="panel entry-card">
+            <div class="panel-heading">
+                <div>
+                    <p class="section-kicker">매일 입력</p>
+                    <h2>오늘 사용한 콩 등록</h2>
+                    <p>비고 입력은 없앴습니다. 날짜·종류·원산지·포대 수만 입력하면 됩니다.</p>
+                </div>
+            </div>
+
+            <form th:action="@{/inventory/usages}" method="post" class="simple-entry-form">
+                <label>
+                    사용 날짜
+                    <input type="date" name="usageDate" th:value="${today}" required>
+                </label>
+
+                <label>
+                    콩 종류
+                    <select id="beanType" name="beanType" required>
+                        <option th:each="type : ${beanTypes}"
+                                th:value="${type.name()}"
+                                th:text="${type.label}">
+                        </option>
+                    </select>
+                </label>
+
+                <label>
+                    원산지
+                    <select id="origin" name="origin" required>
+                        <option th:each="origin : ${beanOrigins}"
+                                th:value="${origin.name()}"
+                                th:text="${origin.label}">
+                        </option>
+                    </select>
+                </label>
+
+                <label>
+                    사용 포대 수
+                    <input type="number"
+                           name="bagCount"
+                           min="0.001"
+                           step="0.001"
+                           inputmode="decimal"
+                           placeholder="예: 6"
+                           required>
+                </label>
+
+                <button type="submit" class="primary-action">사용량 저장</button>
+            </form>
+
+            <div class="form-note">
+                1포는 25kg입니다. 사용량을 저장하면 해당 월의 콩 원가에 자동 반영됩니다.
+            </div>
+        </article>
+
+        <aside class="side-action-card">
+            <span>입력한 내용 확인</span>
+            <strong>사용 기록</strong>
+            <p>날짜별로 입력한 사용량을 확인하거나 잘못 입력한 기록을 삭제할 수 있습니다.</p>
+            <a class="secondary-link full-link" th:href="@{/inventory/usages}">사용 기록 보기 →</a>
+        </aside>
+    </section>
+</main>
+
+<script>
+(function () {
+    const allowedOrigins = {
+        SMALL: ["CANADA", "CHINA"],
+        MEDIUM: ["CANADA", "CHINA"],
+        LARGE: ["CANADA", "CHINA"],
+        MUNG: ["CHINA", "CHILE"]
+    };
+
+    const typeSelect = document.getElementById("beanType");
+    const originSelect = document.getElementById("origin");
+
+    function refreshOrigins() {
+        const allowed = allowedOrigins[typeSelect.value] || [];
+        let firstAllowed = null;
+
+        Array.from(originSelect.options).forEach(option => {
+            const ok = allowed.includes(option.value);
+            option.hidden = !ok;
+            option.disabled = !ok;
+            if (ok && firstAllowed === null) {
+                firstAllowed = option.value;
+            }
+        });
+
+        if (!allowed.includes(originSelect.value) && firstAllowed !== null) {
+            originSelect.value = firstAllowed;
+        }
+    }
+
+    typeSelect.addEventListener("change", refreshOrigins);
+    refreshOrigins();
+})();
+</script>
+</body>
+</html>

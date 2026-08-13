@@ -1,0 +1,67 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/admin-mobile-unified.css(v=20260813_1)}">
+    <title>거래처 관리</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-final.css(v=20260812_2)}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container vendor-management-shell">
+    <section class="hero vendor-hub-hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">거래처 업무</p>
+                <h1>거래처 관리</h1>
+                <p>
+                    판매내역, 행사 임시단가, 입금·미수금,
+                    배송코스와 안전관리 기능을 한곳에 모았습니다.
+                </p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link" th:href="@{/}">홈(대시보드)</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="vendor-hub-grid">
+        <a class="vendor-hub-card" th:href="@{/sales}">
+            <span>판매</span>
+            <strong>판매내역</strong>
+            <p>거래처별 판매 기록을 조회하고 수정·삭제합니다.</p>
+        </a>
+
+        <a class="vendor-hub-card" th:href="@{/promotions}">
+            <span>행사</span>
+            <strong>행사 · 임시단가</strong>
+            <p>행사 기간과 임시 판매단가를 기록하고 적용합니다.</p>
+        </a>
+
+        <a class="vendor-hub-card" th:href="@{/payments}">
+            <span>입금</span>
+            <strong>입금 · 미수금</strong>
+            <p>월별 청구액, 입금액과 미수 거래처를 관리합니다.</p>
+        </a>
+
+        <a class="vendor-hub-card" th:href="@{/vendors}">
+            <span>배송</span>
+            <strong>거래처 · 배송코스</strong>
+            <p>거래처 정보와 A/B/김천 배송 순서를 관리합니다.</p>
+        </a>
+
+        <a th:if="${isAdmin}"
+           class="vendor-hub-card"
+           th:href="@{/admin/safety}">
+            <span>관리</span>
+            <strong>업로드 이력 · 월마감</strong>
+            <p>업로드 복구, DB 백업과 월 마감·해제를 관리합니다.</p>
+        </a>
+    </section>
+</main>
+</body>
+</html>

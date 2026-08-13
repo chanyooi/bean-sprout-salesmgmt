@@ -1,0 +1,354 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>거래명세서 PDF·이미지·공유</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/operations.css}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">거래명세서</p>
+                <h1>거래명세서 PDF · 이미지 · 공유</h1>
+                <p>거래처와 월을 선택한 뒤 카톡으로 보내기 좋은 PDF 또는 PNG로 저장합니다.</p>
+            </div>
+                        <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/statements}">엑셀 거래명세서</a>
+                <a class="secondary-link" th:href="@{/statement-send(month=${selectedMonth})}">발송 기록</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <form th:action="@{/statement-export}" method="get" class="sales-filter-form">
+            <label>월
+                <input type="month" name="month" th:value="${selectedMonth}" required>
+            </label>
+            <label>거래처
+                <select name="vendorId" required>
+                    <option value="">선택</option>
+                    <option th:each="vendor : ${vendors}"
+                            th:value="${vendor.id}"
+                            th:selected="${selectedVendorId != null and selectedVendorId == vendor.id}"
+                            th:text="${vendor.inputName}">
+                    </option>
+                </select>
+            </label>
+            <button type="submit">명세서 보기</button>
+        </form>
+    </section>
+
+    <section th:if="${statement != null}">
+        <div class="statement-export-actions">
+            <button type="button" id="shareStatement"
+                    class="share-statement-button">
+                이미지로 바로 공유
+            </button>
+            <button type="button" id="downloadPng">PNG 다운로드</button>
+            <button type="button" id="downloadPdf">PDF 다운로드</button>
+            <button type="button"
+                    id="copyPhone"
+                    class="secondary-button"
+                    th:if="${recipientPhone != null}"
+                    th:data-phone="${recipientPhone}">
+                전화번호 복사
+            </button>
+        </div>
+
+        <div class="statement-share-guide"
+             th:if="${managedSmsRecipient}">
+            <strong th:text="${alreadySent ? '이번 달 발송완료로 기록되어 있습니다.' : '문자 발송 대상 거래처입니다.'}"></strong>
+            <span th:if="${recipientPhone != null}"
+                  th:text="|전화번호 ${recipientPhone}|"></span>
+            <span>
+                휴대폰에서 ‘이미지로 바로 공유’를 누르면 명세서 PNG가 공유창으로 넘어갑니다.
+                공유 성공 시 이번 달 발송완료로 자동 기록합니다.
+            </span>
+        </div>
+
+        <div class="alert warning" th:if="${statement.missingPriceCount > 0}">
+            단가 미등록 판매가 있어 해당 금액은 합계에서 빠져 있습니다.
+        </div>
+
+        <div id="statementCapture" class="statement-paper">
+            <div class="statement-title">거 래 명 세 서</div>
+            <div class="statement-meta">
+                <div><strong>거래처</strong> <span th:text="${statement.vendorName}"></span></div>
+                <div><strong>정산월</strong> <span th:text="${statement.month}"></span></div>
+            </div>
+
+            <table class="statement-table">
+                <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th th:each="name : ${statement.itemNames}" th:text="${name}"></th>
+                    <th>일계</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${statement.dailyRows}">
+                    <td th:text="${row.date}"></td>
+                    <td th:each="qty : ${row.quantities}"
+                        class="number"
+                        th:text="${qty.signum() == 0 ? '' : qty.stripTrailingZeros().toPlainString()}"></td>
+                    <td class="number"
+                        th:text="${#numbers.formatDecimal(row.amount, 0, 'COMMA', 0, 'POINT') + '원'}"></td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th th:colspan="${statement.itemNames.size() + 1}">합계</th>
+                    <th class="number"
+                        th:text="${#numbers.formatDecimal(statement.totalAmount, 0, 'COMMA', 0, 'POINT') + '원'}"></th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script th:if="${statement != null}" th:inline="javascript">
+(function () {
+    const target = document.getElementById('statementCapture');
+    const safeName = /*[[${statement.vendorName}]]*/ 'statement';
+    const month = /*[[${statement.month}]]*/ 'month';
+
+    const vendorId = /*[[${statement.vendorId}]]*/ null;
+    const recipientPhone = /*[[${recipientPhone}]]*/ null;
+    const managedSmsRecipient = /*[[${managedSmsRecipient}]]*/ false;
+
+    const csrfToken =
+        document.querySelector('meta[name="_csrf"]')
+            ?.getAttribute('content');
+
+    const csrfHeader =
+        document.querySelector('meta[name="_csrf_header"]')
+            ?.getAttribute('content');
+
+    async function capture() {
+        return await html2canvas(target, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true
+        });
+    }
+
+    function canvasToBlob(canvas) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(blob => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('이미지 생성 실패'));
+                }
+            }, 'image/png');
+        });
+    }
+
+    async function markSent() {
+        if (!managedSmsRecipient || !vendorId) {
+            return;
+        }
+
+        const body = new URLSearchParams();
+        body.set('vendorId', vendorId);
+        body.set('month', month);
+
+        const headers = {
+            'Content-Type':
+                'application/x-www-form-urlencoded;charset=UTF-8'
+        };
+
+        if (csrfToken && csrfHeader) {
+            headers[csrfHeader] = csrfToken;
+        }
+
+        await fetch('/statement-send/mark-sent', {
+            method: 'POST',
+            headers,
+            body
+        });
+    }
+
+    const shareButton =
+        document.getElementById('shareStatement');
+
+    shareButton.addEventListener('click', async () => {
+        shareButton.disabled = true;
+        shareButton.textContent = '이미지 만드는 중...';
+
+        try {
+            const canvas = await capture();
+            const blob = await canvasToBlob(canvas);
+
+            const file = new File(
+                [blob],
+                `${month}_${safeName}_명세서.png`,
+                { type: 'image/png' }
+            );
+
+            if (
+                navigator.share
+                && navigator.canShare
+                && navigator.canShare({ files: [file] })
+            ) {
+                if (
+                    recipientPhone
+                    && navigator.clipboard
+                    && window.isSecureContext
+                ) {
+                    try {
+                        await navigator.clipboard.writeText(
+                            recipientPhone
+                        );
+                    } catch (ignored) {
+                    }
+                }
+
+                await navigator.share({
+                    title: `${safeName} ${month} 명세서`,
+                    text: `안녕하세요 송천 콩나물입니다. ${safeName} ${month} 명세서입니다. 감사합니다.`,
+                    files: [file]
+                });
+
+                await markSent();
+
+                shareButton.textContent =
+                    managedSmsRecipient
+                        ? '공유 완료 · 발송기록 저장됨'
+                        : '공유 완료';
+
+                return;
+            }
+
+            // Web Share 파일공유 미지원 브라우저: PNG 저장으로 자동 대체
+            const link = document.createElement('a');
+            link.download = file.name;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
+
+            if (
+                recipientPhone
+                && navigator.clipboard
+                && window.isSecureContext
+            ) {
+                try {
+                    await navigator.clipboard.writeText(
+                        recipientPhone
+                    );
+                } catch (ignored) {
+                }
+            }
+
+            alert(
+                '이 브라우저는 이미지 파일 직접 공유를 지원하지 않아 PNG를 저장했습니다.'
+                + (recipientPhone
+                    ? ' 전화번호는 클립보드에 복사했습니다.'
+                    : '')
+            );
+        } catch (error) {
+            if (error && error.name === 'AbortError') {
+                shareButton.textContent = '이미지로 바로 공유';
+                return;
+            }
+
+            alert(
+                '공유 기능을 사용할 수 없습니다. PNG 다운로드를 이용해주세요.'
+            );
+        } finally {
+            if (
+                shareButton.textContent ===
+                '이미지 만드는 중...'
+            ) {
+                shareButton.textContent =
+                    '이미지로 바로 공유';
+            }
+            shareButton.disabled = false;
+        }
+    });
+
+    const copyPhoneButton =
+        document.getElementById('copyPhone');
+
+    if (copyPhoneButton) {
+        copyPhoneButton.addEventListener(
+            'click',
+            async () => {
+                const phone =
+                    copyPhoneButton.dataset.phone;
+
+                if (!phone) {
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(phone);
+                    copyPhoneButton.textContent =
+                        '전화번호 복사됨';
+                } catch (error) {
+                    prompt(
+                        '전화번호를 복사해주세요.',
+                        phone
+                    );
+                }
+            }
+        );
+    }
+
+    document.getElementById('downloadPng').addEventListener('click', async () => {
+        const canvas = await capture();
+        const link = document.createElement('a');
+        link.download = `${month}_${safeName}_명세서.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+
+    document.getElementById('downloadPdf').addEventListener('click', async () => {
+        const canvas = await capture();
+        const image = canvas.toDataURL('image/jpeg', 0.95);
+        const { jsPDF } = window.jspdf;
+
+        const pdf = new jsPDF({
+            orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const ratio = Math.min(
+            pageWidth / canvas.width,
+            pageHeight / canvas.height
+        );
+
+        const width = canvas.width * ratio;
+        const height = canvas.height * ratio;
+
+        pdf.addImage(
+            image,
+            'JPEG',
+            (pageWidth - width) / 2,
+            6,
+            width,
+            height
+        );
+
+        pdf.save(`${month}_${safeName}_명세서.pdf`);
+    });
+})();
+</script>
+</body>
+</html>

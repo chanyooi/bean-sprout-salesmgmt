@@ -1,0 +1,65 @@
+@media (max-width: 640px) {
+    /* Green legacy action hotfix */
+    .sp-context-action {
+        min-height: 46px !important;
+        padding: 10px 14px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        border: 0 !important;
+        border-radius: 14px !important;
+        background: #EAF3FF !important;
+        color: #3182F6 !important;
+        font-size: 13px !important;
+        line-height: 1.2 !important;
+        font-weight: 750 !important;
+        text-decoration: none !important;
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+        overflow-wrap: normal !important;
+        box-shadow: none !important;
+    }
+
+    .sp-context-action.sp-context-primary {
+        background: #3182F6 !important;
+        color: #FFFFFF !important;
+    }
+
+    .sp-context-action.sp-context-wide {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .sp-context-action:visited {
+        color: #3182F6 !important;
+    }
+
+    .sp-context-action.sp-context-primary:visited {
+        color: #FFFFFF !important;
+    }
+
+    /* Some old styles use green utility classes directly. Neutralize them only on mobile. */
+    a[style*="green"],
+    button[style*="green"],
+    a[style*="#198754"],
+    button[style*="#198754"],
+    a[style*="#168a5b"],
+    button[style*="#168a5b"] {
+        background: #EAF3FF !important;
+        color: #3182F6 !important;
+        border-color: transparent !important;
+    }
+
+    /* Upload: place the new-month download action below the copy instead of squeezing it right. */
+    .sp-upload-download-action {
+        width: 100% !important;
+        margin-top: 14px !important;
+    }
+
+    /* Profit page: secondary analysis action should never look like a destructive/primary green block. */
+    .sp-profit-analysis-action {
+        background: #EAF3FF !important;
+        color: #3182F6 !important;
+    }
+}

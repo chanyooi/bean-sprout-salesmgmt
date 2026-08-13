@@ -1,0 +1,8 @@
+@media (max-width: 640px) {
+    /* 대시보드에서는 우측 중복 햄버거를 숨긴다.
+       visibility:hidden을 써서 가운데 제목 위치는 그대로 유지한다. */
+    body.sp-dashboard-page .sp-menu-action {
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+}

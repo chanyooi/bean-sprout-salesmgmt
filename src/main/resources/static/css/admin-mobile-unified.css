@@ -1,0 +1,473 @@
+/* ============================================================
+   Songcheon Unified Mobile Admin UI
+   Applies to inventory / vendor hub style pages.
+   Desktop remains mostly unchanged.
+   Palette: white cards + light gray bg + blue accent
+   ============================================================ */
+
+@media (max-width: 600px) {
+    :root {
+        --su-blue: #246BFD;
+        --su-blue-dark: #1858D8;
+        --su-blue-soft: #EEF4FF;
+        --su-bg: #F3F5F8;
+        --su-card: #FFFFFF;
+        --su-text: #111827;
+        --su-sub: #7A8392;
+        --su-line: #E6EAF0;
+        --su-shadow: 0 6px 20px rgba(15, 23, 42, .055);
+        --su-radius-lg: 16px;
+        --su-radius-md: 14px;
+        --su-radius-sm: 12px;
+    }
+
+    html,
+    body {
+        margin: 0;
+        min-width: 0 !important;
+        background: var(--su-bg) !important;
+        color: var(--su-text);
+    }
+
+    body {
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .container,
+    .inventory-shell,
+    .vendor-management-shell {
+        width: 100% !important;
+        max-width: 430px !important;
+        margin: 0 auto !important;
+        padding: 0 16px 28px !important;
+        background: var(--su-bg) !important;
+    }
+
+    /* ---------- Header / hero ---------- */
+
+    .hero,
+    .inventory-hero,
+    .vendor-hub-hero {
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        display: block !important;
+        margin: 0 -16px 10px !important;
+        padding: max(12px, env(safe-area-inset-top)) 16px 14px !important;
+        border: 0 !important;
+        border-bottom: 1px solid rgba(226, 231, 238, .88) !important;
+        border-radius: 0 !important;
+        background: rgba(243, 245, 248, .92) !important;
+        box-shadow: none !important;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .hero::before,
+    .inventory-hero::before,
+    .vendor-hub-hero::before {
+        display: none !important;
+    }
+
+    .hero-row {
+        display: block !important;
+    }
+
+    .eyebrow,
+    .section-kicker {
+        margin-bottom: 4px !important;
+        color: var(--su-blue) !important;
+        font-size: 10px !important;
+        font-weight: 850 !important;
+        letter-spacing: .08em !important;
+    }
+
+    h1,
+    .hero h1,
+    .inventory-hero h1 {
+        margin: 0 !important;
+        color: var(--su-text) !important;
+        font-size: 22px !important;
+        line-height: 1.2 !important;
+        letter-spacing: -.045em !important;
+        font-weight: 850 !important;
+    }
+
+    .hero p:not(.eyebrow),
+    .hero-description,
+    .vendor-hub-hero p {
+        margin: 7px 0 0 !important;
+        color: var(--su-sub) !important;
+        font-size: 12px !important;
+        line-height: 1.55 !important;
+    }
+
+    .top-links,
+    .button-row {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 7px !important;
+        overflow-x: auto;
+        margin-top: 14px !important;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+    }
+
+    .top-links::-webkit-scrollbar,
+    .button-row::-webkit-scrollbar {
+        display: none;
+    }
+
+    .secondary-link,
+    .month-arrow {
+        flex: 0 0 auto;
+        min-height: 38px;
+        padding: 8px 12px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(36, 107, 253, .10) !important;
+        border-radius: 999px !important;
+        background: var(--su-card) !important;
+        color: #455062 !important;
+        font-size: 11.5px !important;
+        font-weight: 760 !important;
+        text-decoration: none !important;
+        box-shadow: none !important;
+        white-space: nowrap;
+    }
+
+    .home-dashboard-link {
+        background: var(--su-blue-soft) !important;
+        color: var(--su-blue) !important;
+    }
+
+    /* ---------- Inventory tabs ---------- */
+
+    .inventory-tabs {
+        position: sticky;
+        top: 92px;
+        z-index: 20;
+        display: flex !important;
+        gap: 6px !important;
+        overflow-x: auto;
+        margin: 0 0 12px !important;
+        padding: 6px !important;
+        border: 1px solid var(--su-line) !important;
+        border-radius: var(--su-radius-md) !important;
+        background: rgba(255,255,255,.84) !important;
+        box-shadow: var(--su-shadow) !important;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        scrollbar-width: none;
+    }
+
+    .inventory-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .inventory-tabs a {
+        flex: 0 0 auto;
+        min-height: 37px;
+        padding: 8px 11px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px !important;
+        color: #566174 !important;
+        font-size: 11px !important;
+        font-weight: 760 !important;
+        text-decoration: none !important;
+        white-space: nowrap;
+    }
+
+    .inventory-tabs a.active {
+        background: var(--su-blue) !important;
+        color: #fff !important;
+    }
+
+    /* ---------- Alerts ---------- */
+
+    .alert {
+        margin: 0 0 10px !important;
+        padding: 12px 14px !important;
+        border-radius: var(--su-radius-sm) !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+    }
+
+    /* ---------- Summary cards ---------- */
+
+    .summary-grid,
+    .summary-grid.four,
+    .inventory-summary,
+    .vendor-hub-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    .summary-grid {
+        margin-bottom: 12px !important;
+    }
+
+    .summary-card,
+    .vendor-hub-card {
+        min-width: 0 !important;
+        min-height: 118px !important;
+        padding: 14px !important;
+        border: 1px solid var(--su-line) !important;
+        border-radius: var(--su-radius-md) !important;
+        background: var(--su-card) !important;
+        box-shadow: var(--su-shadow) !important;
+        text-decoration: none !important;
+    }
+
+    .summary-card span,
+    .vendor-hub-card span {
+        color: var(--su-sub) !important;
+        font-size: 11px !important;
+        font-weight: 730 !important;
+    }
+
+    .summary-card strong,
+    .vendor-hub-card strong {
+        display: block;
+        margin-top: 8px !important;
+        color: var(--su-text) !important;
+        font-size: 20px !important;
+        line-height: 1.14 !important;
+        letter-spacing: -.045em !important;
+    }
+
+    .summary-card small,
+    .vendor-hub-card p {
+        display: block;
+        margin-top: 7px !important;
+        color: #8D96A5 !important;
+        font-size: 10px !important;
+        line-height: 1.4 !important;
+    }
+
+    .warning-card {
+        background: linear-gradient(145deg, #FFFFFF, #FFF9EF) !important;
+        border-color: rgba(245,158,11,.14) !important;
+    }
+
+    .warning-card strong {
+        color: #B77911 !important;
+    }
+
+    .vendor-hub-grid {
+        margin-top: 8px;
+    }
+
+    .vendor-hub-card {
+        min-height: 110px !important;
+    }
+
+    .vendor-hub-card strong {
+        font-size: 15px !important;
+        margin-top: 5px !important;
+    }
+
+    .vendor-hub-card p {
+        font-size: 10px !important;
+    }
+
+    /* ---------- Panels ---------- */
+
+    .panel,
+    .entry-card {
+        margin-bottom: 12px !important;
+        padding: 15px !important;
+        border: 1px solid var(--su-line) !important;
+        border-radius: var(--su-radius-lg) !important;
+        background: var(--su-card) !important;
+        box-shadow: var(--su-shadow) !important;
+    }
+
+    .panel-heading {
+        margin-bottom: 12px !important;
+    }
+
+    .panel-heading h2 {
+        margin: 0 0 5px !important;
+        color: var(--su-text) !important;
+        font-size: 17px !important;
+        line-height: 1.25 !important;
+        letter-spacing: -.035em !important;
+    }
+
+    .panel-heading p {
+        margin: 0 !important;
+        color: var(--su-sub) !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+    }
+
+    .split-heading {
+        display: block !important;
+    }
+
+    .split-heading > .button-row,
+    .split-heading > .secondary-link {
+        margin-top: 12px !important;
+    }
+
+    /* ---------- Forms ---------- */
+
+    .single-form-layout {
+        display: block !important;
+    }
+
+    .simple-entry-form,
+    .payment-entry-form,
+    .sales-filter-form {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 11px !important;
+    }
+
+    label {
+        display: block;
+        color: #4D5766;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+        min-height: 46px !important;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    input,
+    select,
+    textarea {
+        margin-top: 6px;
+        padding: 0 13px !important;
+        border: 1px solid rgba(36, 107, 253, .12) !important;
+        border-radius: 13px !important;
+        background: #FBFCFE !important;
+        color: var(--su-text) !important;
+        font-size: 14px !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    textarea {
+        min-height: 96px !important;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: rgba(36, 107, 253, .36) !important;
+        box-shadow: 0 0 0 4px rgba(36, 107, 253, .08) !important;
+    }
+
+    button,
+    .danger-button,
+    .danger-outline-button,
+    .compact-button {
+        padding: 0 14px !important;
+        border-radius: 13px !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        touch-action: manipulation;
+    }
+
+    /* ---------- Tables ---------- */
+
+    .table-wrap,
+    .stock-table-wrap,
+    .history-page-table {
+        width: calc(100% + 8px);
+        margin-left: -4px;
+        padding: 0 4px 4px;
+        overflow-x: auto !important;
+        scrollbar-width: thin;
+    }
+
+    table {
+        min-width: 660px;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        font-size: 12px !important;
+    }
+
+    table th,
+    table td {
+        padding: 11px 10px !important;
+        border-bottom: 1px solid #ECEFF4 !important;
+        white-space: nowrap;
+        vertical-align: middle !important;
+    }
+
+    table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: #F6F8FB !important;
+        color: #626C7C !important;
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        letter-spacing: .01em;
+    }
+
+    .number,
+    .strong-number {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .stock-table th:first-child,
+    .stock-table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #FFF !important;
+        box-shadow: 8px 0 16px -15px rgba(15,23,42,.55);
+    }
+
+    .stock-table thead th:first-child {
+        background: #F6F8FB !important;
+        z-index: 4;
+    }
+
+    .empty-cell {
+        color: #8B94A2 !important;
+        text-align: center !important;
+        padding: 24px 12px !important;
+    }
+
+    /* ---------- Page-specific polish ---------- */
+
+    .compact-hero + .inventory-tabs {
+        margin-top: 2px !important;
+    }
+
+    .vendor-hub-grid > a:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+
+    /* If any summary section has exactly 3 cards, keep last one wide. */
+    .summary-grid > :nth-child(3):last-child {
+        grid-column: 1 / -1;
+    }
+
+    /* ---------- Safe area ---------- */
+
+    @supports (padding: max(0px)) {
+        .container,
+        .inventory-shell,
+        .vendor-management-shell {
+            padding-bottom: max(28px, calc(18px + env(safe-area-inset-bottom))) !important;
+        }
+    }
+}

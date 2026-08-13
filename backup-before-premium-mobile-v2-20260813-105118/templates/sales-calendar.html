@@ -1,0 +1,264 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>일별 매출 캘린더</title>
+    <link rel="stylesheet"
+          th:href="@{/css/app.css}">
+    <link rel="stylesheet"
+          th:href="@{/css/operations.css}">
+    <link rel="stylesheet"
+          th:href="@{/css/sales-calendar.css(v=20260810_2)}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">일별 매출</p>
+                <h1>매출 캘린더</h1>
+                <p>
+                    날짜별 매출·주문건수·거래처 수를 한눈에 확인하고,
+                    날짜를 누르면 당일 판매내역을 바로 볼 수 있습니다.
+                </p>
+            </div>
+
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link"
+                   th:href="@{/}">
+                    홈(대시보드)
+                </a>
+                <a class="secondary-link"
+                   th:href="@{/sales(month=${calendar.month})}">
+                    판매내역
+                </a>
+                <a class="secondary-link"
+                   th:href="@{/reports/monthly(month=${calendar.month})}">
+                    월 매출
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="calendar-month-navigation">
+        <a th:href="@{/sales-calendar(month=${calendar.previousMonth})}">
+            ← 이전 달
+        </a>
+
+        <form th:action="@{/sales-calendar}"
+              method="get"
+              class="calendar-month-form">
+            <input type="month"
+                   name="month"
+                   th:value="${calendar.month}"
+                   required>
+            <button type="submit">
+                조회
+            </button>
+        </form>
+
+        <a th:href="@{/sales-calendar(month=${calendar.nextMonth})}">
+            다음 달 →
+        </a>
+    </section>
+
+    <section class="calendar-summary-grid">
+        <article class="calendar-summary-card">
+            <span>월 매출</span>
+            <strong th:text="${#numbers.formatDecimal(calendar.monthlySales, 0, 'COMMA', 0, 'POINT') + '원'}">
+                0원
+            </strong>
+        </article>
+
+        <article class="calendar-summary-card">
+            <span>영업일 평균</span>
+            <strong th:text="${#numbers.formatDecimal(calendar.averageSalesPerSalesDay, 0, 'COMMA', 0, 'POINT') + '원'}">
+                0원
+            </strong>
+            <small th:text="|매출 발생 ${calendar.salesDayCount}일 기준|">
+            </small>
+        </article>
+
+        <article class="calendar-summary-card">
+            <span>주문</span>
+            <strong th:text="|${calendar.monthlyOrderCount}건|">
+                0건
+            </strong>
+        </article>
+
+        <article class="calendar-summary-card">
+            <span>거래처</span>
+            <strong th:text="|${calendar.monthlyVendorCount}곳|">
+                0곳
+            </strong>
+        </article>
+
+        <article class="calendar-summary-card"
+                 th:classappend="${calendar.missingPriceCount > 0} ? ' calendar-summary-warning' : ''">
+            <span>단가 미등록</span>
+            <strong th:text="|${calendar.missingPriceCount}건|">
+                0건
+            </strong>
+        </article>
+    </section>
+
+    <section class="panel sales-calendar-panel">
+        <div class="sales-calendar-weekdays">
+            <div class="calendar-sunday">일</div>
+            <div>월</div>
+            <div>화</div>
+            <div>수</div>
+            <div>목</div>
+            <div>금</div>
+            <div class="calendar-saturday">토</div>
+        </div>
+
+        <div class="sales-calendar-weeks">
+            <div class="sales-calendar-week"
+                 th:each="week : ${calendar.weeks}">
+
+                <th:block th:each="day : ${week}">
+                    <a th:if="${day.inCurrentMonth}"
+                       class="sales-calendar-day"
+                       th:classappend="${(day.isSunday() ? ' calendar-sunday-cell' : '') +
+                                        (day.isSaturday() ? ' calendar-saturday-cell' : '') +
+                                        (day.hasSales ? ' has-sales' : '') +
+                                        (calendar.selectedDate != null and calendar.selectedDate.equals(day.date) ? ' selected-calendar-day' : '')}"
+                       th:href="@{/sales-calendar(month=${calendar.month}, date=${day.date})} + '#daily-detail'">
+
+                        <div class="calendar-day-top">
+                            <strong th:text="${day.date.dayOfMonth}">
+                                1
+                            </strong>
+
+                            <span th:if="${day.missingPriceCount > 0}"
+                                  class="calendar-missing-badge"
+                                  th:text="|단가 ${day.missingPriceCount}|">
+                            </span>
+                        </div>
+
+                        <div th:if="${day.hasSales}"
+                             class="calendar-day-sales">
+                            <strong th:text="${#numbers.formatDecimal(day.salesAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                                0원
+                            </strong>
+
+                            <small th:text="|주문 ${day.orderCount} · 거래처 ${day.vendorCount}|">
+                            </small>
+                        </div>
+
+                        <div th:unless="${day.hasSales}"
+                             class="calendar-no-sales">
+                            매출 없음
+                        </div>
+                    </a>
+
+                    <div th:unless="${day.inCurrentMonth}"
+                         class="sales-calendar-day outside-month">
+                        <div class="calendar-day-top">
+                            <strong th:text="${day.date.dayOfMonth}">
+                                1
+                            </strong>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </section>
+
+    <section id="daily-detail"
+             class="panel daily-sales-detail"
+             th:if="${calendar.selectedDate != null}">
+
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">선택 날짜</p>
+                <h2 th:text="|${calendar.selectedDate} 매출|">
+                    일 매출
+                </h2>
+            </div>
+
+            <a class="secondary-link"
+               th:href="@{/sales(month=${calendar.month})}">
+                판매내역에서 수정
+            </a>
+        </div>
+
+        <section class="daily-detail-summary"
+                 th:if="${calendar.selectedDay != null}">
+            <div>
+                <span>일매출</span>
+                <strong th:text="${#numbers.formatDecimal(calendar.selectedDay.salesAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+            </div>
+            <div>
+                <span>주문</span>
+                <strong th:text="|${calendar.selectedDay.orderCount}건|">
+                    0건
+                </strong>
+            </div>
+            <div>
+                <span>거래처</span>
+                <strong th:text="|${calendar.selectedDay.vendorCount}곳|">
+                    0곳
+                </strong>
+            </div>
+            <div>
+                <span>판매 품목</span>
+                <strong th:text="|${calendar.selectedDay.itemCount}건|">
+                    0건
+                </strong>
+            </div>
+        </section>
+
+        <div class="alert warning"
+             th:if="${calendar.selectedDay != null and calendar.selectedDay.missingPriceCount > 0}"
+             th:text="|단가 미등록 판매가 ${calendar.selectedDay.missingPriceCount}건 있어 일매출 합계에서 제외되었습니다.|">
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>주문번호</th>
+                    <th>거래처</th>
+                    <th>품목</th>
+                    <th>수량</th>
+                    <th>단가</th>
+                    <th>금액</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${calendar.selectedRows}">
+                    <td th:text="${row.orderNumber}"></td>
+                    <td th:text="${row.inputVendor}"></td>
+                    <td th:text="${row.item}"></td>
+                    <td class="number"
+                        th:text="${row.quantity.stripTrailingZeros().toPlainString()}">
+                    </td>
+                    <td class="number"
+                        th:text="${row.unitPrice == null ? '미등록' : #numbers.formatDecimal(row.unitPrice, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    </td>
+                    <td class="number"
+                        th:text="${row.lineAmount == null ? '-' : #numbers.formatDecimal(row.lineAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(calendar.selectedRows)}">
+                    <td colspan="6">
+                        이 날짜에는 판매내역이 없습니다.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

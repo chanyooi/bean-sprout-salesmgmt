@@ -1,0 +1,40 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>초기 설정 제한</title>
+    <link rel="stylesheet"
+          th:href="@{/css/security.css(v=20260810_1)}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+</head>
+<body class="security-page">
+<main class="security-card">
+    <div class="security-brand">
+        <span class="security-logo">!</span>
+        <div>
+            <p>보안 설정</p>
+            <h1>초기 설정 제한</h1>
+        </div>
+    </div>
+
+    <div class="security-alert error"
+         th:text="${message}">
+    </div>
+
+    <p class="security-description">
+        서버가 설치된 컴퓨터에서
+        http://localhost:8080/setup 으로 접속해주세요.
+    </p>
+
+    <a class="security-primary-link"
+       th:href="@{/login}">
+        로그인 화면으로
+    </a>
+</main>
+</body>
+</html>

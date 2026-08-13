@@ -1,0 +1,92 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>처음 관리자 설정</title>
+    <link rel="stylesheet"
+          th:href="@{/css/security.css(v=20260810_1)}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+</head>
+<body class="security-page">
+<main class="security-card wider">
+    <div class="security-brand">
+        <span class="security-logo">1</span>
+        <div>
+            <p>최초 1회 설정</p>
+            <h1>관리자 계정 만들기</h1>
+        </div>
+    </div>
+
+    <p class="security-description">
+        이 화면은 사용자가 한 명도 없을 때 localhost에서만 열립니다.
+        관리자 계정을 만든 뒤 아빠 계정은 로그인 후 계정관리에서 추가하면 됩니다.
+    </p>
+
+    <div class="security-alert error"
+         th:if="${errorMessage}"
+         th:text="${errorMessage}">
+    </div>
+
+    <form th:action="@{/setup}"
+          method="post"
+          class="security-form">
+        <label>
+            관리자 아이디
+            <input type="text"
+                   name="username"
+                   th:value="${username}"
+                   placeholder="예: chanhyeon"
+                   autocomplete="username"
+                   autocapitalize="none"
+                   required>
+            <small>
+                영문 소문자·숫자·점·밑줄·하이픈, 3~30자
+            </small>
+        </label>
+
+        <label>
+            표시 이름
+            <input type="text"
+                   name="displayName"
+                   th:value="${displayName}"
+                   placeholder="예: 찬현"
+                   required>
+        </label>
+
+        <label>
+            비밀번호
+            <input type="password"
+                   name="password"
+                   autocomplete="new-password"
+                   minlength="8"
+                   required>
+            <small>8자 이상으로 설정해주세요.</small>
+        </label>
+
+        <label>
+            비밀번호 확인
+            <input type="password"
+                   name="passwordConfirm"
+                   autocomplete="new-password"
+                   minlength="8"
+                   required>
+        </label>
+
+        <button type="submit"
+                class="security-primary-button">
+            관리자 계정 생성
+        </button>
+    </form>
+
+    <a class="security-back-link"
+       th:href="@{/login}">
+        로그인 화면으로
+    </a>
+</main>
+</body>
+</html>
