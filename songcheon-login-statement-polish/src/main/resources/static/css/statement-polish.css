@@ -1,0 +1,191 @@
+/* ============================================================
+   거래명세서 페이지 PC 정렬/간격 보정
+   기존 기능/HTML은 건드리지 않고 레이아웃만 정돈
+   ============================================================ */
+
+@media (min-width: 641px) {
+
+    body.songcheon-statements-polished main,
+    body.songcheon-statements-polished .container,
+    body.songcheon-statements-polished .page-container {
+        box-sizing: border-box;
+    }
+
+    body.songcheon-statements-polished main.container,
+    body.songcheon-statements-polished main.page-container,
+    body.songcheon-statements-polished main {
+        max-width: 1500px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    /* 페이지 상단 */
+    body.songcheon-statements-polished main > header,
+    body.songcheon-statements-polished .page-header,
+    body.songcheon-statements-polished .hero {
+        position: relative;
+    }
+
+    body.songcheon-statements-polished h1 {
+        letter-spacing: -.045em;
+    }
+
+    /* 상단 우측 버튼들 */
+    body.songcheon-statements-polished .page-actions,
+    body.songcheon-statements-polished .header-actions,
+    body.songcheon-statements-polished .top-actions,
+    body.songcheon-statements-polished main > header nav,
+    body.songcheon-statements-polished main > header > div:last-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 10px !important;
+    }
+
+    body.songcheon-statements-polished .page-actions a,
+    body.songcheon-statements-polished .header-actions a,
+    body.songcheon-statements-polished .top-actions a,
+    body.songcheon-statements-polished main > header nav a {
+        min-height: 46px !important;
+        padding: 0 16px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 12px !important;
+        white-space: nowrap !important;
+        line-height: 1 !important;
+    }
+
+    /* 큰 흰 카드 / 패널 공통 */
+    body.songcheon-statements-polished .panel,
+    body.songcheon-statements-polished .card,
+    body.songcheon-statements-polished section.panel,
+    body.songcheon-statements-polished section.card {
+        border-radius: 18px !important;
+    }
+
+    /* 첫 번째 생성 폼 카드 */
+    body.songcheon-statements-polished form {
+        box-sizing: border-box;
+    }
+
+    body.songcheon-statements-polished form input[type="month"],
+    body.songcheon-statements-polished form input[type="file"],
+    body.songcheon-statements-polished form select {
+        min-height: 52px !important;
+        box-sizing: border-box !important;
+        border-radius: 12px !important;
+    }
+
+    body.songcheon-statements-polished form input[type="month"] {
+        padding: 0 16px !important;
+    }
+
+    body.songcheon-statements-polished form input[type="file"] {
+        padding: 8px 12px !important;
+    }
+
+    body.songcheon-statements-polished form input[type="file"]::file-selector-button {
+        height: 34px !important;
+        margin-right: 10px !important;
+        padding: 0 12px !important;
+        border: 1px solid #d7dde5 !important;
+        border-radius: 9px !important;
+        background: #fff !important;
+        color: #333d4b !important;
+        font: inherit !important;
+        cursor: pointer;
+    }
+
+    /* 흔한 form grid 구조의 기준선을 통일 */
+    body.songcheon-statements-polished .form-grid,
+    body.songcheon-statements-polished .statement-form-grid,
+    body.songcheon-statements-polished .export-grid,
+    body.songcheon-statements-polished form > .grid {
+        align-items: start !important;
+        column-gap: 22px !important;
+        row-gap: 16px !important;
+    }
+
+    /* 스크린샷의 2열: 생성 월 / 템플릿 */
+    body.songcheon-statements-polished .form-row,
+    body.songcheon-statements-polished .statement-form-row {
+        align-items: end !important;
+        gap: 22px !important;
+    }
+
+    /* label 텍스트/필드 간격 */
+    body.songcheon-statements-polished label {
+        line-height: 1.35 !important;
+    }
+
+    body.songcheon-statements-polished label > span,
+    body.songcheon-statements-polished .field-label,
+    body.songcheon-statements-polished .form-label {
+        display: block !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* 체크박스 줄 */
+    body.songcheon-statements-polished input[type="checkbox"] {
+        width: 20px !important;
+        height: 20px !important;
+        vertical-align: middle !important;
+    }
+
+    body.songcheon-statements-polished .checkbox-row,
+    body.songcheon-statements-polished label:has(input[type="checkbox"]) {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        min-height: 34px !important;
+    }
+
+    /* 주 액션 */
+    body.songcheon-statements-polished form button[type="submit"],
+    body.songcheon-statements-polished form .primary,
+    body.songcheon-statements-polished form .btn-primary {
+        min-height: 50px !important;
+        padding: 0 24px !important;
+        border-radius: 12px !important;
+        white-space: nowrap !important;
+    }
+
+    /* 생성 기준 카드들: 높이/간격 통일 */
+    body.songcheon-statements-polished .criteria-grid,
+    body.songcheon-statements-polished .guide-grid,
+    body.songcheon-statements-polished .rule-grid,
+    body.songcheon-statements-polished .info-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 16px !important;
+        align-items: stretch !important;
+    }
+
+    body.songcheon-statements-polished .criteria-grid > *,
+    body.songcheon-statements-polished .guide-grid > *,
+    body.songcheon-statements-polished .rule-grid > *,
+    body.songcheon-statements-polished .info-grid > * {
+        min-height: 150px !important;
+        box-sizing: border-box !important;
+        padding: 22px !important;
+        border-radius: 14px !important;
+    }
+
+    /* 화면에 보이는 카드형 설명 영역이 클래스 없이 구성돼도 높이 흔들림 완화 */
+    body.songcheon-statements-polished section:last-of-type > div {
+        align-items: stretch !important;
+    }
+
+    /* 텍스트 줄 높이 */
+    body.songcheon-statements-polished p {
+        line-height: 1.6;
+    }
+}
+
+@media (max-width: 640px) {
+    /* 모바일은 기존 premium mobile UI 우선 */
+    body.songcheon-statements-polished {
+        --statement-mobile-safe: 1;
+    }
+}

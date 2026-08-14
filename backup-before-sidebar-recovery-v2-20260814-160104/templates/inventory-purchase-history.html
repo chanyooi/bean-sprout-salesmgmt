@@ -1,0 +1,102 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/admin-mobile-unified.css(v=20260813_1)}">
+    <title>콩 매입 기록</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory.css}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-single-menu.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container inventory-shell">
+    <section class="inventory-hero compact-hero">
+        <div>
+            <p class="eyebrow">원재료 원가 관리</p>
+            <h1>콩 매입 기록</h1>
+            <p class="hero-description">등록한 콩 매입 내역을 최신 날짜순으로 확인합니다.</p>
+        </div>
+        <div class="top-links">
+            <a class="secondary-link" th:href="@{/}">홈(대시보드)</a>
+            <a class="secondary-link" th:href="@{/inventory/purchases/new}">+ 매입 등록</a>
+        </div>
+    </section>
+
+    <nav class="inventory-tabs" aria-label="콩 원가 메뉴">
+        <a th:href="@{/inventory}">원가 현황</a>
+        <a th:href="@{/inventory/usages/new}">콩 사용 등록</a>
+        <a th:href="@{/inventory/usages}">사용 기록</a>
+        <a th:href="@{/inventory/purchases/new}">콩 매입 등록</a>
+        <a class="active" th:href="@{/inventory/purchases}">매입 기록</a>
+    </nav>
+
+    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
+    <div class="alert error" th:if="${inventoryError}" th:text="${inventoryError}"></div>
+
+    <section class="panel">
+        <div class="panel-heading split-heading">
+            <div>
+                <h2>전체 매입 기록</h2>
+                <p>매입을 추가·삭제하면 해당 월의 가중평균 원가도 자동으로 달라집니다.</p>
+            </div>
+            <a class="secondary-link" th:href="@{/inventory/purchases/new}">콩 매입 등록</a>
+        </div>
+
+        <div class="table-wrap history-page-table">
+            <table>
+                <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>콩 종류</th>
+                    <th>원산지</th>
+                    <th>구입 포대</th>
+                    <th>총 kg</th>
+                    <th>포대단가</th>
+                    <th>총액</th>
+                    <th>비고</th>
+                    <th>관리</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(purchaseHistory)}">
+                    <td colspan="9" class="empty-cell">매입 기록이 없습니다.</td>
+                </tr>
+                <tr th:each="row : ${purchaseHistory}">
+                    <td th:text="${row.purchaseDate}">2026-08-12</td>
+                    <td><strong th:text="${row.beanTypeLabel}">소립</strong></td>
+                    <td th:text="${row.originLabel}">캐나다산</td>
+                    <td class="number" th:text="|${row.bagCount.stripTrailingZeros().toPlainString()}포|">0포</td>
+                    <td class="number" th:text="|${row.totalKg.stripTrailingZeros().toPlainString()}kg|">0kg</td>
+                    <td class="number"
+                        th:text="|${#numbers.formatDecimal(row.unitPricePerBag, 0, 'COMMA', 0, 'POINT')}원|">
+                        0원
+                    </td>
+                    <td class="number strong-number"
+                        th:text="|${#numbers.formatDecimal(row.totalAmount, 0, 'COMMA', 0, 'POINT')}원|">
+                        0원
+                    </td>
+                    <td class="note-cell" th:text="${row.note != null ? row.note : '-'}">-</td>
+                    <td>
+                        <form th:action="@{/inventory/purchases/{id}/delete(id=${row.id})}"
+                              method="post"
+                              onsubmit="return confirm('이 매입 기록을 삭제할까요?');">
+                            <button type="submit" class="danger-button compact-button">삭제</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
+</body>
+</html>

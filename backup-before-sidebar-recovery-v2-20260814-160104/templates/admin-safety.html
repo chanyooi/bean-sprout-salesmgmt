@@ -1,0 +1,132 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터 안전관리</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/operations.css}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-single-menu.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">데이터 안전</p>
+                <h1>업로드 이력 · 복구 · 월 마감</h1>
+                <p>잘못 올린 장부를 되돌리고, 마감된 월의 판매자료 변경을 막습니다.</p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/upload}">장부 업로드</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <section class="dashboard-grid">
+        <article class="panel">
+            <h2>DB 전체 백업</h2>
+            <p>현재 MySQL의 모든 테이블을 ZIP 안의 JSON으로 내려받습니다.</p>
+            <a class="primary-link" th:href="@{/admin/backup/download}">DB 백업 ZIP 다운로드</a>
+        </article>
+
+        <article class="panel">
+            <h2>월 마감</h2>
+            <form th:action="@{/admin/month-close}" method="post" class="close-month-form">
+                <input type="month" name="month" th:value="${currentMonth}" required>
+                <button type="submit"
+                        onclick="return confirm('이 월을 마감하면 장부 재업로드와 판매 수정/삭제가 차단됩니다. 마감할까요?');">
+                    월 마감
+                </button>
+            </form>
+
+            <div class="closure-list">
+                <div th:each="closure : ${closures}" class="closure-row">
+                    <strong th:text="${closure.monthKey}"></strong>
+                    <span th:text="${closure.closedAt}"></span>
+                    <form th:action="@{/admin/month-reopen}" method="post">
+                        <input type="hidden" name="month" th:value="${closure.monthKey}">
+                        <button class="danger-outline-button compact-button"
+                                type="submit"
+                                onclick="return confirm('마감을 해제하면 다시 판매자료를 수정할 수 있습니다. 해제할까요?');">
+                            마감 해제
+                        </button>
+                    </form>
+                </div>
+                <p th:if="${#lists.isEmpty(closures)}">아직 마감된 월이 없습니다.</p>
+            </div>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>최근 장부 업로드 이력</h2>
+                <p>복구는 안전을 위해 가장 최근 미복구 업로드 1건만 가능합니다.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>업로드 일시</th>
+                    <th>파일</th>
+                    <th>신규 주문</th>
+                    <th>신규 품목</th>
+                    <th>수정 품목</th>
+                    <th>삭제 품목</th>
+                    <th>삭제 주문</th>
+                    <th>동일 건너뜀</th>
+                    <th>상태/복구</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="history : ${histories}">
+                    <td th:text="${history.uploadedAt}"></td>
+                    <td th:text="${history.fileName}"></td>
+                    <td class="number" th:text="${history.createdOrders}"></td>
+                    <td class="number" th:text="${history.savedItems}"></td>
+                    <td class="number" th:text="${history.updatedItems}"></td>
+                    <td class="number" th:text="${history.deletedItems}"></td>
+                    <td class="number" th:text="${history.deletedOrders}"></td>
+                    <td class="number" th:text="${history.skippedItems}"></td>
+                    <td>
+                        <span th:if="${history.restored}" class="payment-status status-paid">복구 완료</span>
+                        <form th:if="${!history.restored and latestRestorableId != null and latestRestorableId == history.id}"
+                              th:action="@{/admin/uploads/{id}/restore(id=${history.id})}"
+                              method="post">
+                            <button type="submit"
+                                    class="danger-button compact-button"
+                                    onclick="return confirm('가장 최근 장부 업로드 직전 상태로 판매자료를 되돌릴까요?');">
+                                직전 상태로 복구
+                            </button>
+                        </form>
+                        <span th:if="${!history.restored and (latestRestorableId == null or latestRestorableId != history.id)}"
+                              class="muted-badge">
+                            이력
+                        </span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(histories)}">
+                    <td colspan="9">아직 저장된 장부 업로드 이력이 없습니다.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+/* ============================================================
+   송천 PC 사이드바 원래 크기 복원
+   100% 브라우저 배율 기준
+   기능/구조는 유지하고 크기만 조정
+   ============================================================ */
+
+@media (min-width: 641px) {
+    body:not(.security-page) {
+        padding-left: 230px !important;
+    }
+
+    .desktop-global-sidebar {
+        width: 230px !important;
+        padding: 22px 14px 18px !important;
+    }
+
+    .dgs-brand {
+        min-height: 56px !important;
+        padding: 7px 10px 18px !important;
+        gap: 11px !important;
+    }
+
+    .dgs-brand-mark {
+        width: 38px !important;
+        height: 38px !important;
+        flex-basis: 38px !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+    }
+
+    .dgs-brand strong {
+        font-size: 16px !important;
+    }
+
+    .dgs-brand small {
+        margin-top: 2px !important;
+        font-size: 10px !important;
+    }
+
+    .dgs-nav {
+        gap: 4px !important;
+    }
+
+    .dgs-nav a,
+    .dgs-bottom > a,
+    .dgs-logout-button {
+        min-height: 46px !important;
+        padding: 0 12px !important;
+        gap: 11px !important;
+        border-radius: 11px !important;
+    }
+
+    .dgs-icon,
+    .dgs-logout-button .dgs-icon {
+        width: 22px !important;
+        font-size: 16px !important;
+    }
+
+    .dgs-nav strong,
+    .dgs-bottom > a strong,
+    .dgs-logout-button strong {
+        font-size: 13px !important;
+        font-weight: 740 !important;
+        line-height: 1.2 !important;
+    }
+
+    .dgs-bottom {
+        padding-top: 12px !important;
+    }
+
+    .dgs-logout-form {
+        margin-top: 3px !important;
+    }
+
+    /* 예전 대시보드 전용 사이드바가 남아 있어도 동일 크기로 맞춤 */
+    .desktop-app-sidebar {
+        width: 230px !important;
+        padding: 22px 14px 18px !important;
+    }
+
+    .desktop-brand {
+        min-height: 56px !important;
+        padding: 7px 10px 18px !important;
+        gap: 11px !important;
+    }
+
+    .desktop-brand-mark {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+    }
+
+    .desktop-brand strong {
+        font-size: 16px !important;
+    }
+
+    .desktop-brand small {
+        margin-top: 2px !important;
+        font-size: 10px !important;
+    }
+
+    .desktop-sidebar-nav {
+        gap: 4px !important;
+    }
+
+    .desktop-sidebar-nav a,
+    .desktop-sidebar-bottom > a {
+        min-height: 46px !important;
+        padding: 0 12px !important;
+        gap: 11px !important;
+        border-radius: 11px !important;
+    }
+
+    .desktop-sidebar-nav span,
+    .desktop-sidebar-bottom > a span {
+        width: 22px !important;
+        font-size: 16px !important;
+    }
+
+    .desktop-sidebar-nav strong,
+    .desktop-sidebar-bottom > a strong {
+        font-size: 13px !important;
+        font-weight: 740 !important;
+    }
+}

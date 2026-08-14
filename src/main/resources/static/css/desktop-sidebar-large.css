@@ -1,0 +1,99 @@
+/* ============================================================
+   송천 데스크톱 사이드바 확대 패치
+   - 모바일에는 영향 없음
+   - dashboard-navigation-v4.css 위에 덮어쓰는 보정용
+   ============================================================ */
+
+@media (min-width: 641px) {
+    body {
+        padding-left: 270px !important;
+    }
+
+    .desktop-app-sidebar {
+        width: 270px !important;
+        padding: 24px 16px 20px !important;
+    }
+
+    .desktop-brand {
+        min-height: 68px !important;
+        padding: 8px 10px 20px !important;
+        gap: 13px !important;
+    }
+
+    .desktop-brand-mark {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 14px !important;
+        font-size: 16px !important;
+    }
+
+    .desktop-brand strong {
+        font-size: 18px !important;
+        line-height: 1.2 !important;
+    }
+
+    .desktop-brand small {
+        margin-top: 4px !important;
+        font-size: 11px !important;
+    }
+
+    .desktop-sidebar-nav {
+        gap: 6px !important;
+    }
+
+    .desktop-sidebar-nav a,
+    .desktop-sidebar-bottom > a {
+        min-height: 54px !important;
+        padding: 0 14px !important;
+        gap: 13px !important;
+        border-radius: 13px !important;
+    }
+
+    .desktop-sidebar-nav a.active {
+        background: #e7f1ff !important;
+        color: #246bfd !important;
+    }
+
+    .desktop-sidebar-nav a:hover,
+    .desktop-sidebar-bottom > a:hover {
+        background: #f3f6fa !important;
+    }
+
+    .desktop-sidebar-nav span,
+    .desktop-sidebar-bottom > a span {
+        width: 26px !important;
+        font-size: 19px !important;
+    }
+
+    .desktop-sidebar-nav strong,
+    .desktop-sidebar-bottom > a strong {
+        font-size: 14.5px !important;
+        line-height: 1.2 !important;
+        font-weight: 760 !important;
+        letter-spacing: -0.02em !important;
+    }
+
+    .desktop-sidebar-bottom {
+        padding-top: 15px !important;
+    }
+
+    .desktop-sidebar-user {
+        margin-top: 12px !important;
+        padding: 13px 14px !important;
+        border-radius: 13px !important;
+    }
+
+    .desktop-sidebar-user small {
+        font-size: 11px !important;
+    }
+
+    .desktop-sidebar-user strong {
+        margin-top: 4px !important;
+        font-size: 13px !important;
+    }
+
+    /* 넓어진 사이드바 때문에 본문이 답답해 보이지 않도록 최대 폭도 살짝 보정 */
+    .desktop-dashboard-shell {
+        max-width: 1540px !important;
+    }
+}

@@ -1,0 +1,233 @@
+html,
+body.songcheon-login-page {
+    min-height: 100%;
+}
+
+body.songcheon-login-page {
+    min-height: 100vh;
+    margin: 0;
+    padding: 32px 20px;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    color: #191f28;
+    background:
+        radial-gradient(
+            circle at 50% 16%,
+            rgba(49, 130, 246, .05),
+            transparent 28%
+        ),
+        #f2f4f6;
+}
+
+.modern-login-shell {
+    width: min(100%, 430px);
+}
+
+.modern-login-brand {
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.modern-login-brand.text-only > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.modern-login-brand strong {
+    color: #191f28;
+    font-size: 34px;
+    line-height: 1.08;
+    font-weight: 900;
+    letter-spacing: -.05em;
+}
+
+.modern-login-brand span {
+    margin-top: 6px;
+    color: #8b95a1;
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: -.02em;
+}
+
+.modern-login-card {
+    padding: 34px 34px 28px;
+    border: 1px solid #e5e8eb;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow:
+        0 20px 55px rgba(15, 23, 42, .07),
+        0 2px 6px rgba(15, 23, 42, .025);
+}
+
+.modern-login-card-head {
+    margin-bottom: 28px;
+}
+
+.modern-login-card-head h1 {
+    margin: 0;
+    color: #191f28;
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: 850;
+    letter-spacing: -.045em;
+}
+
+.modern-login-card-head p {
+    margin: 8px 0 0;
+    color: #8b95a1;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.modern-login-form {
+    display: grid;
+    gap: 18px;
+}
+
+.modern-login-form label {
+    display: grid;
+    gap: 8px;
+}
+
+.modern-login-form label > span {
+    color: #4e5968;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.modern-login-form input {
+    width: 100%;
+    min-height: 52px;
+    box-sizing: border-box;
+    padding: 0 15px;
+    border: 1px solid #d9dee5;
+    border-radius: 13px;
+    outline: none;
+    background: #fff;
+    color: #191f28;
+    font-size: 14px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.modern-login-form input::placeholder {
+    color: #b0b8c1;
+}
+
+.modern-login-form input:focus {
+    border-color: #3182f6;
+    box-shadow: 0 0 0 4px rgba(49, 130, 246, .10);
+}
+
+.modern-password-field {
+    position: relative;
+}
+
+.modern-password-field input {
+    padding-right: 70px;
+}
+
+.modern-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    min-width: 48px;
+    height: 34px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #6b7684;
+    font-size: 11px;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.modern-password-toggle:hover {
+    background: #f2f4f6;
+    color: #333d4b;
+}
+
+.modern-login-submit {
+    width: 100%;
+    min-height: 52px;
+    margin-top: 4px;
+    border: 0;
+    border-radius: 13px;
+    background: #3182f6;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(49, 130, 246, .17);
+}
+
+.modern-login-submit:hover {
+    background: #1b64da;
+}
+
+body.songcheon-login-page .security-alert {
+    margin: 0 0 18px;
+    padding: 12px 13px;
+    border-radius: 11px;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+body.songcheon-login-page .security-alert.success {
+    border: 1px solid #cfe3ff;
+    background: #edf5ff;
+    color: #1b64da;
+}
+
+body.songcheon-login-page .security-alert.error {
+    border: 1px solid #ffd4d4;
+    background: #fff1f1;
+    color: #d14343;
+}
+
+.modern-setup-link {
+    display: block;
+    margin-top: 18px;
+    text-align: center;
+    color: #3182f6;
+    font-size: 12px;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.modern-login-footnote {
+    margin: 24px 0 0;
+    text-align: center;
+    color: #b0b8c1;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    body.songcheon-login-page {
+        padding: 22px 18px;
+        background: #f2f4f6;
+    }
+
+    .modern-login-brand {
+        margin-bottom: 18px;
+    }
+
+    .modern-login-brand strong {
+        font-size: 30px;
+    }
+
+    .modern-login-brand span {
+        font-size: 13px;
+    }
+
+    .modern-login-card {
+        padding: 26px 22px 23px;
+        border-radius: 20px;
+    }
+}

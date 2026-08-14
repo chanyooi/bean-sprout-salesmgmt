@@ -1,0 +1,189 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>사용자 계정 관리</title>
+    <link rel="stylesheet"
+          th:href="@{/css/app.css}">
+    <link rel="stylesheet"
+          th:href="@{/css/operations.css}">
+    <link rel="stylesheet"
+          th:href="@{/css/security.css(v=20260810_1)}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-single-menu.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">관리자</p>
+                <h1>사용자 계정 관리</h1>
+                <p>
+                    아빠용 업무 계정을 만들거나 비밀번호를 변경합니다.
+                </p>
+            </div>
+
+            <div class="button-row">
+                <a class="secondary-link"
+                   th:href="@{/}">
+                    홈(대시보드)
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <div class="alert success"
+         th:if="${successMessage}"
+         th:text="${successMessage}">
+    </div>
+
+    <div class="alert error"
+         th:if="${errorMessage}"
+         th:text="${errorMessage}">
+    </div>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>새 계정 만들기</h2>
+                <p>
+                    아빠 계정은 권한을 ‘업무용’으로 선택하면 됩니다.
+                </p>
+            </div>
+        </div>
+
+        <form th:action="@{/admin/users}"
+              method="post"
+              class="admin-user-create-form">
+            <label>
+                아이디
+                <input type="text"
+                       name="username"
+                       placeholder="예: father"
+                       required>
+            </label>
+
+            <label>
+                표시 이름
+                <input type="text"
+                       name="displayName"
+                       placeholder="예: 아버지"
+                       required>
+            </label>
+
+            <label>
+                권한
+                <select name="role" required>
+                    <option th:each="role : ${roles}"
+                            th:value="${role.name()}"
+                            th:text="${role.label}">
+                    </option>
+                </select>
+            </label>
+
+            <label>
+                비밀번호
+                <input type="password"
+                       name="password"
+                       minlength="8"
+                       required>
+            </label>
+
+            <label>
+                비밀번호 확인
+                <input type="password"
+                       name="passwordConfirm"
+                       minlength="8"
+                       required>
+            </label>
+
+            <button type="submit">
+                계정 생성
+            </button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>현재 계정</h2>
+                <p>
+                    비밀번호는 해시로 저장되어 기존 비밀번호를 화면에서 확인할 수 없습니다.
+                </p>
+            </div>
+        </div>
+
+        <div class="account-card-grid">
+            <article class="account-card"
+                     th:each="user : ${users}">
+                <div class="account-card-heading">
+                    <div>
+                        <strong th:text="${user.displayName}">
+                            사용자
+                        </strong>
+                        <span th:text="${'@' + user.username}">
+                            @user
+                        </span>
+                    </div>
+
+                    <span class="account-role-badge"
+                          th:text="${user.role.label}">
+                        관리자
+                    </span>
+                </div>
+
+                <div class="account-status-row">
+                    <span th:classappend="${user.enabled} ? ' account-enabled' : ' account-disabled'"
+                          th:text="${user.enabled ? '사용중' : '비활성'}">
+                    </span>
+
+                    <small th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm')}">
+                    </small>
+                </div>
+
+                <form th:action="@{/admin/users/{id}/password(id=${user.id})}"
+                      method="post"
+                      class="account-password-form">
+                    <input type="password"
+                           name="password"
+                           minlength="8"
+                           placeholder="새 비밀번호"
+                           required>
+                    <input type="password"
+                           name="passwordConfirm"
+                           minlength="8"
+                           placeholder="새 비밀번호 확인"
+                           required>
+                    <button type="submit"
+                            class="secondary-button">
+                        비밀번호 변경
+                    </button>
+                </form>
+
+                <form th:action="@{/admin/users/{id}/toggle(id=${user.id})}"
+                      method="post">
+                    <button type="submit"
+                            class="danger-outline-button"
+                            th:text="${user.enabled ? '계정 비활성화' : '계정 다시 사용'}"
+                            th:disabled="${currentUsername == user.username}"
+                            onclick="return confirm('계정 사용 상태를 변경할까요?');">
+                        계정 비활성화
+                    </button>
+                </form>
+            </article>
+        </div>
+    </section>
+</main>
+    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
+</body>
+</html>

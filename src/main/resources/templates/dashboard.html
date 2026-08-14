@@ -1,5 +1,3 @@
-<link rel="stylesheet"
-      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -13,10 +11,17 @@
     <link rel="stylesheet" th:href="@{/css/sales-calendar.css(v=20260810_2)}">
     <link rel="stylesheet" th:href="@{/css/dashboard-final.css(v=20260812_2)}">
     <link rel="stylesheet" th:href="@{/css/dashboard-mobile-390.css(v=20260813_1)}">
-    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
-    <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
-    <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
-    <link rel="stylesheet" th:href="@{/css/dashboard-single-menu.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-navigation-v4.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/desktop-sidebar-large.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260814_2)}">
+    <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/statement-polish.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/statement-form-align-fix.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/statement-template-subtle.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/special-item-accounting.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/special-item-accounting-v2.css(v=20260814_2)}">
+    <link rel="stylesheet" th:href="@{/css/tofu-table-simple.css(v=20260814_1)}">
 </head>
 <body>
 
@@ -126,88 +131,7 @@
         </div>
     </section>
 
-    <section class="sc-mobile-menu-section">
-        <div class="sc-section-heading">
-            <div>
-                <span>QUICK MENU</span>
-                <h2>주요 메뉴</h2>
-            </div>
-        </div>
-
-        <div class="sc-menu-grid">
-            <a th:if="${isAdmin}" class="sc-menu-card" th:href="@{/upload}">
-                <span class="sc-menu-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>
-                    </svg>
-                </span>
-                <div><strong>주문업로드</strong><small>엑셀 주문 등록</small></div>
-                <span class="sc-arrow">›</span>
-            </a>
-
-            <a class="sc-menu-card" th:href="@{/statements}">
-                <span class="sc-menu-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M6 3h9l4 4v14H6zM15 3v5h5M9 12h6M9 16h6"/>
-                    </svg>
-                </span>
-                <div><strong>거래명세서</strong><small>생성 · 공유</small></div>
-                <span class="sc-arrow">›</span>
-            </a>
-
-            <a class="sc-menu-card" th:href="@{/vendor-management}">
-                <span class="sc-menu-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </span>
-                <div><strong>거래처관리</strong><small>판매 · 배송 · 설정</small></div>
-                <span class="sc-arrow">›</span>
-            </a>
-
-            <a class="sc-menu-card" th:href="@{/payments(month=${selectedMonth})}">
-                <span class="sc-menu-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M3 6h18v12H3zM3 10h18M7 15h3"/>
-                    </svg>
-                </span>
-                <div><strong>입금관리</strong><small>입금 · 미수금</small></div>
-                <span class="sc-arrow">›</span>
-            </a>
-
-            <a class="sc-menu-card" th:href="@{/profit(month=${selectedMonth})}">
-                <span class="sc-menu-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M4 19V5M4 19h16M7 15l4-4 3 2 5-6"/>
-                    </svg>
-                </span>
-                <div><strong>원가·이익</strong><small>비용 · 수익 분석</small></div>
-                <span class="sc-arrow">›</span>
-            </a>
-
-            <a class="sc-menu-card" th:href="@{/inventory}">
-                <span class="sc-menu-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="m12 2 8 5-8 5-8-5 8-5ZM4 7v10l8 5 8-5V7M12 12v10"/>
-                    </svg>
-                </span>
-                <div><strong>재고관리</strong><small>사용 · 매입 · 재고</small></div>
-                <span class="sc-arrow">›</span>
-            </a>
-
-            <a th:if="${isAdmin}" class="sc-menu-card sc-menu-card-wide" th:href="@{/admin/users}">
-                <span class="sc-menu-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM19 8v6M22 11h-6"/>
-                    </svg>
-                </span>
-                <div><strong>사용자관리</strong><small>계정과 권한 설정</small></div>
-                <span class="sc-arrow">›</span>
-            </a>
-        </div>
-    </section>
-
-    <section class="sc-mobile-summary-section">
+<section class="sc-mobile-summary-section">
         <div class="sc-section-heading">
             <div>
                 <span>MONTHLY SNAPSHOT</span>
@@ -332,15 +256,59 @@
 </aside>
 
 
+
+<aside class="desktop-app-sidebar">
+    <a class="desktop-brand" th:href="@{/}">
+        <span class="desktop-brand-mark">송</span>
+        <div>
+            <strong>송천</strong>
+        </div>
+    </a>
+
+    <nav class="desktop-sidebar-nav" aria-label="주요 메뉴">
+        <a class="active" th:href="@{/}">
+            <span>⌂</span><strong>대시보드</strong>
+        </a>
+        <a th:if="${isAdmin}" th:href="@{/upload}">
+            <span>↑</span><strong>주문 업로드</strong>
+        </a>
+        <a th:href="@{/statements}">
+            <span>▤</span><strong>거래명세서</strong>
+        </a>
+        <a th:href="@{/vendor-management}">
+            <span>◎</span><strong>거래처 관리</strong>
+        </a>
+        <a th:href="@{/payments(month=${selectedMonth})}">
+            <span>₩</span><strong>입금 관리</strong>
+        </a>
+        <a th:href="@{/profit(month=${selectedMonth})}">
+            <span>↗</span><strong>원가·이익</strong>
+        </a>
+        <a th:href="@{/inventory}">
+            <span>◇</span><strong>재고 관리</strong>
+        </a>
+    </nav>
+
+    <div class="desktop-sidebar-bottom">
+        <a th:if="${isAdmin}" th:href="@{/admin/users}">
+            <span>♙</span><strong>사용자 관리</strong>
+        </a>
+        <div class="desktop-sidebar-user">
+            <small th:text="|${currentUserDisplayName}님|">사용자님</small>
+            <strong th:text="${isAdmin ? '관리자' : '업무용'}">관리자</strong>
+        </div>
+    </div>
+</aside>
+
 <main class="container final-dashboard desktop-dashboard-shell">
 
     <section class="hero dashboard-hero">
         <div class="hero-row">
             <div>
                 <p class="eyebrow">사업 현황</p>
-                <h1>송천 매출 관리 대시보드</h1>
+                <h1>송천 매출 관리</h1>
                 <p>
-                    매출·예상이익·미수금·콩 재고와 일별 매출을
+                    매출·예상이익·미수금과 일별 매출을
                     한 화면에서 확인합니다.
                 </p>
             </div>
@@ -409,72 +377,58 @@
             </strong>
             <small th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳|"></small>
         </a>
-
-        <a class="metric-card"
-           th:classappend="${inventory.lowStockCount > 0} ? ' danger-metric' : ''"
-           th:href="@{/inventory}">
-            <span>콩 재고 부족</span>
-            <strong th:text="|${inventory.lowStockCount}종|">0종</strong>
-            <small>현재 재고 기준</small>
-        </a>
     </section>
 
-    <section class="panel final-menu-panel">
-        <div class="panel-heading">
-            <div>
-                <h2>주요 메뉴</h2>
-                <p>자주 쓰는 기능만 남겨 간단하게 정리했습니다.</p>
+    <section class="dashboard-overview-grid">
+        <article class="panel dashboard-overview-card">
+            <div class="overview-card-head">
+                <div>
+                    <p class="eyebrow">이번 달 요약</p>
+                    <h2>운영 현황</h2>
+                </div>
             </div>
-        </div>
 
-        <div class="final-menu-grid">
-            <a th:if="${isAdmin}"
-               class="final-menu-card"
-               th:href="@{/upload}">
-                <span class="menu-icon">↑</span>
-                <strong>주문 업로드</strong>
-                <small>주문 엑셀 검사·저장</small>
-            </a>
+            <div class="overview-stat-list">
+                <a th:href="@{/reports/monthly(month=${selectedMonth})}">
+                    <span>주문</span>
+                    <strong th:text="|${sales.orderCount}건|">0건</strong>
+                    <em>›</em>
+                </a>
+                <a th:href="@{/vendor-management}">
+                    <span>거래처</span>
+                    <strong th:text="|${sales.vendorCount}곳|">0곳</strong>
+                    <em>›</em>
+                </a>
+                <a th:href="@{/inventory}">
+                    <span>사용 박스</span>
+                    <strong th:text="|${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">0박스</strong>
+                    <em>›</em>
+                </a>
+            </div>
+        </article>
 
-            <a class="final-menu-card"
-               th:href="@{/statements}">
-                <span class="menu-icon">▤</span>
-                <strong>거래명세서</strong>
-                <small>명세서 생성·다운로드</small>
-            </a>
+        <article class="panel dashboard-overview-card attention-card">
+            <div class="overview-card-head">
+                <div>
+                    <p class="eyebrow">확인할 항목</p>
+                    <h2>입금 현황</h2>
+                </div>
+                <a class="overview-detail-link" th:href="@{/payments(month=${selectedMonth})}">관리하기</a>
+            </div>
 
-            <a class="final-menu-card"
-               th:href="@{/vendor-management}">
-                <span class="menu-icon">◎</span>
-                <strong>거래처 관리</strong>
-                <small>판매·입금·행사·배송·월마감</small>
-            </a>
+            <div class="attention-main">
+                <span>현재 미수금</span>
+                <strong th:text="${#numbers.formatDecimal(receivables.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</strong>
+                <small th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳|">미수 거래처 0곳</small>
+            </div>
 
-            <a class="final-menu-card"
-               th:href="@{/profit(month=${selectedMonth})}">
-                <span class="menu-icon">₩</span>
-                <strong>원가·이익</strong>
-                <small>월 원가와 예상이익</small>
+            <a class="attention-action" th:href="@{/payments(month=${selectedMonth})}">
+                입금·미수금 확인
+                <span>›</span>
             </a>
-
-            <a class="final-menu-card"
-               th:href="@{/inventory}">
-                <span class="menu-icon">◆</span>
-                <strong>콩 재고</strong>
-                <small>재고·사용·매입·콩 원가</small>
-            </a>
-
-            <a th:if="${isAdmin}"
-               class="final-menu-card"
-               th:href="@{/admin/users}">
-                <span class="menu-icon">♙</span>
-                <strong>사용자 관리</strong>
-                <small>계정·권한 관리</small>
-            </a>
-        </div>
+        </article>
     </section>
-
-    <section class="panel dashboard-calendar-section">
+<section class="panel dashboard-calendar-section">
         <div class="panel-heading dashboard-calendar-heading">
             <div>
                 <p class="eyebrow">일별 매출</p>
@@ -678,8 +632,18 @@
 })();
 </script>
 
-    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260814_2)}"></script>
+    <form id="songcheonPcLogoutForm"
+          th:action="@{/logout}"
+          method="post"
+          style="display:none"
+          aria-hidden="true"></form>
+    <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
+    <script defer th:src="@{/js/statement-polish.js(v=20260814_1)}"></script>
+    <script defer th:src="@{/js/statement-form-align-fix.js(v=20260814_1)}"></script>
+    <script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"> </script>
+    <script defer th:src="@{/js/special-item-accounting.js(v=20260814_1)}"></script>
+    <script defer th:src="@{/js/special-item-accounting-v2.js(v=20260814_2)}"></script>
+    <script defer th:src="@{/js/tofu-table-simple.js(v=20260814_1)}"></script>
 </body>
 </html>

@@ -1,0 +1,201 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>원가·이익</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/profit.css}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-single-menu.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container">
+    <section class="hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">손익 관리</p>
+                <h1>원가·이익</h1>
+                <p>
+                    확정 월매출에서 실제 콩 사용 원가와 비닐·박스·인건비·식비·월세를 차감해 예상이익을 계산합니다.
+                </p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
+                <a class="secondary-link" th:href="@{/inventory}">콩 재고 관리</a>
+                <a class="secondary-link" th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 현황</a>
+                <a class="secondary-link" th:href="@{/sales(month=${selectedMonth})}">판매내역</a>
+                <a class="secondary-link" th:href="@{/upload}">장부 업로드</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="button-row">
+            <a class="primary-link" th:href="@{/profit(month=${selectedMonth})}">수익 분석</a>
+            <a class="secondary-link" th:href="@{/inventory}">콩 재고 관리</a>
+        </div>
+    </section>    <div class="alert success" th:if="${profitMessage}" th:text="${profitMessage}"></div>
+    <div class="alert error" th:if="${profitError}" th:text="${profitError}"></div>
+
+    <section class="panel month-toolbar">
+        <a class="month-arrow" th:href="@{/profit(month=${previousMonth})}">이전 달</a>
+        <form method="get" th:action="@{/profit}" class="month-form">
+            <label for="month">조회 월</label>
+            <input id="month" name="month" type="month" th:value="${selectedMonth}" required>
+            <button type="submit">조회</button>
+        </form>
+        <a class="month-arrow" th:href="@{/profit(month=${nextMonth})}">다음 달</a>
+    </section>
+
+    <section class="summary-grid five profit-summary">
+        <article class="summary-card primary-metric">
+            <span>월매출</span>
+            <strong th:text="|${#numbers.formatDecimal(report.confirmedSales, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
+        </article>
+        <article class="summary-card">
+            <span>콩 사용 원가</span>
+            <strong th:text="|${#numbers.formatDecimal(report.beanUsageCost, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
+        </article>
+        <article class="summary-card">
+            <span>기타 원가·고정비</span>
+            <strong th:text="|${#numbers.formatDecimal(report.otherExpenseTotal, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
+        </article>
+        <article class="summary-card profit-card" th:classappend="${report.estimatedProfit.signum() < 0} ? ' loss-card'">
+            <span>예상이익</span>
+            <strong th:text="|${#numbers.formatDecimal(report.estimatedProfit, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
+        </article>
+        <article class="summary-card">
+            <span>예상이익률</span>
+            <strong th:text="|${#numbers.formatDecimal(report.estimatedProfitMarginPercent, 0, 'COMMA', 2, 'POINT')}%|">0%</strong>
+        </article>
+    </section>
+
+    <div class="report-notice warning" th:if="${report.missingSalesPriceCount > 0}">
+        판매단가가 없는 판매자료가 <strong th:text="|${report.missingSalesPriceCount}건|">0건</strong> 있어 해당 금액은 월매출에서 제외되어 있습니다.
+    </div>
+    <div class="report-notice warning" th:if="${report.missingBeanCostUsageCount > 0}">
+        사용일 이전의 매입단가를 찾을 수 없는 콩 사용 기록이 <strong th:text="|${report.missingBeanCostUsageCount}건|">0건</strong> 있습니다.
+        이 사용량은 콩 원가에서 제외되므로 매입 기록을 먼저 등록해주세요.
+    </div>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>월 비용 입력</h2>
+                <p>비닐·박스·직원 2명 월급·식비·공장 월세를 해당 월의 실제 금액으로 입력합니다.</p>
+            </div>
+        </div>
+        <form th:action="@{/profit/expenses}" method="post" class="expense-form">
+            <input type="hidden" name="month" th:value="${selectedMonth}">
+            <label>비닐
+                <input type="number" name="vinyl" min="0" step="1" th:value="${vinylAmount.stripTrailingZeros().toPlainString()}" required>
+            </label>
+            <label>박스
+                <input type="number" name="box" min="0" step="1" th:value="${boxAmount.stripTrailingZeros().toPlainString()}" required>
+            </label>
+            <label>직원 1 월급
+                <input type="number" name="employee1Wage" min="0" step="1" th:value="${employee1WageAmount.stripTrailingZeros().toPlainString()}" required>
+            </label>
+            <label>직원 2 월급
+                <input type="number" name="employee2Wage" min="0" step="1" th:value="${employee2WageAmount.stripTrailingZeros().toPlainString()}" required>
+            </label>
+            <label>식비
+                <input type="number" name="meal" min="0" step="1" th:value="${mealAmount.stripTrailingZeros().toPlainString()}" required>
+            </label>
+            <label>공장 월세
+                <input type="number" name="rent" min="0" step="1" th:value="${rentAmount.stripTrailingZeros().toPlainString()}" required>
+            </label>
+            <label>기타 비용
+                <input type="number" name="other" min="0" step="1" th:value="${otherAmount.stripTrailingZeros().toPlainString()}" required>
+            </label>
+            <button type="submit">월 비용 저장·재계산</button>
+        </form>
+    </section>
+
+    <section class="report-columns">
+        <article class="panel report-panel">
+            <h2>콩 사용 원가</h2>
+            <p class="helper">
+                각 사용일 기준으로 그날까지 매입한 같은 종류·원산지 콩의 가중평균 포대단가를 적용합니다.
+            </p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr><th>콩 종류</th><th>원산지</th><th>사용 포대</th><th>사용 kg</th><th>적용 평균단가</th><th>예상 원가</th><th>단가 누락</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(report.beanCostRows)}"><td colspan="7">해당 월 콩 사용 기록이 없습니다.</td></tr>
+                    <tr th:each="row : ${report.beanCostRows}">
+                        <td th:text="${row.beanTypeLabel}"></td>
+                        <td th:text="${row.originLabel}"></td>
+                        <td class="number" th:text="${row.usedBags.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number" th:text="${row.usedKg.stripTrailingZeros().toPlainString()}"></td>
+                        <td class="number" th:text="|${#numbers.formatDecimal(row.effectiveAveragePricePerBag, 0, 'COMMA', 0, 'POINT')}원/포|"></td>
+                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.estimatedCost, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                        <td class="number" th:classappend="${row.missingCostUsageCount > 0} ? ' warning-text'" th:text="|${row.missingCostUsageCount}건|"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="panel report-panel">
+            <h2>비용 구성</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>항목</th><th>금액</th></tr></thead>
+                    <tbody>
+                    <tr th:each="row : ${report.expenseRows}">
+                        <td th:text="${row.label}"></td>
+                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.amount, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>콩 원가 + 기타 비용 합계</td>
+                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(report.totalCost, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>거래처별 매출·배부 예상이익</h2>
+                <p>
+                    현재는 제품별 콩 투입량(수율) 정보가 없으므로 전체 원가를 거래처 매출 비중으로 배부한 참고값입니다.
+                    정확한 거래처별 이익은 추후 품목별 제조원가 기준을 넣으면 계산할 수 있습니다.
+                </p>
+            </div>
+        </div>
+        <div class="table-wrap vendor-profit-table-wrap">
+            <table>
+                <thead>
+                <tr><th>순위</th><th>거래처</th><th>매출</th><th>매출 비중</th><th>배부 원가</th><th>배부 예상이익</th></tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(report.vendorRows)}"><td colspan="6">해당 월 판매자료가 없습니다.</td></tr>
+                <tr th:each="row, status : ${report.vendorRows}">
+                    <td class="rank" th:text="${status.count}"></td>
+                    <td><strong th:text="${row.vendorName}"></strong></td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.sales, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.salesSharePercent, 0, 'COMMA', 2, 'POINT')}%|"></td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.allocatedCost, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.allocatedEstimatedProfit, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+/* 손두부 표 단순화 */
+.special-tofu-table {
+    table-layout: fixed !important;
+}
+
+.special-tofu-table thead th,
+.special-tofu-table tbody td {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+}
+
+.special-tofu-table thead th:nth-child(1),
+.special-tofu-table tbody td:nth-child(1) {
+    width: 16%;
+}
+
+.special-tofu-table thead th:nth-child(2),
+.special-tofu-table tbody td:nth-child(2) {
+    width: 13%;
+}
+
+.special-tofu-table thead th:nth-child(3),
+.special-tofu-table tbody td:nth-child(3) {
+    width: 18%;
+}
+
+.special-tofu-table thead th:nth-child(4),
+.special-tofu-table tbody td:nth-child(4) {
+    width: 18%;
+}
+
+.special-tofu-table thead th:nth-child(5),
+.special-tofu-table tbody td:nth-child(5) {
+    width: 19%;
+}
+
+.special-tofu-table thead th:nth-child(6),
+.special-tofu-table tbody td:nth-child(6) {
+    width: 16%;
+}
+
+@media (max-width: 640px) {
+    .special-tofu-table {
+        min-width: 640px !important;
+    }
+}

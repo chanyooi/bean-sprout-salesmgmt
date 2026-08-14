@@ -1,0 +1,210 @@
+/* ============================================================
+   모든 PC 화면 공통 송천 사이드바 + 장부복구 UI
+   ============================================================ */
+
+.desktop-global-sidebar,
+.desktop-global-sidebar-backdrop {
+    display: none;
+}
+
+@media (min-width: 641px) {
+    body:not(.security-page) {
+        padding-left: 270px !important;
+    }
+
+    .desktop-app-sidebar {
+        display: none !important;
+    }
+
+    .desktop-global-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 1000;
+        width: 270px;
+        padding: 24px 16px 20px;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-right: 1px solid #e6eaf0;
+    }
+
+    .dgs-brand {
+        min-height: 68px;
+        padding: 8px 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        color: #172033;
+        text-decoration: none;
+    }
+
+    .dgs-brand-mark {
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: #3182f6;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 900;
+    }
+
+    .dgs-brand div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dgs-brand strong {
+        font-size: 18px;
+        font-weight: 850;
+        letter-spacing: -.03em;
+    }
+
+    .dgs-brand small {
+        margin-top: 4px;
+        color: #98a1ad;
+        font-size: 11px;
+    }
+
+    .dgs-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .dgs-nav a,
+    .dgs-bottom > a {
+        min-height: 54px;
+        padding: 0 14px;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        border-radius: 13px;
+        color: #556070;
+        text-decoration: none;
+        transition: background .12s ease,
+                    color .12s ease;
+    }
+
+    .dgs-nav a:hover,
+    .dgs-bottom > a:hover {
+        background: #f3f6fa;
+        color: #202938;
+    }
+
+    .dgs-nav a.active {
+        background: #e7f1ff;
+        color: #246bfd;
+    }
+
+    .dgs-icon {
+        width: 26px;
+        text-align: center;
+        font-size: 19px;
+    }
+
+    .dgs-nav strong,
+    .dgs-bottom > a strong {
+        font-size: 14.5px;
+        line-height: 1.2;
+        font-weight: 760;
+        letter-spacing: -.02em;
+    }
+
+    .dgs-bottom {
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid #eef0f3;
+    }
+
+    main.container,
+    .container {
+        max-width: 1540px;
+    }
+}
+
+/* 업로드 화면에 JS로 삽입되는 복구 카드 */
+.input-recovery-card {
+    margin: 0 0 18px;
+    padding: 20px;
+    border: 1px solid #e4e9ef;
+    border-radius: 16px;
+    background: #fff;
+}
+
+.input-recovery-card h2 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: -.03em;
+}
+
+.input-recovery-card p {
+    margin: 8px 0 0;
+    color: #748091;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.input-recovery-grid {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr)
+                           minmax(150px, 1fr)
+                           auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.input-recovery-grid label {
+    color: #536071;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.input-recovery-grid input {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 6px;
+    padding: 0 12px;
+    border: 1px solid #dce2e9;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.input-recovery-button {
+    min-height: 46px;
+    padding: 0 17px;
+    border: 0;
+    border-radius: 12px;
+    background: #3182f6;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .desktop-global-sidebar {
+        display: none !important;
+    }
+
+    .input-recovery-card {
+        padding: 17px;
+        border: 0;
+        border-radius: 18px;
+        background: #fff;
+    }
+
+    .input-recovery-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .input-recovery-button {
+        width: 100%;
+        min-height: 50px;
+        border-radius: 14px;
+    }
+}

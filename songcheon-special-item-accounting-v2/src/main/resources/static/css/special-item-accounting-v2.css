@@ -1,0 +1,110 @@
+/* ============================================================
+   손두부 / 회수통 회계 표시 V2
+   ============================================================ */
+
+.special-hidden-row {
+    display: none !important;
+}
+
+.special-tofu-section {
+    margin-top: 14px;
+    overflow: hidden;
+    border: 1px solid #e5e8eb;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.special-tofu-head {
+    padding: 18px 20px 12px;
+}
+
+.special-tofu-head h3 {
+    margin: 0;
+    color: #191f28;
+    font-size: 18px;
+    font-weight: 850;
+    letter-spacing: -.035em;
+}
+
+.special-tofu-head p {
+    margin: 5px 0 0;
+    color: #8b95a1;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.special-tofu-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.special-tofu-table thead th {
+    padding: 12px 15px;
+    border-top: 1px solid #e9edf2;
+    border-bottom: 1px solid #e9edf2;
+    background: #f7f8fa;
+    color: #4e5968;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: right;
+}
+
+.special-tofu-table thead th:first-child,
+.special-tofu-table tbody td:first-child {
+    text-align: left;
+}
+
+.special-tofu-table tbody td {
+    padding: 16px 15px;
+    border-bottom: 0;
+    color: #191f28;
+    font-size: 14px;
+    text-align: right;
+}
+
+.special-tofu-table tbody td strong {
+    font-weight: 850;
+}
+
+.special-tofu-profit {
+    color: #246bfd !important;
+    font-weight: 850 !important;
+}
+
+.special-tofu-note {
+    padding: 0 20px 16px;
+    color: #8b95a1;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.special-adjusted-badge {
+    display: inline-flex;
+    margin-left: 7px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #eaf3ff;
+    color: #246bfd;
+    font-size: 10px;
+    font-weight: 800;
+    vertical-align: middle;
+}
+
+@media (max-width: 640px) {
+    .special-tofu-section {
+        overflow-x: auto;
+    }
+
+    .special-tofu-table {
+        min-width: 720px;
+    }
+
+    .special-tofu-head {
+        padding: 16px 16px 11px;
+    }
+
+    .special-tofu-note {
+        padding: 0 16px 15px;
+    }
+}

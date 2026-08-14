@@ -1,0 +1,163 @@
+<link rel="stylesheet"
+      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/admin-mobile-unified.css(v=20260813_1)}">
+    <title>콩 매입 등록</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory.css}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-single-menu.css(v=20260813_1)}">
+</head>
+<body>
+<main class="container inventory-shell">
+    <section class="inventory-hero compact-hero">
+        <div>
+            <p class="eyebrow">원재료 원가 관리</p>
+            <h1>콩 매입 등록</h1>
+            <p class="hero-description">콩을 새로 샀을 때만 매입 정보를 등록합니다.</p>
+        </div>
+        <div class="top-links">
+            <a class="secondary-link" th:href="@{/}">홈(대시보드)</a>
+            <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
+        </div>
+    </section>
+
+    <nav class="inventory-tabs" aria-label="콩 원가 메뉴">
+        <a th:href="@{/inventory}">원가 현황</a>
+        <a th:href="@{/inventory/usages/new}">콩 사용 등록</a>
+        <a th:href="@{/inventory/usages}">사용 기록</a>
+        <a class="active" th:href="@{/inventory/purchases/new}">콩 매입 등록</a>
+        <a th:href="@{/inventory/purchases}">매입 기록</a>
+    </nav>
+
+    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
+    <div class="alert error" th:if="${inventoryError}" th:text="${inventoryError}"></div>
+
+    <section class="single-form-layout">
+        <article class="panel entry-card">
+            <div class="panel-heading">
+                <div>
+                    <p class="section-kicker">단가 계산</p>
+                    <h2>콩 매입 등록</h2>
+                    <p>같은 월의 매입은 종류·원산지별로 자동 가중평균됩니다.</p>
+                </div>
+            </div>
+
+            <form th:action="@{/inventory/purchases}" method="post" class="simple-entry-form">
+                <label>
+                    매입 날짜
+                    <input type="date" name="purchaseDate" th:value="${today}" required>
+                </label>
+
+                <label>
+                    콩 종류
+                    <select id="beanType" name="beanType" required>
+                        <option th:each="type : ${beanTypes}"
+                                th:value="${type.name()}"
+                                th:text="${type.label}">
+                        </option>
+                    </select>
+                </label>
+
+                <label>
+                    원산지
+                    <select id="origin" name="origin" required>
+                        <option th:each="origin : ${beanOrigins}"
+                                th:value="${origin.name()}"
+                                th:text="${origin.label}">
+                        </option>
+                    </select>
+                </label>
+
+                <label>
+                    구입 포대 수
+                    <input type="number"
+                           name="bagCount"
+                           min="0.001"
+                           step="0.001"
+                           inputmode="decimal"
+                           placeholder="예: 100"
+                           required>
+                </label>
+
+                <label>
+                    포대당 매입단가
+                    <input type="number"
+                           name="unitPricePerBag"
+                           min="0"
+                           step="1"
+                           inputmode="numeric"
+                           placeholder="예: 85000"
+                           required>
+                </label>
+
+                <label class="wide-field optional-field">
+                    비고 <span>(선택)</span>
+                    <input type="text"
+                           name="note"
+                           maxlength="500"
+                           placeholder="특이사항이 있을 때만 입력">
+                </label>
+
+                <button type="submit" class="primary-action wide-field">매입 저장</button>
+            </form>
+
+            <div class="form-note">
+                매입을 나중에 등록해도 매입 날짜가 속한 월의 원가를 다시 조회하면 자동 재계산됩니다.
+            </div>
+        </article>
+
+        <aside class="side-action-card">
+            <span>등록한 매입 확인</span>
+            <strong>매입 기록</strong>
+            <p>매입 날짜, 포대 수, 단가와 총액을 한 화면에서 확인할 수 있습니다.</p>
+            <a class="secondary-link full-link" th:href="@{/inventory/purchases}">매입 기록 보기 →</a>
+        </aside>
+    </section>
+</main>
+
+<script>
+(function () {
+    const allowedOrigins = {
+        SMALL: ["CANADA", "CHINA"],
+        MEDIUM: ["CANADA", "CHINA"],
+        LARGE: ["CANADA", "CHINA"],
+        MUNG: ["CHINA", "CHILE"]
+    };
+
+    const typeSelect = document.getElementById("beanType");
+    const originSelect = document.getElementById("origin");
+
+    function refreshOrigins() {
+        const allowed = allowedOrigins[typeSelect.value] || [];
+        let firstAllowed = null;
+
+        Array.from(originSelect.options).forEach(option => {
+            const ok = allowed.includes(option.value);
+            option.hidden = !ok;
+            option.disabled = !ok;
+            if (ok && firstAllowed === null) {
+                firstAllowed = option.value;
+            }
+        });
+
+        if (!allowed.includes(originSelect.value) && firstAllowed !== null) {
+            originSelect.value = firstAllowed;
+        }
+    }
+
+    typeSelect.addEventListener("change", refreshOrigins);
+    refreshOrigins();
+})();
+</script>
+    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
+    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
+</body>
+</html>

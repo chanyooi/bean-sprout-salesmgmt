@@ -1,0 +1,291 @@
+/* ============================================================
+   송천 Modern Login
+   대시보드와 동일한 밝은 회색 + 흰 카드 + 파란 포인트
+   ============================================================ */
+
+html,
+body.songcheon-login-page {
+    min-height: 100%;
+}
+
+body.songcheon-login-page {
+    min-height: 100vh;
+    margin: 0;
+    padding: 32px 20px;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+
+    color: #191f28;
+    background:
+        radial-gradient(
+            circle at 50% 17%,
+            rgba(49, 130, 246, .055),
+            transparent 28%
+        ),
+        #f2f4f6;
+}
+
+.modern-login-shell {
+    width: min(100%, 430px);
+}
+
+.modern-login-brand {
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.modern-login-logo {
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 46px;
+
+    border-radius: 14px;
+    background: #3182f6;
+    color: #fff;
+
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: -.04em;
+    box-shadow: 0 8px 20px rgba(49, 130, 246, .17);
+}
+
+.modern-login-brand > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.modern-login-brand strong {
+    color: #191f28;
+    font-size: 19px;
+    line-height: 1.25;
+    font-weight: 850;
+    letter-spacing: -.035em;
+}
+
+.modern-login-brand span:not(.modern-login-logo) {
+    margin-top: 2px;
+    color: #8b95a1;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.modern-login-card {
+    padding: 34px 34px 28px;
+    border: 1px solid #e5e8eb;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow:
+        0 20px 55px rgba(15, 23, 42, .07),
+        0 2px 6px rgba(15, 23, 42, .025);
+}
+
+.modern-login-card-head {
+    margin-bottom: 28px;
+}
+
+.modern-login-card-head h1 {
+    margin: 0;
+    color: #191f28;
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: 850;
+    letter-spacing: -.045em;
+}
+
+.modern-login-card-head p {
+    margin: 8px 0 0;
+    color: #8b95a1;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.modern-login-form {
+    display: grid;
+    gap: 18px;
+}
+
+.modern-login-form label {
+    display: grid;
+    gap: 8px;
+}
+
+.modern-login-form label > span {
+    color: #4e5968;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.modern-login-form input {
+    width: 100%;
+    min-height: 52px;
+    box-sizing: border-box;
+    padding: 0 15px;
+
+    border: 1px solid #d9dee5;
+    border-radius: 13px;
+    outline: none;
+
+    background: #fff;
+    color: #191f28;
+
+    font-size: 14px;
+    transition:
+        border-color .15s ease,
+        box-shadow .15s ease,
+        background .15s ease;
+}
+
+.modern-login-form input::placeholder {
+    color: #b0b8c1;
+}
+
+.modern-login-form input:hover {
+    border-color: #c6cdd6;
+}
+
+.modern-login-form input:focus {
+    border-color: #3182f6;
+    box-shadow: 0 0 0 4px rgba(49, 130, 246, .10);
+}
+
+.modern-password-field {
+    position: relative;
+}
+
+.modern-password-field input {
+    padding-right: 68px;
+}
+
+.modern-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+
+    min-width: 48px;
+    height: 34px;
+
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #6b7684;
+
+    font-size: 11px;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.modern-password-toggle:hover {
+    background: #f2f4f6;
+    color: #333d4b;
+}
+
+.modern-login-submit {
+    width: 100%;
+    min-height: 52px;
+    margin-top: 4px;
+
+    border: 0;
+    border-radius: 13px;
+
+    background: #3182f6;
+    color: #fff;
+
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+
+    box-shadow: 0 8px 18px rgba(49, 130, 246, .17);
+    transition:
+        transform .12s ease,
+        background .12s ease,
+        box-shadow .12s ease;
+}
+
+.modern-login-submit:hover {
+    background: #1b64da;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(49, 130, 246, .22);
+}
+
+.modern-login-submit:active {
+    transform: translateY(0);
+}
+
+body.songcheon-login-page .security-alert {
+    margin: 0 0 18px;
+    padding: 12px 13px;
+    border-radius: 11px;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+body.songcheon-login-page .security-alert.success {
+    border: 1px solid #cfe3ff;
+    background: #edf5ff;
+    color: #1b64da;
+}
+
+body.songcheon-login-page .security-alert.error {
+    border: 1px solid #ffd4d4;
+    background: #fff1f1;
+    color: #d14343;
+}
+
+.modern-setup-link {
+    display: block;
+    margin-top: 18px;
+    text-align: center;
+
+    color: #3182f6;
+    font-size: 12px;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.modern-login-footnote {
+    margin: 24px 0 0;
+    text-align: center;
+    color: #b0b8c1;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    body.songcheon-login-page {
+        padding: 22px 18px;
+        background: #f2f4f6;
+    }
+
+    .modern-login-shell {
+        width: 100%;
+        max-width: 430px;
+    }
+
+    .modern-login-brand {
+        justify-content: flex-start;
+        margin-bottom: 18px;
+    }
+
+    .modern-login-card {
+        padding: 26px 22px 23px;
+        border-radius: 20px;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, .055);
+    }
+
+    .modern-login-card-head h1 {
+        font-size: 27px;
+    }
+
+    .modern-login-form input,
+    .modern-login-submit {
+        min-height: 52px;
+    }
+}

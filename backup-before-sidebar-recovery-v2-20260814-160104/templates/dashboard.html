@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송천</title>
+
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/operations.css}">
+    <link rel="stylesheet" th:href="@{/css/security.css(v=20260810_1)}">
+    <link rel="stylesheet" th:href="@{/css/sales-calendar.css(v=20260810_2)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-final.css(v=20260812_2)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-mobile-390.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-navigation-v4.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/desktop-sidebar-large.css(v=20260814_1)}">
+</head>
+<body>
+
+<div class="sc-mobile-dashboard">
+
+    <header class="sc-mobile-appbar">
+        <button type="button"
+                class="sc-menu-button"
+                id="scMobileMenuOpen"
+                aria-label="메뉴 열기"
+                aria-controls="scMobileDrawer"
+                aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <div class="sc-mobile-title">
+            <strong>송천 대시보드</strong>
+            <small th:text="|${selectedMonth} 현황|">2026-08 현황</small>
+        </div>
+
+        <form class="sc-month-picker"
+              th:action="@{/}"
+              method="get">
+            <label for="scMobileMonth" aria-label="조회 월 선택">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 2v3M17 2v3M3.5 9h17M5 4.5h14a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2Z"/>
+                </svg>
+                <input id="scMobileMonth"
+                       type="month"
+                       name="month"
+                       th:value="${selectedMonth}"
+                       onchange="this.form.submit()"
+                       required>
+            </label>
+        </form>
+    </header>
+
+    <div class="sc-mobile-month-nav">
+        <a th:href="@{/(month=${previousMonth})}" aria-label="이전 달">
+            <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        <strong th:text="${selectedMonth}">2026-08</strong>
+        <a th:href="@{/(month=${nextMonth})}" aria-label="다음 달">
+            <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+    </div>
+
+    <section class="sc-mobile-kpi-section">
+        <div class="sc-section-heading">
+            <div>
+                <span>BUSINESS</span>
+                <h2>이번 달 현황</h2>
+            </div>
+            <a th:href="@{/reports/monthly(month=${selectedMonth})}">상세보기</a>
+        </div>
+
+        <div class="sc-kpi-grid">
+            <a class="sc-kpi-card sc-kpi-primary"
+               th:href="@{/reports/monthly(month=${selectedMonth})}">
+                <div class="sc-kpi-top">
+                    <span class="sc-kpi-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>
+                        </svg>
+                    </span>
+                    <span class="sc-kpi-label">월매출</span>
+                </div>
+                <strong th:text="${#numbers.formatDecimal(sales.confirmedSales, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+                <small th:text="|주문 ${sales.orderCount}건|">주문 0건</small>
+            </a>
+
+            <a class="sc-kpi-card"
+               th:href="@{/profit(month=${selectedMonth})}">
+                <div class="sc-kpi-top">
+                    <span class="sc-kpi-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2v20M17 6.5c0-2-2.2-3.5-5-3.5S7 4.4 7 6.5 9 9.3 12 10s5 1.8 5 4.3S14.8 18 12 18s-5-1.5-5-3.5"/>
+                        </svg>
+                    </span>
+                    <span class="sc-kpi-label">예상이익</span>
+                </div>
+                <strong th:text="${#numbers.formatDecimal(profit.estimatedProfit, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+                <small th:text="|이익률 ${profit.estimatedProfitMarginPercent}%|">이익률 0%</small>
+            </a>
+
+            <a class="sc-kpi-card sc-kpi-warning"
+               th:href="@{/payments(month=${selectedMonth})}">
+                <div class="sc-kpi-top">
+                    <span class="sc-kpi-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 7h18v11H3zM3 10h18M7 15h4"/>
+                        </svg>
+                    </span>
+                    <span class="sc-kpi-label">미수금</span>
+                </div>
+                <strong th:text="${#numbers.formatDecimal(receivables.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+                <small th:text="|미수 ${receivables.outstandingVendorCount}곳|">미수 0곳</small>
+            </a>
+        </div>
+    </section>
+
+<section class="sc-mobile-summary-section">
+        <div class="sc-section-heading">
+            <div>
+                <span>MONTHLY SNAPSHOT</span>
+                <h2>간단 요약</h2>
+            </div>
+        </div>
+
+        <div class="sc-summary-card">
+            <a th:href="@{/reports/monthly(month=${selectedMonth})}">
+                <span class="sc-summary-dot blue"></span>
+                <div>
+                    <small>이번 달 주문</small>
+                    <strong th:text="|${sales.orderCount}건|">0건</strong>
+                </div>
+            </a>
+
+            <a th:href="@{/vendor-management}">
+                <span class="sc-summary-dot violet"></span>
+                <div>
+                    <small>거래 거래처</small>
+                    <strong th:text="|${sales.vendorCount}곳|">0곳</strong>
+                </div>
+            </a>
+
+            <a th:href="@{/inventory}">
+                <span class="sc-summary-dot cyan"></span>
+                <div>
+                    <small>이번 달 박스</small>
+                    <strong th:text="|${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                        0박스
+                    </strong>
+                </div>
+            </a>
+
+            <a th:href="@{/payments(month=${selectedMonth})}">
+                <span class="sc-summary-dot orange"></span>
+                <div>
+                    <small>미수 거래처</small>
+                    <strong th:text="|${receivables.outstandingVendorCount}곳|">0곳</strong>
+                </div>
+            </a>
+        </div>
+
+        <a class="sc-payment-cta"
+           th:href="@{/payments(month=${selectedMonth})}">
+            <span class="sc-payment-cta-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 6h18v12H3zM3 10h18M7 15h3"/>
+                </svg>
+            </span>
+            <div>
+                <small>입금 현황 확인</small>
+                <strong th:if="${receivables.outstandingVendorCount > 0}"
+                        th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳을 확인하세요|">
+                    미수 거래처를 확인하세요
+                </strong>
+                <strong th:if="${receivables.outstandingVendorCount == 0}">
+                    이번 달 미수금이 없습니다
+                </strong>
+            </div>
+            <span class="sc-payment-arrow">›</span>
+        </a>
+    </section>
+
+    <div class="sc-mobile-footer-note">
+        <span>송천</span>
+        <span>·</span>
+        <span th:text="${isAdmin ? '관리자 모드' : '업무용 모드'}">관리자 모드</span>
+    </div>
+</div>
+
+<div class="sc-drawer-backdrop" id="scMobileDrawerBackdrop"></div>
+
+<aside class="sc-mobile-drawer"
+       id="scMobileDrawer"
+       aria-hidden="true">
+    <div class="sc-drawer-header">
+        <div>
+            <span class="sc-drawer-logo">송</span>
+            <div>
+                <strong>송천</strong>
+                <small th:text="|${currentUserDisplayName}님|">사용자님</small>
+            </div>
+        </div>
+        <button type="button"
+                id="scMobileMenuClose"
+                aria-label="메뉴 닫기">×</button>
+    </div>
+
+    <nav class="sc-drawer-nav">
+        <a th:href="@{/}">
+            <span>⌂</span><strong>대시보드</strong>
+        </a>
+        <a th:if="${isAdmin}" th:href="@{/upload}">
+            <span>↑</span><strong>주문업로드</strong>
+        </a>
+        <a th:href="@{/statements}">
+            <span>▤</span><strong>거래명세서</strong>
+        </a>
+        <a th:href="@{/vendor-management}">
+            <span>◎</span><strong>거래처관리</strong>
+        </a>
+        <a th:href="@{/payments(month=${selectedMonth})}">
+            <span>₩</span><strong>입금관리</strong>
+        </a>
+        <a th:href="@{/profit(month=${selectedMonth})}">
+            <span>↗</span><strong>원가·이익</strong>
+        </a>
+        <a th:href="@{/inventory}">
+            <span>◇</span><strong>재고관리</strong>
+        </a>
+        <a th:if="${isAdmin}" th:href="@{/admin/users}">
+            <span>♙</span><strong>사용자관리</strong>
+        </a>
+    </nav>
+
+    <form class="sc-drawer-logout"
+          th:action="@{/logout}"
+          method="post">
+        <button type="submit">로그아웃</button>
+    </form>
+</aside>
+
+
+
+<aside class="desktop-app-sidebar">
+    <a class="desktop-brand" th:href="@{/}">
+        <span class="desktop-brand-mark">송</span>
+        <div>
+            <strong>송천</strong>
+            <small>매출 관리</small>
+        </div>
+    </a>
+
+    <nav class="desktop-sidebar-nav" aria-label="주요 메뉴">
+        <a class="active" th:href="@{/}">
+            <span>⌂</span><strong>대시보드</strong>
+        </a>
+        <a th:if="${isAdmin}" th:href="@{/upload}">
+            <span>↑</span><strong>주문 업로드</strong>
+        </a>
+        <a th:href="@{/statements}">
+            <span>▤</span><strong>거래명세서</strong>
+        </a>
+        <a th:href="@{/vendor-management}">
+            <span>◎</span><strong>거래처 관리</strong>
+        </a>
+        <a th:href="@{/payments(month=${selectedMonth})}">
+            <span>₩</span><strong>입금 관리</strong>
+        </a>
+        <a th:href="@{/profit(month=${selectedMonth})}">
+            <span>↗</span><strong>원가·이익</strong>
+        </a>
+        <a th:href="@{/inventory}">
+            <span>◇</span><strong>재고 관리</strong>
+        </a>
+    </nav>
+
+    <div class="desktop-sidebar-bottom">
+        <a th:if="${isAdmin}" th:href="@{/admin/users}">
+            <span>♙</span><strong>사용자 관리</strong>
+        </a>
+        <div class="desktop-sidebar-user">
+            <small th:text="|${currentUserDisplayName}님|">사용자님</small>
+            <strong th:text="${isAdmin ? '관리자' : '업무용'}">관리자</strong>
+        </div>
+    </div>
+</aside>
+
+<main class="container final-dashboard desktop-dashboard-shell">
+
+    <section class="hero dashboard-hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">사업 현황</p>
+                <h1>송천 매출 관리 대시보드</h1>
+                <p>
+                    매출·예상이익·미수금과 일별 매출을
+                    한 화면에서 확인합니다.
+                </p>
+            </div>
+
+            <div class="dashboard-login-area">
+                <div class="dashboard-current-user">
+                    <span th:text="|${currentUserDisplayName}님|">사용자님</span>
+                    <strong th:text="${isAdmin ? '관리자' : '업무용'}">관리자</strong>
+
+                    <form class="logout-form"
+                          th:action="@{/logout}"
+                          method="post">
+                        <button type="submit" class="logout-button">로그아웃</button>
+                    </form>
+                </div>
+
+                <form class="dashboard-month-form"
+                      th:action="@{/}"
+                      method="get">
+                    <input type="month"
+                           name="month"
+                           th:value="${selectedMonth}"
+                           required>
+                    <button type="submit">조회</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <div class="dashboard-month-nav">
+        <a th:href="@{/(month=${previousMonth})}">← 이전 달</a>
+        <strong th:text="|${selectedMonth} 현황|">월 현황</strong>
+        <a th:href="@{/(month=${nextMonth})}">다음 달 →</a>
+    </div>
+
+    <section class="dashboard-metrics final-dashboard-metrics">
+        <a class="metric-card"
+           th:href="@{/reports/monthly(month=${selectedMonth})}">
+            <span>월매출</span>
+            <strong th:text="${#numbers.formatDecimal(sales.confirmedSales, 0, 'COMMA', 0, 'POINT') + '원'}">
+                0원
+            </strong>
+            <small>
+                <span th:text="|주문 ${sales.orderCount}건 · 거래처 ${sales.vendorCount}곳|"></span>
+                <span class="box-inline"
+                      th:text="|📦 ${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
+                </span>
+            </small>
+        </a>
+
+        <a class="metric-card"
+           th:href="@{/profit(month=${selectedMonth})}">
+            <span>예상이익</span>
+            <strong th:text="${#numbers.formatDecimal(profit.estimatedProfit, 0, 'COMMA', 0, 'POINT') + '원'}">
+                0원
+            </strong>
+            <small th:text="|예상이익률 ${profit.estimatedProfitMarginPercent}%|"></small>
+        </a>
+
+        <a class="metric-card warning-metric"
+           th:href="@{/payments(month=${selectedMonth})}">
+            <span>미수금</span>
+            <strong th:text="${#numbers.formatDecimal(receivables.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                0원
+            </strong>
+            <small th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳|"></small>
+        </a>
+    </section>
+
+    <section class="dashboard-overview-grid">
+        <article class="panel dashboard-overview-card">
+            <div class="overview-card-head">
+                <div>
+                    <p class="eyebrow">이번 달 요약</p>
+                    <h2>운영 현황</h2>
+                </div>
+            </div>
+
+            <div class="overview-stat-list">
+                <a th:href="@{/reports/monthly(month=${selectedMonth})}">
+                    <span>주문</span>
+                    <strong th:text="|${sales.orderCount}건|">0건</strong>
+                    <em>›</em>
+                </a>
+                <a th:href="@{/vendor-management}">
+                    <span>거래처</span>
+                    <strong th:text="|${sales.vendorCount}곳|">0곳</strong>
+                    <em>›</em>
+                </a>
+                <a th:href="@{/inventory}">
+                    <span>사용 박스</span>
+                    <strong th:text="|${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">0박스</strong>
+                    <em>›</em>
+                </a>
+            </div>
+        </article>
+
+        <article class="panel dashboard-overview-card attention-card">
+            <div class="overview-card-head">
+                <div>
+                    <p class="eyebrow">확인할 항목</p>
+                    <h2>입금 현황</h2>
+                </div>
+                <a class="overview-detail-link" th:href="@{/payments(month=${selectedMonth})}">관리하기</a>
+            </div>
+
+            <div class="attention-main">
+                <span>현재 미수금</span>
+                <strong th:text="${#numbers.formatDecimal(receivables.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</strong>
+                <small th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳|">미수 거래처 0곳</small>
+            </div>
+
+            <a class="attention-action" th:href="@{/payments(month=${selectedMonth})}">
+                입금·미수금 확인
+                <span>›</span>
+            </a>
+        </article>
+    </section>
+<section class="panel dashboard-calendar-section">
+        <div class="panel-heading dashboard-calendar-heading">
+            <div>
+                <p class="eyebrow">일별 매출</p>
+                <h2>매출 캘린더</h2>
+                <p>
+                    날짜를 누르면 당일 판매내역을 바로 확인합니다.
+                    3.5kg일반·3.5kg곱슬·숙주는 수량 1개당 박스 1개로 계산합니다.
+                </p>
+            </div>
+
+            <div class="calendar-heading-summary">
+                <span>이번 달 박스</span>
+                <strong th:text="|📦 ${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
+                </strong>
+            </div>
+        </div>
+
+        <div class="sales-calendar-panel dashboard-calendar-panel">
+            <div class="sales-calendar-weekdays">
+                <div class="calendar-sunday">일</div>
+                <div>월</div>
+                <div>화</div>
+                <div>수</div>
+                <div>목</div>
+                <div>금</div>
+                <div class="calendar-saturday">토</div>
+            </div>
+
+            <div class="sales-calendar-weeks">
+                <div class="sales-calendar-week"
+                     th:each="week : ${calendar.weeks}">
+
+                    <th:block th:each="day : ${week}">
+                        <a th:if="${day.inCurrentMonth}"
+                           class="sales-calendar-day"
+                           th:classappend="${(day.hasSales ? ' has-sales' : '') +
+                                            (calendar.selectedDate != null and calendar.selectedDate.equals(day.date) ? ' selected-calendar-day' : '')}"
+                           th:href="@{/(month=${calendar.month}, date=${day.date})} + '#daily-detail'">
+
+                            <div class="calendar-day-top">
+                                <strong th:text="${day.date.dayOfMonth}">1</strong>
+                            </div>
+
+                            <div th:if="${day.hasSales}"
+                                 class="calendar-day-sales">
+                                <strong th:text="${#numbers.formatDecimal(day.salesAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                                    0원
+                                </strong>
+                                <small th:text="|📦 ${day.boxCount.stripTrailingZeros().toPlainString()}박스|">
+                                    📦 0박스
+                                </small>
+                                <small th:text="|주문 ${day.orderCount} · 거래처 ${day.vendorCount}|"></small>
+                            </div>
+
+                            <span th:if="${!day.hasSales}"
+                                  class="calendar-no-sales">
+                                -
+                            </span>
+                        </a>
+
+                        <div th:if="${!day.inCurrentMonth}"
+                             class="sales-calendar-day outside-month">
+                            <div class="calendar-day-top">
+                                <strong th:text="${day.date.dayOfMonth}">1</strong>
+                            </div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="daily-detail"
+             class="panel daily-sales-detail dashboard-daily-detail"
+             th:if="${calendar.selectedDate != null}">
+        <div class="panel-heading split-heading">
+            <div>
+                <p class="eyebrow">선택 날짜</p>
+                <h2 th:text="|${calendar.selectedDate} 판매내역|">
+                    일별 판매내역
+                </h2>
+            </div>
+        </div>
+
+        <div class="daily-detail-summary"
+             th:if="${calendar.selectedDay != null}">
+            <div>
+                <span>일 매출</span>
+                <strong th:text="${#numbers.formatDecimal(calendar.selectedDay.salesAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+            </div>
+
+            <div>
+                <span>일 박스 사용</span>
+                <strong th:text="|📦 ${calendar.selectedDay.dailyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
+                </strong>
+            </div>
+
+            <div>
+                <span>해당 주 박스 사용</span>
+                <strong th:text="|📦 ${calendar.selectedDay.weeklyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
+                </strong>
+            </div>
+
+            <div>
+                <span>주문 · 거래처</span>
+                <strong th:text="|${calendar.selectedDay.orderCount}건 · ${calendar.selectedDay.vendorCount}곳|">
+                    0건
+                </strong>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="dashboard-daily-table">
+                <thead>
+                <tr>
+                    <th>주문번호</th>
+                    <th>거래처</th>
+                    <th>품목</th>
+                    <th>수량</th>
+                    <th>단가</th>
+                    <th>금액</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(calendar.selectedRows)}">
+                    <td colspan="6" class="empty-cell">해당 날짜의 판매내역이 없습니다.</td>
+                </tr>
+
+                <tr th:each="row : ${calendar.selectedRows}">
+                    <td th:text="${row.orderNumber}">20260812-001</td>
+                    <td th:text="${row.inputVendor}">거래처</td>
+                    <td><strong th:text="${row.item}">3.5kg일반</strong></td>
+                    <td class="number"
+                        th:text="${row.quantity != null ? row.quantity.stripTrailingZeros().toPlainString() : '-'}">
+                        0
+                    </td>
+                    <td class="number"
+                        th:text="${row.unitPrice != null
+                            ? #numbers.formatDecimal(row.unitPrice, 0, 'COMMA', 0, 'POINT') + '원'
+                            : '-'}">
+                        -
+                    </td>
+                    <td class="number strong-number"
+                        th:text="${row.lineAmount != null
+                            ? #numbers.formatDecimal(row.lineAmount, 0, 'COMMA', 0, 'POINT') + '원'
+                            : '-'}">
+                        -
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script>
+(function () {
+    const drawer = document.getElementById('scMobileDrawer');
+    const backdrop = document.getElementById('scMobileDrawerBackdrop');
+    const openButton = document.getElementById('scMobileMenuOpen');
+    const closeButton = document.getElementById('scMobileMenuClose');
+
+    if (!drawer || !backdrop || !openButton || !closeButton) {
+        return;
+    }
+
+    function openDrawer() {
+        drawer.classList.add('is-open');
+        backdrop.classList.add('is-open');
+        drawer.setAttribute('aria-hidden', 'false');
+        openButton.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('sc-menu-open');
+    }
+
+    function closeDrawer() {
+        drawer.classList.remove('is-open');
+        backdrop.classList.remove('is-open');
+        drawer.setAttribute('aria-hidden', 'true');
+        openButton.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('sc-menu-open');
+    }
+
+    openButton.addEventListener('click', openDrawer);
+    closeButton.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeDrawer();
+        }
+    });
+
+    drawer.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', closeDrawer);
+    });
+})();
+</script>
+
+</body>
+</html>

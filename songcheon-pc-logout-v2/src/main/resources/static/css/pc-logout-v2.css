@@ -1,0 +1,51 @@
+/* 송천 PC 로그아웃 버튼 V2 */
+@media (min-width: 641px) {
+    .songcheon-pc-logout-wrap {
+        margin-top: 4px;
+    }
+
+    .songcheon-pc-logout-btn {
+        width: 100%;
+        min-height: 46px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+
+        border: 0;
+        border-radius: 11px;
+        background: transparent;
+        color: #6b7684;
+
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 740;
+        text-align: left;
+        cursor: pointer;
+
+        transition:
+            background .12s ease,
+            color .12s ease;
+    }
+
+    .songcheon-pc-logout-btn:hover {
+        background: #fff1f1;
+        color: #d14343;
+    }
+
+    .songcheon-pc-logout-icon {
+        width: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 22px;
+        font-size: 16px;
+        line-height: 1;
+    }
+}
+
+@media (max-width: 640px) {
+    .songcheon-pc-logout-wrap {
+        display: none !important;
+    }
+}

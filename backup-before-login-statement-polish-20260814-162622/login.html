@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송천 로그인</title>
+
+    <link rel="stylesheet" th:href="@{/css/security.css(v=20260810_1)}">
+    <link rel="stylesheet" th:href="@{/css/login-modern-blue.css(v=20260814_1)}">
+</head>
+
+<body class="security-page songcheon-login-page">
+<main class="modern-login-shell">
+
+    <section class="modern-login-brand" aria-label="송천 매출 관리 시스템">
+        <span class="modern-login-logo">송</span>
+        <div>
+            <strong>송천</strong>
+            <span>매출 관리 시스템</span>
+        </div>
+    </section>
+
+    <section class="modern-login-card">
+        <div class="modern-login-card-head">
+            <h1>로그인</h1>
+            <p>계정 정보를 입력해주세요.</p>
+        </div>
+
+        <div class="security-alert success"
+             th:if="${setupSuccess}"
+             th:text="${setupSuccess}">
+        </div>
+
+        <div class="security-alert error"
+             th:if="${param.error}">
+            아이디 또는 비밀번호가 올바르지 않습니다.
+        </div>
+
+        <div class="security-alert success"
+             th:if="${param.logout}">
+            로그아웃했습니다.
+        </div>
+
+        <form th:action="@{/login}"
+              method="post"
+              class="modern-login-form">
+
+            <label>
+                <span>아이디</span>
+                <input type="text"
+                       name="username"
+                       autocomplete="username"
+                       autocapitalize="none"
+                       placeholder="아이디를 입력하세요"
+                       required
+                       autofocus>
+            </label>
+
+            <label>
+                <span>비밀번호</span>
+
+                <div class="modern-password-field">
+                    <input id="loginPassword"
+                           type="password"
+                           name="password"
+                           autocomplete="current-password"
+                           placeholder="비밀번호를 입력하세요"
+                           required>
+
+                    <button type="button"
+                            class="modern-password-toggle"
+                            id="passwordToggle"
+                            aria-label="비밀번호 표시">
+                        보기
+                    </button>
+                </div>
+            </label>
+
+            <button type="submit"
+                    class="modern-login-submit">
+                로그인
+            </button>
+        </form>
+
+        <a th:if="${setupRequired}"
+           class="modern-setup-link"
+           th:href="@{/setup}">
+            관리자 계정 만들기
+        </a>
+
+        <p class="modern-login-footnote">
+            공용 컴퓨터에서는 사용 후 반드시 로그아웃해주세요.
+        </p>
+    </section>
+
+</main>
+
+<script>
+(function () {
+    const password =
+        document.getElementById('loginPassword');
+
+    const toggle =
+        document.getElementById('passwordToggle');
+
+    if (!password || !toggle) {
+        return;
+    }
+
+    toggle.addEventListener(
+        'click',
+        function () {
+            const hidden =
+                password.type === 'password';
+
+            password.type =
+                hidden ? 'text' : 'password';
+
+            toggle.textContent =
+                hidden ? '숨기기' : '보기';
+
+            toggle.setAttribute(
+                'aria-label',
+                hidden
+                    ? '비밀번호 숨기기'
+                    : '비밀번호 표시'
+            );
+        }
+    );
+})();
+</script>
+</body>
+</html>

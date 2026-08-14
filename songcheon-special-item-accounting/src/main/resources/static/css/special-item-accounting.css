@@ -1,0 +1,17 @@
+.special-accounting-section { margin-top: 18px; }
+.special-accounting-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.special-accounting-card { padding:20px; border:1px solid #e5e8eb; border-radius:16px; background:#fff; }
+.special-accounting-card h3 { margin:0 0 6px; font-size:17px; }
+.special-accounting-card p { margin:0 0 14px; color:#8b95a1; font-size:12px; }
+.special-accounting-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.special-accounting-metric { padding:12px; border-radius:12px; background:#f7f8fa; }
+.special-accounting-metric span { display:block; color:#8b95a1; font-size:11px; }
+.special-accounting-metric strong { display:block; margin-top:4px; font-size:15px; }
+.special-accounting-profit { color:#246bfd; }
+.special-accounting-note { margin-top:10px; color:#8b95a1; font-size:11px; }
+.special-hidden-row { display:none !important; }
+.special-adjusted-badge { display:inline-flex; margin-left:8px; padding:3px 7px; border-radius:999px; background:#eaf3ff; color:#246bfd; font-size:10px; font-weight:800; vertical-align:middle; }
+@media(max-width:640px){
+  .special-accounting-grid,.special-accounting-metrics{grid-template-columns:1fr;}
+  .special-accounting-card{padding:16px;}
+}

@@ -1,0 +1,300 @@
+/* ============================================================
+   송천 대시보드 Navigation V4
+   - Desktop: left navigation + content-first dashboard
+   - Mobile: quick menu section removed, KPI 3-card balance
+   ============================================================ */
+
+.desktop-app-sidebar { display: none; }
+
+@media (min-width: 641px) {
+    body {
+        padding-left: 230px;
+    }
+
+    .desktop-app-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 80;
+        width: 230px;
+        padding: 22px 14px 18px;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border-right: 1px solid #e6eaf0;
+    }
+
+    .desktop-brand {
+        min-height: 56px;
+        padding: 7px 10px 18px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        color: #172033;
+        text-decoration: none;
+    }
+
+    .desktop-brand-mark {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #3182f6;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 900;
+    }
+
+    .desktop-brand > div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .desktop-brand strong {
+        font-size: 16px;
+        font-weight: 850;
+        letter-spacing: -.03em;
+    }
+
+    .desktop-brand small {
+        margin-top: 2px;
+        color: #98a1ad;
+        font-size: 10px;
+    }
+
+    .desktop-sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .desktop-sidebar-nav a,
+    .desktop-sidebar-bottom > a {
+        min-height: 46px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        border-radius: 11px;
+        color: #556070;
+        text-decoration: none;
+        transition: background .12s ease, color .12s ease;
+    }
+
+    .desktop-sidebar-nav a:hover,
+    .desktop-sidebar-bottom > a:hover {
+        background: #f5f7fa;
+        color: #202938;
+    }
+
+    .desktop-sidebar-nav a.active {
+        background: #eaf3ff;
+        color: #246bfd;
+    }
+
+    .desktop-sidebar-nav span,
+    .desktop-sidebar-bottom > a span {
+        width: 22px;
+        text-align: center;
+        font-size: 16px;
+    }
+
+    .desktop-sidebar-nav strong,
+    .desktop-sidebar-bottom > a strong {
+        font-size: 13px;
+        font-weight: 740;
+    }
+
+    .desktop-sidebar-bottom {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid #eef0f3;
+    }
+
+    .desktop-sidebar-user {
+        margin-top: 10px;
+        padding: 11px 12px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 12px;
+        background: #f6f8fa;
+    }
+
+    .desktop-sidebar-user small {
+        color: #7b8594;
+        font-size: 10px;
+    }
+
+    .desktop-sidebar-user strong {
+        margin-top: 3px;
+        color: #273142;
+        font-size: 12px;
+    }
+
+    .desktop-dashboard-shell {
+        max-width: 1500px !important;
+        margin: 0 auto !important;
+    }
+
+    .desktop-dashboard-shell .dashboard-login-area .dashboard-current-user {
+        display: none;
+    }
+
+    .final-dashboard-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+    }
+
+    .final-dashboard-metrics .metric-card {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .dashboard-overview-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(340px, .75fr);
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .dashboard-overview-card {
+        margin: 0 !important;
+    }
+
+    .overview-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .overview-card-head h2 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: -.035em;
+    }
+
+    .overview-detail-link {
+        padding: 7px 10px;
+        border-radius: 9px;
+        background: #eef4ff;
+        color: #246bfd;
+        font-size: 11px;
+        font-weight: 750;
+        text-decoration: none;
+    }
+
+    .overview-stat-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: hidden;
+        border: 1px solid #e9edf2;
+        border-radius: 13px;
+    }
+
+    .overview-stat-list a {
+        min-height: 94px;
+        padding: 15px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto 1fr;
+        align-items: center;
+        border-right: 1px solid #edf0f3;
+        color: #202938;
+        text-decoration: none;
+    }
+
+    .overview-stat-list a:last-child {
+        border-right: 0;
+    }
+
+    .overview-stat-list span {
+        grid-column: 1 / -1;
+        color: #87919f;
+        font-size: 11px;
+        font-weight: 650;
+    }
+
+    .overview-stat-list strong {
+        align-self: end;
+        font-size: 20px;
+        line-height: 1.1;
+        letter-spacing: -.035em;
+    }
+
+    .overview-stat-list em {
+        align-self: end;
+        color: #b4bbc5;
+        font-size: 20px;
+        font-style: normal;
+    }
+
+    .attention-card {
+        background: linear-gradient(145deg, #fff, #fffaf0) !important;
+    }
+
+    .attention-main span,
+    .attention-main small {
+        display: block;
+    }
+
+    .attention-main span {
+        color: #7f8997;
+        font-size: 11px;
+        font-weight: 650;
+    }
+
+    .attention-main strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 25px;
+        line-height: 1.1;
+        letter-spacing: -.045em;
+    }
+
+    .attention-main small {
+        margin-top: 6px;
+        color: #a16f16;
+        font-size: 11px;
+    }
+
+    .attention-action {
+        min-height: 42px;
+        margin-top: 16px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 11px;
+        background: #fff2d7;
+        color: #8d5b00;
+        font-size: 12px;
+        font-weight: 750;
+        text-decoration: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .desktop-app-sidebar { display: none !important; }
+
+    /* 3 KPI cards: 2 top + 1 wide bottom. No empty hole. */
+    .sc-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .sc-kpi-grid > .sc-kpi-card:nth-child(3) {
+        grid-column: 1 / -1 !important;
+        min-height: 124px !important;
+    }
+
+    /* The mobile quick-menu cards were removed from markup. */
+    .sc-mobile-menu-section {
+        display: none !important;
+    }
+
+    .sc-mobile-summary-section {
+        margin-top: 4px !important;
+    }
+}

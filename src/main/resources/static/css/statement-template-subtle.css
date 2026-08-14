@@ -1,0 +1,87 @@
+/* ============================================================
+   거래명세서 - 새 템플릿 사용(선택) 영역 보조화
+   너무 크고 눈에 띄는 파일 선택 박스를 선택형 옵션답게 정리
+   ============================================================ */
+
+@media (min-width: 641px) {
+    body.songcheon-statements-polished .statement-template-optional {
+        align-self: start !important;
+    }
+
+    body.songcheon-statements-polished .statement-template-optional .statement-align-label {
+        color: #333d4b !important;
+    }
+
+    /* 파일 입력 전체 박스 */
+    body.songcheon-statements-polished .statement-template-optional input[type="file"] {
+        max-width: 620px !important;
+        width: 100% !important;
+        height: 52px !important;
+        min-height: 52px !important;
+        padding: 8px 12px !important;
+        border: 1px solid #dfe5ec !important;
+        border-radius: 12px !important;
+        background: #fafbfc !important;
+        box-shadow: none !important;
+    }
+
+    /* 실제 "파일 선택" 버튼 */
+    body.songcheon-statements-polished .statement-template-optional input[type="file"]::file-selector-button {
+        height: 34px !important;
+        margin-right: 10px !important;
+        padding: 0 12px !important;
+        border: 1px solid #d7dde5 !important;
+        border-radius: 9px !important;
+        background: #ffffff !important;
+        color: #4e5968 !important;
+        font: inherit !important;
+        font-weight: 650 !important;
+        cursor: pointer;
+    }
+
+    /* 템플릿 영역 설명문 */
+    body.songcheon-statements-polished .statement-template-optional .statement-align-help {
+        max-width: 760px !important;
+        margin-top: 8px !important;
+        color: #7a8699 !important;
+        font-size: 12.5px !important;
+        line-height: 1.55 !important;
+    }
+
+    /* 선택 옵션이라는 느낌을 더 주기 위한 작은 뱃지 느낌 */
+    body.songcheon-statements-polished .statement-template-optional .statement-align-label::after {
+        content: "선택 사항";
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+        padding: 0 8px;
+        height: 22px;
+
+        border-radius: 999px;
+        background: #f2f4f6;
+        color: #6b7684;
+
+        font-size: 11px;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+}
+
+@media (max-width: 640px) {
+    body.songcheon-statements-polished .statement-template-optional input[type="file"] {
+        width: 100% !important;
+        min-height: 48px !important;
+        padding: 8px 10px !important;
+        background: #fafbfc !important;
+    }
+
+    body.songcheon-statements-polished .statement-template-optional .statement-align-label::after {
+        content: "선택";
+        display: inline-block;
+        margin-left: 6px;
+        color: #8b95a1;
+        font-size: 11px;
+        font-weight: 700;
+    }
+}
