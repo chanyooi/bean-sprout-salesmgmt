@@ -1,0 +1,146 @@
+/* ============================================================
+   문자발송 화면 - 인라인 발송완료 표 V2
+   ============================================================ */
+
+.sms-inline-history {
+    margin-top: 16px;
+    overflow: hidden;
+    border: 1px solid #e5e8eb;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.sms-inline-history-head {
+    padding: 16px 18px 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #edf0f3;
+}
+
+.sms-inline-history-head > div {
+    min-width: 0;
+}
+
+.sms-inline-history-head h3 {
+    margin: 0;
+    color: #191f28;
+    font-size: 16px;
+    font-weight: 850;
+    letter-spacing: -.03em;
+}
+
+.sms-inline-history-head p {
+    margin: 4px 0 0;
+    color: #8b95a1;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.sms-inline-count {
+    flex: 0 0 auto;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #eaf3ff;
+    color: #246bfd;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.sms-inline-table-wrap {
+    overflow-x: auto;
+}
+
+.sms-inline-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.sms-inline-table th {
+    padding: 11px 14px;
+    border-bottom: 1px solid #e9edf2;
+    background: #f7f8fa;
+    color: #596579;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: left;
+}
+
+.sms-inline-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid #f0f2f5;
+    color: #191f28;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.sms-inline-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.sms-inline-table th:nth-child(1),
+.sms-inline-table td:nth-child(1) {
+    width: 34%;
+}
+
+.sms-inline-table th:nth-child(2),
+.sms-inline-table td:nth-child(2) {
+    width: 19%;
+}
+
+.sms-inline-table th:nth-child(3),
+.sms-inline-table td:nth-child(3) {
+    width: 32%;
+}
+
+.sms-inline-table th:nth-child(4),
+.sms-inline-table td:nth-child(4) {
+    width: 15%;
+    text-align: right;
+}
+
+.sms-inline-delete {
+    min-height: 32px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: #fff1f1;
+    color: #d14343;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.sms-inline-delete:hover {
+    background: #ffe4e4;
+}
+
+.sms-inline-empty {
+    padding: 22px 18px;
+    color: #8b95a1;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* 이전 V1의 접기 버튼/패널이 남아 있으면 숨김 */
+.sms-send-history {
+    display: none !important;
+}
+
+@media (max-width: 640px) {
+    .sms-inline-history {
+        margin-top: 14px;
+        border-radius: 16px;
+    }
+
+    .sms-inline-history-head {
+        padding: 15px;
+    }
+
+    .sms-inline-table {
+        min-width: 620px;
+    }
+}

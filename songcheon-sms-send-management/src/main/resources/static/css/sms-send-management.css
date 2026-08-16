@@ -1,0 +1,120 @@
+/* 문자발송 화면 - 발송완료 기록 */
+.sms-send-history {
+    margin-top: 16px;
+    padding: 0;
+}
+
+.sms-send-history-toggle {
+    min-height: 46px;
+    padding: 0 16px;
+    border: 1px solid #cfe0fb;
+    border-radius: 12px;
+    background: #eef5ff;
+    color: #246bfd;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.sms-send-history-panel {
+    display: none;
+    margin-top: 12px;
+    overflow: hidden;
+    border: 1px solid #e5e8eb;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.sms-send-history-panel.open {
+    display: block;
+}
+
+.sms-send-history-head {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid #eef1f4;
+}
+
+.sms-send-history-head strong {
+    display: block;
+    color: #191f28;
+    font-size: 15px;
+}
+
+.sms-send-history-head span {
+    display: block;
+    margin-top: 4px;
+    color: #8b95a1;
+    font-size: 11px;
+}
+
+.sms-send-history-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sms-send-history-item {
+    min-height: 58px;
+    padding: 10px 14px 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.sms-send-history-item:last-child {
+    border-bottom: 0;
+}
+
+.sms-send-history-info {
+    min-width: 0;
+}
+
+.sms-send-history-info strong {
+    display: block;
+    color: #191f28;
+    font-size: 13px;
+}
+
+.sms-send-history-info span {
+    display: block;
+    margin-top: 3px;
+    color: #8b95a1;
+    font-size: 11px;
+}
+
+.sms-send-delete {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 11px;
+    border: 0;
+    border-radius: 9px;
+    background: #fff1f1;
+    color: #d14343;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.sms-send-history-empty {
+    padding: 22px 18px;
+    color: #8b95a1;
+    font-size: 12px;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .sms-send-history-toggle {
+        width: 100%;
+        min-height: 50px;
+        border-radius: 14px;
+    }
+
+    .sms-send-history-item {
+        min-height: 64px;
+        padding: 12px 12px 12px 15px;
+    }
+}
