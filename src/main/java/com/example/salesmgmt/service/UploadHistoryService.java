@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UploadHistoryService {
@@ -38,18 +40,27 @@ public class UploadHistoryService {
 
     @Transactional(readOnly = true)
     public String captureSalesSnapshot() {
-        List<OrderBackup> orders = new ArrayList<>();
+        List<SalesOrderEntity> allOrders = orderRepository.findAllForBackup();
+        List<SalesItemEntity> allItems = itemRepository.findAllForBackup();
 
-        for (SalesOrderEntity order : orderRepository.findAll()) {
-            List<ItemBackup> items = itemRepository
-                    .findAllBySalesOrder_Id(order.getId())
-                    .stream()
-                    .map(item -> new ItemBackup(
+        Map<Long, List<ItemBackup>> itemsByOrderId = new LinkedHashMap<>();
+        for (SalesItemEntity item : allItems) {
+            Long orderId = item.getSalesOrder().getId();
+            itemsByOrderId
+                    .computeIfAbsent(orderId, ignored -> new ArrayList<>())
+                    .add(new ItemBackup(
                             item.getItemName(),
                             item.getQuantity(),
                             item.getUnitPrice()
-                    ))
-                    .toList();
+                    ));
+        }
+
+        List<OrderBackup> orders = new ArrayList<>(allOrders.size());
+        for (SalesOrderEntity order : allOrders) {
+            List<ItemBackup> items = itemsByOrderId.getOrDefault(
+                    order.getId(),
+                    List.of()
+            );
 
             orders.add(new OrderBackup(
                     order.getOrderNumber(),
@@ -60,7 +71,7 @@ public class UploadHistoryService {
                     order.getNote(),
                     order.getSourceSheet(),
                     order.getSourceRow(),
-                    items
+                    List.copyOf(items)
             ));
         }
 
@@ -108,11 +119,6 @@ public class UploadHistoryService {
                 .orElse(null);
     }
 
-    /**
-     * 가장 최근 업로드 1건만 되돌립니다.
-     * 오래된 이력으로 임의 복구하면 그 이후 정상 업로드도 함께 사라질 수 있어
-     * 안전을 위해 최신 미복구 이력만 허용합니다.
-     */
     @Transactional
     public void restoreLatest(Long historyId) {
         UploadHistoryEntity latest = historyRepository
