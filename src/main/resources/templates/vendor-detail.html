@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="|${detail.vendorName} · 거래처 관리|">거래처 상세</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260814_2)}">
+    <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/vendor-management-v2.css(v=20260818_1)}">
+</head>
+<body>
+<main class="vendor-v2-shell">
+    <section class="vendor-v2-hero">
+        <div>
+            <a th:href="@{/vendor-management}" style="text-decoration:none;color:#3182f6">‹ 거래처 목록</a>
+            <h1 th:text="${detail.vendorName}">거래처명</h1>
+            <div class="profile-line" th:if="${profile != null}">
+                <span th:if="${profile.phone != null and !#strings.isEmpty(profile.phone)}" th:text="|전화 ${profile.phone}|">전화</span>
+                <span th:if="${profile.address != null and !#strings.isEmpty(profile.address)}" th:text="${profile.address}">주소</span>
+                <span th:text="|정산 ${profile.paymentCycle.label}|">정산</span>
+            </div>
+        </div>
+        <a class="secondary-link" th:href="@{/vendors}">배송코스·기본정보</a>
+    </section>
+
+    <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <section class="detail-grid">
+        <div>
+            <section class="v2-panel">
+                <h2>거래처 기본 단가</h2>
+                <div class="price-row" th:each="price : ${prices}">
+                    <strong th:text="${price.itemName}">품목</strong>
+                    <form th:action="@{/vendor-management/{vendorId}/prices/{priceId}(vendorId=${detail.vendorId},priceId=${price.id})}" method="post" style="display:contents">
+                        <input type="hidden" name="month" th:value="${selectedMonth}">
+                        <input type="number" name="unitPrice" min="0" step="1" th:value="${price.unitPrice.stripTrailingZeros().toPlainString()}" required>
+                        <button type="submit">저장</button>
+                    </form>
+                </div>
+                <form class="add-price" th:if="${!#lists.isEmpty(missingItems)}" th:action="@{/vendor-management/{vendorId}/prices(vendorId=${detail.vendorId})}" method="post">
+                    <input type="hidden" name="month" th:value="${selectedMonth}">
+                    <select name="itemName" required>
+                        <option th:each="item : ${missingItems}" th:value="${item}" th:text="${item}"></option>
+                    </select>
+                    <input type="number" name="unitPrice" min="0" step="1" placeholder="단가" required>
+                    <button type="submit">추가</button>
+                </form>
+            </section>
+        </div>
+
+        <div>
+            <section class="v2-panel">
+                <h2>월별 사용 금액</h2>
+                <div class="month-strip">
+                    <a th:each="row : ${detail.monthlySpend}"
+                       th:href="@{/vendor-management/{id}(id=${detail.vendorId},month=${row.month})}"
+                       th:classappend="${row.month == selectedMonth} ? ' active'">
+                        <span th:text="${row.month}">2026-08</span>
+                        <strong th:text="|${#numbers.formatDecimal(row.amount,0,'COMMA',0,'POINT')}원|">0원</strong>
+                    </a>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <section class="v2-panel">
+        <div class="vendor-v2-hero" style="margin-bottom:12px">
+            <div>
+                <h2 style="margin-bottom:5px" th:text="|${selectedMonth} 일별 주문|">이번 달 주문</h2>
+                <div class="summary-line">
+                    <span th:text="|주문 ${detail.selectedOrderCount}건|">주문 0건</span>
+                    <span th:text="|매출 ${#numbers.formatDecimal(detail.selectedTotal,0,'COMMA',0,'POINT')}원|">매출 0원</span>
+                </div>
+            </div>
+            <div class="month-nav">
+                <a th:href="@{/vendor-management/{id}(id=${detail.vendorId},month=${previousMonth})}">이전달</a>
+                <a th:href="@{/vendor-management/{id}(id=${detail.vendorId},month=${nextMonth})}">다음달</a>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(detail.orderItems)}" style="padding:28px 0;text-align:center;color:#8b95a1">해당 월 주문이 없습니다.</div>
+
+        <div style="overflow-x:auto" th:unless="${#lists.isEmpty(detail.orderItems)}">
+            <table class="order-table">
+                <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>주문번호</th>
+                    <th>품목</th>
+                    <th>수량</th>
+                    <th>적용단가</th>
+                    <th class="money">금액</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${detail.orderItems}">
+                    <td th:text="${#temporals.format(row.deliveryDate,'MM/dd')}">08/18</td>
+                    <td th:text="${row.orderNumber}">주문번호</td>
+                    <td><strong th:text="${row.itemName}">품목</strong></td>
+                    <td th:text="${row.quantity.stripTrailingZeros().toPlainString()}">0</td>
+                    <td>
+                        <form class="order-price-form" th:action="@{/vendor-management/{vendorId}/items/{itemId}/price(vendorId=${detail.vendorId},itemId=${row.itemId})}" method="post">
+                            <input type="hidden" name="month" th:value="${selectedMonth}">
+                            <input type="hidden" name="quantity" th:value="${row.quantity.stripTrailingZeros().toPlainString()}">
+                            <input type="number" name="unitPrice" min="0" step="1" th:value="${row.unitPrice == null ? '' : row.unitPrice.stripTrailingZeros().toPlainString()}" placeholder="단가">
+                            <button type="submit">수정</button>
+                        </form>
+                    </td>
+                    <td class="money" th:text="${row.lineAmount == null ? '-' : #numbers.formatDecimal(row.lineAmount,0,'COMMA',0,'POINT') + '원'}">0원</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="margin:14px 0 0;color:#8b95a1;font-size:12px">주문 목록에서 수정한 단가는 해당 주문에만 적용됩니다. 위 기본 단가표는 그대로 유지됩니다.</p>
+    </section>
+</main>
+<form id="songcheonPcLogoutForm" th:action="@{/logout}" method="post" style="display:none" aria-hidden="true"></form>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260818_1)}"></script>
+<script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
+</body>
+</html>
