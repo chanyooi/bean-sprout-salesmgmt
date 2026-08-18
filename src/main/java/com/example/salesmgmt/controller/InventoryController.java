@@ -28,7 +28,15 @@ public class InventoryController {
     }
 
     @GetMapping("/inventory")
-    public String inventory(
+    public String inventoryRedirect(
+            @RequestParam(required = false) String month
+    ) {
+        YearMonth selectedMonth = parseMonth(month);
+        return "redirect:/bean-usage?month=" + selectedMonth;
+    }
+
+    @GetMapping("/inventory/overview")
+    public String inventoryOverview(
             @RequestParam(required = false) String month,
             Model model
     ) {
@@ -123,7 +131,6 @@ public class InventoryController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            // 사용 등록 페이지에서는 비고를 받지 않습니다.
             beanInventoryService.addUsage(
                     usageDate,
                     beanType,
@@ -211,7 +218,7 @@ public class InventoryController {
             );
         }
 
-        return "redirect:/inventory";
+        return "redirect:/inventory/overview";
     }
 
     private void addCatalogModel(Model model) {
