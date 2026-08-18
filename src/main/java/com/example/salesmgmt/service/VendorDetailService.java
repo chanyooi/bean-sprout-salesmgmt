@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -43,18 +44,20 @@ public class VendorDetailService {
                 ));
 
         int selectedYear = selectedMonth.getYear();
-        LocalDate yearStart = LocalDate.of(selectedYear, 1, 1);
-        LocalDate yearEnd = LocalDate.of(selectedYear, 12, 31);
+        YearMonth comparisonStartMonth = YearMonth.of(selectedYear - 1, 1);
+        YearMonth comparisonEndMonth = YearMonth.of(selectedYear, 12);
 
         List<SalesItemEntity> items = salesItemRepository.findForVendorPeriod(
                 vendorId,
-                yearStart,
-                yearEnd
+                comparisonStartMonth.atDay(1),
+                comparisonEndMonth.atEndOfMonth()
         );
 
         Map<YearMonth, BigDecimal> totals = new LinkedHashMap<>();
-        for (int month = 1; month <= 12; month++) {
-            totals.put(YearMonth.of(selectedYear, month), BigDecimal.ZERO);
+        YearMonth cursor = comparisonStartMonth;
+        while (!cursor.isAfter(comparisonEndMonth)) {
+            totals.put(cursor, BigDecimal.ZERO);
+            cursor = cursor.plusMonths(1);
         }
 
         for (SalesItemEntity item : items) {
@@ -72,8 +75,8 @@ public class VendorDetailService {
         List<VendorHistoricalMonthlySpendEntity> historical =
                 historicalSpendRepository.findAllByVendor_IdAndSpendMonthBetween(
                         vendorId,
-                        yearStart,
-                        yearEnd
+                        comparisonStartMonth.atDay(1),
+                        comparisonEndMonth.atEndOfMonth()
                 );
 
         Map<YearMonth, BigDecimal> manualAmounts = new LinkedHashMap<>();
@@ -113,15 +116,29 @@ public class VendorDetailService {
             ));
         }
 
-        List<MonthlySpendRow> monthlyRows = totals.entrySet().stream()
-                .map(entry -> new MonthlySpendRow(
-                        entry.getKey().toString(),
-                        entry.getKey().getMonthValue(),
-                        entry.getValue(),
-                        manualAmounts.containsKey(entry.getKey()),
-                        entry.getKey().isBefore(SYSTEM_START_MONTH)
-                ))
-                .toList();
+        List<MonthlySpendRow> monthlyRows = new ArrayList<>();
+        for (int monthNumber = 1; monthNumber <= 12; monthNumber++) {
+            YearMonth month = YearMonth.of(selectedYear, monthNumber);
+            BigDecimal amount = totals.getOrDefault(month, BigDecimal.ZERO);
+            BigDecimal previousMonthAmount = totals.getOrDefault(
+                    month.minusMonths(1),
+                    BigDecimal.ZERO
+            );
+            BigDecimal previousYearAmount = totals.getOrDefault(
+                    month.minusYears(1),
+                    BigDecimal.ZERO
+            );
+
+            monthlyRows.add(new MonthlySpendRow(
+                    month.toString(),
+                    monthNumber,
+                    amount,
+                    manualAmounts.containsKey(month),
+                    month.isBefore(SYSTEM_START_MONTH),
+                    growthRate(amount, previousMonthAmount),
+                    growthRate(amount, previousYearAmount)
+            ));
+        }
 
         BigDecimal selectedTotal = selectedRows.stream()
                 .map(OrderItemRow::lineAmount)
@@ -147,13 +164,31 @@ public class VendorDetailService {
                 vendor.getStatementName(),
                 selectedMonth.toString(),
                 selectedYear,
-                monthlyRows,
+                List.copyOf(monthlyRows),
                 List.copyOf(selectedRows),
                 selectedTotal,
                 yearTotal,
                 selectedOrderCount,
                 selectedMonth.isBefore(SYSTEM_START_MONTH)
         );
+    }
+
+    private BigDecimal growthRate(
+            BigDecimal currentAmount,
+            BigDecimal comparisonAmount
+    ) {
+        if (comparisonAmount == null || comparisonAmount.signum() == 0) {
+            return null;
+        }
+
+        BigDecimal safeCurrent = currentAmount == null
+                ? BigDecimal.ZERO
+                : currentAmount;
+
+        return safeCurrent
+                .subtract(comparisonAmount)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(comparisonAmount, 1, RoundingMode.HALF_UP);
     }
 
     @Transactional
@@ -211,7 +246,9 @@ public class VendorDetailService {
             int monthNumber,
             BigDecimal amount,
             boolean manuallyRegistered,
-            boolean historicalMonth
+            boolean historicalMonth,
+            BigDecimal monthOverMonthGrowth,
+            BigDecimal yearOverYearGrowth
     ) {}
 
     public record OrderItemRow(
