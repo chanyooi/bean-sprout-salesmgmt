@@ -1,102 +1,60 @@
-<link rel="stylesheet"
-      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" th:href="@{/css/admin-mobile-unified.css(v=20260813_1)}">
     <title>거래처 관리</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="stylesheet" th:href="@{/css/dashboard-final.css(v=20260812_2)}">
-    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
-    <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
-    <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
-    <link rel="stylesheet" th:href="@{/css/dashboard-single-menu.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260814_2)}">
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/statement-polish.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/statement-form-align-fix.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/statement-template-subtle.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/special-item-accounting.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/special-item-accounting-v2.css(v=20260814_2)}">
-    <link rel="stylesheet" th:href="@{/css/tofu-table-simple.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
-    <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
-    <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
+    <link rel="stylesheet" th:href="@{/css/vendor-management-v2.css(v=20260818_1)}">
 </head>
 <body>
-<main class="container vendor-management-shell">
-    <section class="hero vendor-hub-hero">
-        <div class="hero-row">
-            <div>
-                <p class="eyebrow">거래처 업무</p>
-                <h1>거래처 관리</h1>
-                <p>
-                    판매내역, 행사 임시단가, 입금·미수금,
-                    배송코스와 안전관리 기능을 한곳에 모았습니다.
-                </p>
-            </div>
-            <div class="button-row">
-                <a class="secondary-link" th:href="@{/}">홈(대시보드)</a>
-            </div>
+<main class="vendor-v2-shell">
+    <section class="vendor-v2-hero">
+        <div>
+            <p>거래처 업무</p>
+            <h1>거래처 관리</h1>
+            <p>거래처를 선택하면 기본단가, 월별 사용금액, 일별 주문과 행사 단가를 한 화면에서 관리할 수 있습니다.</p>
+        </div>
+        <a class="secondary-link" th:href="@{/vendors}">배송코스 관리</a>
+    </section>
+
+    <section class="v2-panel">
+        <input id="vendorSearch" class="vendor-search" type="search" placeholder="거래처명 검색">
+        <div class="initial-filter" id="initialFilter">
+            <button type="button" class="active" data-initial="">전체</button>
+            <button type="button" th:each="initial : ${#strings.arraySplit('ㄱ,ㄴ,ㄷ,ㄹ,ㅁ,ㅂ,ㅅ,ㅇ,ㅈ,ㅊ,ㅋ,ㅌ,ㅍ,ㅎ', ',')}" th:text="${initial}" th:data-initial="${initial}"></button>
+        </div>
+
+        <div class="vendor-list" id="vendorList">
+            <a th:each="vendor : ${vendors}"
+               th:href="@{/vendor-management/{id}(id=${vendor.id})}"
+               th:data-name="${vendor.inputName}">
+                <span class="vendor-card-name">
+                    <strong th:text="${vendor.inputName}">거래처</strong>
+                    <small th:if="${vendor.statementName != vendor.inputName}" th:text="|명세서: ${vendor.statementName}|">명세서명</small>
+                </span>
+                <span>›</span>
+            </a>
         </div>
     </section>
-
-    <section class="vendor-hub-grid">
-        <a class="vendor-hub-card" th:href="@{/sales}">
-            <span>판매</span>
-            <strong>판매내역</strong>
-            <p>거래처별 판매 기록을 조회하고 수정·삭제합니다.</p>
-        </a>
-
-        <a class="vendor-hub-card" th:href="@{/promotions}">
-            <span>행사</span>
-            <strong>행사 · 임시단가</strong>
-            <p>행사 기간과 임시 판매단가를 기록하고 적용합니다.</p>
-        </a>
-
-        <a class="vendor-hub-card" th:href="@{/payments}">
-            <span>입금</span>
-            <strong>입금 · 미수금</strong>
-            <p>월별 청구액, 입금액과 미수 거래처를 관리합니다.</p>
-        </a>
-
-        <a class="vendor-hub-card" th:href="@{/vendors}">
-            <span>배송</span>
-            <strong>거래처 · 배송코스</strong>
-            <p>거래처 정보와 A/B/김천 배송 순서를 관리합니다.</p>
-        </a>
-
-        <a th:if="${isAdmin}"
-           class="vendor-hub-card"
-           th:href="@{/admin/safety}">
-            <span>관리</span>
-            <strong>업로드 이력 · 월마감</strong>
-            <p>업로드 복구, DB 백업과 월 마감·해제를 관리합니다.</p>
-        </a>
-    </section>
 </main>
-    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260814_2)}"></script>
-    <form id="songcheonPcLogoutForm"
-          th:action="@{/logout}"
-          method="post"
-          style="display:none"
-          aria-hidden="true"></form>
-    <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-polish.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-form-align-fix.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"> </script>
-    <script defer th:src="@{/js/special-item-accounting.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/special-item-accounting-v2.js(v=20260814_2)}"></script>
-    <script defer th:src="@{/js/tofu-table-simple.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/sms-send-management.js(v=20260817_1)}"></script>
-    <script defer th:src="@{/js/sms-send-inline-v2.js(v=20260817_2)}"></script>
-    <script defer th:src="@{/js/statement-send-premium-v2.js(v=20260817_2)}"></script>
-    <script defer th:src="@{/js/statement-column-order.js(v=20260817_1)}"></script>
+<form id="songcheonPcLogoutForm" th:action="@{/logout}" method="post" style="display:none" aria-hidden="true"></form>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260818_1)}"></script>
+<script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
+<script>
+(function(){
+  var search=document.getElementById('vendorSearch');
+  var list=[].slice.call(document.querySelectorAll('#vendorList a'));
+  var activeInitial='';
+  var choseong=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  function firstInitial(name){var c=(name||'').trim().charCodeAt(0);if(c<0xAC00||c>0xD7A3)return '';return choseong[Math.floor((c-0xAC00)/588)];}
+  function apply(){var q=(search.value||'').trim().toLowerCase();list.forEach(function(a){var n=(a.dataset.name||'');var ok=(!q||n.toLowerCase().indexOf(q)>=0)&&(!activeInitial||firstInitial(n)===activeInitial);a.style.display=ok?'flex':'none';});}
+  search.addEventListener('input',apply);
+  document.getElementById('initialFilter').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;document.querySelectorAll('#initialFilter button').forEach(function(x){x.classList.remove('active')});b.classList.add('active');activeInitial=b.dataset.initial||'';apply();});
+})();
+</script>
 </body>
 </html>
