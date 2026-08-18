@@ -1,7 +1,10 @@
 package com.example.salesmgmt.entity;
 
+import com.example.salesmgmt.domain.StatementDeliveryMethod;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,6 +34,10 @@ public class VendorEntity {
     @Column(name = "statement_template_available", nullable = false)
     private boolean statementTemplateAvailable;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statement_delivery_method", length = 20)
+    private StatementDeliveryMethod statementDeliveryMethod = StatementDeliveryMethod.UNASSIGNED;
+
     protected VendorEntity() {
     }
 
@@ -42,6 +49,7 @@ public class VendorEntity {
         this.inputName = inputName;
         this.statementName = statementName;
         this.statementTemplateAvailable = statementTemplateAvailable;
+        this.statementDeliveryMethod = StatementDeliveryMethod.UNASSIGNED;
     }
 
     public Long getId() {
@@ -60,11 +68,25 @@ public class VendorEntity {
         return statementTemplateAvailable;
     }
 
+    public StatementDeliveryMethod getStatementDeliveryMethod() {
+        return statementDeliveryMethod == null
+                ? StatementDeliveryMethod.UNASSIGNED
+                : statementDeliveryMethod;
+    }
+
     public void updateStatementSettings(
             String statementName,
             boolean statementTemplateAvailable
     ) {
         this.statementName = statementName;
         this.statementTemplateAvailable = statementTemplateAvailable;
+    }
+
+    public void updateStatementDeliveryMethod(
+            StatementDeliveryMethod statementDeliveryMethod
+    ) {
+        this.statementDeliveryMethod = statementDeliveryMethod == null
+                ? StatementDeliveryMethod.UNASSIGNED
+                : statementDeliveryMethod;
     }
 }
