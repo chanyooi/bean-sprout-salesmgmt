@@ -54,9 +54,10 @@ public class VendorHubController {
     public String vendorDetail(
             @PathVariable Long vendorId,
             @RequestParam(required = false) String month,
+            @RequestParam(required = false) Integer year,
             Model model
     ) {
-        YearMonth selectedMonth = resolveMonth(month);
+        YearMonth selectedMonth = resolveMonthAndYear(month, year);
         var detail = vendorDetailService.load(vendorId, selectedMonth);
 
         var profile = vendorManagementService.findAllRows().stream()
@@ -80,6 +81,9 @@ public class VendorHubController {
                 priceManagementService.findMissingItems(vendorId)
         );
         model.addAttribute("selectedMonth", selectedMonth.toString());
+        model.addAttribute("selectedYear", selectedMonth.getYear());
+        model.addAttribute("previousYear", selectedMonth.getYear() - 1);
+        model.addAttribute("nextYear", selectedMonth.getYear() + 1);
         model.addAttribute(
                 "previousMonth",
                 selectedMonth.minusMonths(1).toString()
@@ -88,8 +92,48 @@ public class VendorHubController {
                 "nextMonth",
                 selectedMonth.plusMonths(1).toString()
         );
+        model.addAttribute(
+                "historicalDefaultMonth",
+                selectedMonth.isBefore(VendorDetailService.SYSTEM_START_MONTH)
+                        ? selectedMonth.toString()
+                        : VendorDetailService.SYSTEM_START_MONTH.minusMonths(1).toString()
+        );
 
         return "vendor-detail";
+    }
+
+    @PostMapping("/vendor-management/{vendorId}/historical-spend")
+    public String saveHistoricalSpend(
+            @PathVariable Long vendorId,
+            @RequestParam String historicalMonth,
+            @RequestParam BigDecimal amount,
+            @RequestParam String month,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            YearMonth targetMonth = YearMonth.parse(historicalMonth);
+            vendorDetailService.saveHistoricalMonthlySpend(
+                    vendorId,
+                    targetMonth,
+                    amount
+            );
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    targetMonth + " 과거 사용금액을 저장했습니다."
+            );
+            return "redirect:/vendor-management/"
+                    + vendorId
+                    + "?month="
+                    + targetMonth;
+        } catch (DateTimeParseException | IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    exception.getMessage() == null
+                            ? "과거 사용금액을 저장하지 못했습니다."
+                            : exception.getMessage()
+            );
+            return redirectDetail(vendorId, month);
+        }
     }
 
     @PostMapping("/vendor-management/{vendorId}/statement-delivery")
@@ -190,6 +234,15 @@ public class VendorHubController {
             );
         }
         return redirectDetail(vendorId, month);
+    }
+
+    private YearMonth resolveMonthAndYear(String month, Integer year) {
+        YearMonth resolved = resolveMonth(month);
+        if (year == null) {
+            return resolved;
+        }
+        int safeYear = Math.max(2000, Math.min(2100, year));
+        return YearMonth.of(safeYear, resolved.getMonthValue());
     }
 
     private YearMonth resolveMonth(String month) {

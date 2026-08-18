@@ -70,14 +70,36 @@
 
         <div>
             <section class="v2-panel">
-                <h2>월별 사용 금액</h2>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px">
+                    <div>
+                        <h2 style="margin-bottom:3px" th:text="|${selectedYear}년 월별 사용 금액|">2026년 월별 사용 금액</h2>
+                        <span style="font-size:12px;color:#8b95a1" th:text="|연간 합계 ${#numbers.formatDecimal(detail.yearTotal,0,'COMMA',0,'POINT')}원|">연간 합계</span>
+                    </div>
+                    <div class="month-nav">
+                        <a th:href="@{/vendor-management/{id}(id=${detail.vendorId},year=${previousYear},month=${selectedMonth})}">‹ <span th:text="${previousYear}">2025</span></a>
+                        <a th:href="@{/vendor-management/{id}(id=${detail.vendorId},year=${nextYear},month=${selectedMonth})}"><span th:text="${nextYear}">2027</span> ›</a>
+                    </div>
+                </div>
+
                 <div class="month-strip">
                     <a th:each="row : ${detail.monthlySpend}"
                        th:href="@{/vendor-management/{id}(id=${detail.vendorId},month=${row.month})}"
                        th:classappend="${row.month == selectedMonth} ? ' active'">
-                        <span th:text="${row.month}">2026-08</span>
+                        <span th:text="|${row.monthNumber}월|">8월</span>
                         <strong th:text="|${#numbers.formatDecimal(row.amount,0,'COMMA',0,'POINT')}원|">0원</strong>
+                        <small th:if="${row.manuallyRegistered}" style="font-size:10px;color:#8b95a1">직접등록</small>
                     </a>
+                </div>
+
+                <div style="margin-top:18px;padding-top:16px;border-top:1px solid #f2f4f6">
+                    <strong style="display:block;margin-bottom:8px">2026년 6월 이전 사용금액 직접 등록</strong>
+                    <form th:action="@{/vendor-management/{vendorId}/historical-spend(vendorId=${detail.vendorId})}" method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                        <input type="hidden" name="month" th:value="${selectedMonth}">
+                        <input type="month" name="historicalMonth" th:value="${historicalDefaultMonth}" max="2026-06" required style="min-height:40px">
+                        <input type="number" name="amount" min="0" step="1" placeholder="그 달 사용금액" required style="min-height:40px;min-width:170px">
+                        <button type="submit" style="min-height:40px">저장</button>
+                    </form>
+                    <p style="margin:8px 0 0;color:#8b95a1;font-size:12px">장부 업로드를 시작한 2026년 7월부터는 실제 주문 금액이 자동 집계되고, 그 이전 달만 직접 입력합니다. 같은 달을 다시 저장하면 금액이 수정됩니다.</p>
                 </div>
             </section>
         </div>
@@ -88,7 +110,8 @@
             <div>
                 <h2 style="margin-bottom:5px" th:text="|${selectedMonth} 일별 주문|">이번 달 주문</h2>
                 <div class="summary-line">
-                    <span th:text="|주문 ${detail.selectedOrderCount}건|">주문 0건</span>
+                    <span th:if="${!detail.historicalMonth}" th:text="|주문 ${detail.selectedOrderCount}건|">주문 0건</span>
+                    <span th:if="${detail.historicalMonth}">과거 직접등록 금액</span>
                     <span th:text="|매출 ${#numbers.formatDecimal(detail.selectedTotal,0,'COMMA',0,'POINT')}원|">매출 0원</span>
                 </div>
             </div>
@@ -98,9 +121,13 @@
             </div>
         </div>
 
-        <div th:if="${#lists.isEmpty(detail.orderItems)}" style="padding:28px 0;text-align:center;color:#8b95a1">해당 월 주문이 없습니다.</div>
+        <div th:if="${detail.historicalMonth}" style="padding:28px 0;text-align:center;color:#8b95a1">
+            2026년 6월 이전은 일별 주문자료가 없어 월 사용금액만 직접 관리합니다.
+        </div>
 
-        <div style="overflow-x:auto" th:unless="${#lists.isEmpty(detail.orderItems)}">
+        <div th:if="${!detail.historicalMonth and #lists.isEmpty(detail.orderItems)}" style="padding:28px 0;text-align:center;color:#8b95a1">해당 월 주문이 없습니다.</div>
+
+        <div style="overflow-x:auto" th:if="${!detail.historicalMonth and !#lists.isEmpty(detail.orderItems)}">
             <table class="order-table">
                 <thead>
                 <tr>
@@ -131,7 +158,7 @@
                 </tbody>
             </table>
         </div>
-        <p style="margin:14px 0 0;color:#8b95a1;font-size:12px">주문 목록에서 수정한 단가는 해당 주문에만 적용됩니다. 위 기본 단가표는 그대로 유지됩니다.</p>
+        <p th:if="${!detail.historicalMonth}" style="margin:14px 0 0;color:#8b95a1;font-size:12px">주문 목록에서 수정한 단가는 해당 주문에만 적용됩니다. 위 기본 단가표는 그대로 유지됩니다.</p>
     </section>
 </main>
 <form id="songcheonPcLogoutForm" th:action="@{/logout}" method="post" style="display:none" aria-hidden="true"></form>
