@@ -37,7 +37,7 @@
                     넣어 완성된 월간 명세서를 다운로드합니다.
                 </p>
             </div>
-                        <div class="button-row">
+            <div class="button-row">
                 <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
                 <a class="secondary-link" th:href="@{/statement-export(month=${selectedMonth})}">PDF·이미지·공유</a>
                 <a class="secondary-link" th:href="@{/statement-send(month=${selectedMonth})}">발송 기록</a>
@@ -78,7 +78,13 @@
                 <span>판매가 없는 거래처의 빈 명세서도 포함</span>
             </label>
 
-            <button type="submit">거래명세서 엑셀 다운로드</button>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+                <button type="submit">전체 엑셀 다운로드</button>
+                <button type="submit" name="deliveryMethod" value="FAX" style="background:#4e5968">팩스 거래처</button>
+                <button type="submit" name="deliveryMethod" value="MAIL" style="background:#4e5968">우편 거래처</button>
+                <button type="submit" name="deliveryMethod" value="SMS" style="background:#3182f6">문자 거래처</button>
+            </div>
+            <small style="display:block;margin-top:10px;color:#8b95a1">팩스·우편·문자 버튼은 거래처 관리에서 지정한 명세서 전달 방식에 맞는 거래처 시트만 따로 저장합니다.</small>
         </form>
     </section>
 
@@ -94,8 +100,8 @@
                 <p>전달 26일부터 선택한 달 25일까지를 한 달 정산기간으로 처리합니다.</p>
             </article>
             <article>
-                <strong>특수 양식</strong>
-                <p>아포농협의 손두부와 팔공식품의 손두부·두부판·회수통 양식을 인식합니다.</p>
+                <strong>전달 방식별 파일</strong>
+                <p>거래처 관리에서 팩스·우편·문자로 분류하면 해당 방식 거래처 시트만 모아서 다운로드합니다.</p>
             </article>
             <article>
                 <strong>빈 명세서</strong>
@@ -107,31 +113,30 @@
     <section class="panel caution-panel">
         <h2>확인할 점</h2>
         <p>
-            산동빅처럼 template.xlsx에 시트가 없거나 품목 열이 없는 판매자료가 있으면
-            다운로드 파일 첫 번째에 <strong>생성확인</strong> 시트가 추가됩니다.
-            생성된 파일을 열면 엑셀이 합계 수식을 다시 계산합니다.
+            아직 전달 방식이 <strong>미분류</strong>인 거래처는 전체 엑셀에는 포함되지만
+            팩스·우편·문자 분류 다운로드에는 포함되지 않습니다.
         </p>
     </section>
 </main>
-    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260814_2)}"></script>
-    <form id="songcheonPcLogoutForm"
-          th:action="@{/logout}"
-          method="post"
-          style="display:none"
-          aria-hidden="true"></form>
-    <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-polish.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-form-align-fix.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"> </script>
-    <script defer th:src="@{/js/special-item-accounting.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/special-item-accounting-v2.js(v=20260814_2)}"></script>
-    <script defer th:src="@{/js/tofu-table-simple.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/sms-send-management.js(v=20260817_1)}"></script>
-    <script defer th:src="@{/js/sms-send-inline-v2.js(v=20260817_2)}"></script>
-    <script defer th:src="@{/js/statement-send-premium-v2.js(v=20260817_2)}"></script>
-    <script defer th:src="@{/js/statement-column-order.js(v=20260817_1)}"></script>
+<script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
+<script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
+<script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260814_2)}"></script>
+<form id="songcheonPcLogoutForm"
+      th:action="@{/logout}"
+      method="post"
+      style="display:none"
+      aria-hidden="true"></form>
+<script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/statement-polish.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/statement-form-align-fix.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/special-item-accounting.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/special-item-accounting-v2.js(v=20260814_2)}"></script>
+<script defer th:src="@{/js/tofu-table-simple.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/sms-send-management.js(v=20260817_1)}"></script>
+<script defer th:src="@{/js/sms-send-inline-v2.js(v=20260817_2)}"></script>
+<script defer th:src="@{/js/statement-send-premium-v2.js(v=20260817_2)}"></script>
+<script defer th:src="@{/js/statement-column-order.js(v=20260817_1)}"></script>
 </body>
 </html>

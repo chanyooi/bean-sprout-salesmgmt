@@ -1,5 +1,7 @@
 package com.example.salesmgmt.controller;
 
+import com.example.salesmgmt.domain.StatementDeliveryMethod;
+import com.example.salesmgmt.repository.VendorRepository;
 import com.example.salesmgmt.service.PriceManagementService;
 import com.example.salesmgmt.service.SalesManagementService;
 import com.example.salesmgmt.service.VendorDetailService;
@@ -23,17 +25,20 @@ public class VendorHubController {
     private final SalesManagementService salesManagementService;
     private final VendorManagementService vendorManagementService;
     private final VendorDetailService vendorDetailService;
+    private final VendorRepository vendorRepository;
 
     public VendorHubController(
             PriceManagementService priceManagementService,
             SalesManagementService salesManagementService,
             VendorManagementService vendorManagementService,
-            VendorDetailService vendorDetailService
+            VendorDetailService vendorDetailService,
+            VendorRepository vendorRepository
     ) {
         this.priceManagementService = priceManagementService;
         this.salesManagementService = salesManagementService;
         this.vendorManagementService = vendorManagementService;
         this.vendorDetailService = vendorDetailService;
+        this.vendorRepository = vendorRepository;
     }
 
     @GetMapping("/vendor-management")
@@ -59,8 +64,13 @@ public class VendorHubController {
                 .findFirst()
                 .orElse(null);
 
+        var vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
+
         model.addAttribute("detail", detail);
         model.addAttribute("profile", profile);
+        model.addAttribute("statementDeliveryMethods", StatementDeliveryMethod.values());
+        model.addAttribute("statementDeliveryMethod", vendor.getStatementDeliveryMethod());
         model.addAttribute(
                 "prices",
                 priceManagementService.findPrices(vendorId)
@@ -80,6 +90,28 @@ public class VendorHubController {
         );
 
         return "vendor-detail";
+    }
+
+    @PostMapping("/vendor-management/{vendorId}/statement-delivery")
+    public String updateStatementDeliveryMethod(
+            @PathVariable Long vendorId,
+            @RequestParam StatementDeliveryMethod statementDeliveryMethod,
+            @RequestParam String month,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            var vendor = vendorRepository.findById(vendorId)
+                    .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
+            vendor.updateStatementDeliveryMethod(statementDeliveryMethod);
+            vendorRepository.save(vendor);
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "명세서 전달방식을 " + statementDeliveryMethod.getLabel() + "로 저장했습니다."
+            );
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return redirectDetail(vendorId, month);
     }
 
     @PostMapping("/vendor-management/{vendorId}/prices/{priceId}")

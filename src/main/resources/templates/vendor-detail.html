@@ -28,6 +28,23 @@
     <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
     <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
+    <section class="v2-panel">
+        <h2>명세서 전달 방식</h2>
+        <form th:action="@{/vendor-management/{vendorId}/statement-delivery(vendorId=${detail.vendorId})}" method="post" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input type="hidden" name="month" th:value="${selectedMonth}">
+            <label th:each="method : ${statementDeliveryMethods}"
+                   style="display:flex;align-items:center;gap:6px;padding:10px 13px;border:1px solid #e5e8eb;border-radius:12px;background:#fff;cursor:pointer">
+                <input type="radio"
+                       name="statementDeliveryMethod"
+                       th:value="${method.name()}"
+                       th:checked="${method == statementDeliveryMethod}">
+                <span th:text="${method.label}">문자</span>
+            </label>
+            <button type="submit" style="border:0;border-radius:10px;padding:11px 16px;background:#3182f6;color:#fff;font-weight:700;cursor:pointer">저장</button>
+        </form>
+        <p style="margin:10px 0 0;color:#8b95a1;font-size:12px">여기서 분류한 전달 방식대로 거래명세서 화면에서 팩스·우편·문자 거래처 파일을 따로 다운로드할 수 있습니다.</p>
+    </section>
+
     <section class="detail-grid">
         <div>
             <section class="v2-panel">

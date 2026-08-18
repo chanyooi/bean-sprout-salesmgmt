@@ -1,6 +1,8 @@
 package com.example.salesmgmt.controller;
 
+import com.example.salesmgmt.domain.StatementDeliveryMethod;
 import com.example.salesmgmt.domain.StatementWorkbookResult;
+import com.example.salesmgmt.service.FilteredStatementWorkbookService;
 import com.example.salesmgmt.service.SalesManagementService;
 import com.example.salesmgmt.service.StatementWorkbookService;
 import org.springframework.http.HttpHeaders;
@@ -29,13 +31,16 @@ public class StatementController {
             );
 
     private final StatementWorkbookService statementWorkbookService;
+    private final FilteredStatementWorkbookService filteredStatementWorkbookService;
     private final SalesManagementService salesManagementService;
 
     public StatementController(
             StatementWorkbookService statementWorkbookService,
+            FilteredStatementWorkbookService filteredStatementWorkbookService,
             SalesManagementService salesManagementService
     ) {
         this.statementWorkbookService = statementWorkbookService;
+        this.filteredStatementWorkbookService = filteredStatementWorkbookService;
         this.salesManagementService = salesManagementService;
     }
 
@@ -55,16 +60,23 @@ public class StatementController {
     public ResponseEntity<byte[]> download(
             @RequestParam(value = "templateFile", required = false) MultipartFile templateFile,
             @RequestParam String month,
-            @RequestParam(defaultValue = "false") boolean includeEmpty
+            @RequestParam(defaultValue = "false") boolean includeEmpty,
+            @RequestParam(required = false) StatementDeliveryMethod deliveryMethod
     ) {
         try {
             YearMonth selectedMonth = YearMonth.parse(month);
 
-            StatementWorkbookResult result =
-                    statementWorkbookService.generate(
+            StatementWorkbookResult result = deliveryMethod == null
+                    ? statementWorkbookService.generate(
                             templateFile,
                             selectedMonth,
                             includeEmpty
+                    )
+                    : filteredStatementWorkbookService.generate(
+                            templateFile,
+                            selectedMonth,
+                            includeEmpty,
+                            deliveryMethod
                     );
 
             String encodedFilename = URLEncoder.encode(
