@@ -6,9 +6,10 @@
         if (path === '/') return 'dashboard';
         if (path.startsWith('/upload')) return 'upload';
         if (path.startsWith('/statement')) return 'statement';
-        if (path.startsWith('/vendor')
+        if (path.startsWith('/vendor-management')
                 || path.startsWith('/sales')
                 || path.startsWith('/promotion')) return 'vendor';
+        if (path.startsWith('/vendors')) return 'route';
         if (path.startsWith('/payment')) return 'payment';
         if (path.startsWith('/profit')) return 'profit';
         if (path.startsWith('/inventory')) return 'inventory';
@@ -65,6 +66,7 @@
                 ${link('/upload', '↑', '주문 업로드', 'upload')}
                 ${link('/statements', '▤', '거래명세서', 'statement')}
                 ${link('/vendor-management', '◎', '거래처 관리', 'vendor')}
+                ${link('/vendors', '⌖', '배송 코스', 'route')}
                 ${link('/payments', '₩', '입금 관리', 'payment')}
                 ${link('/profit', '↗', '원가·이익', 'profit')}
                 ${link('/inventory', '◇', '재고 관리', 'inventory')}

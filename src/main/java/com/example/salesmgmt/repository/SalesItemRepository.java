@@ -40,6 +40,21 @@ public interface SalesItemRepository extends JpaRepository<SalesItemEntity, Long
             from SalesItemEntity item
             join fetch item.salesOrder salesOrder
             join fetch salesOrder.vendor vendor
+            where vendor.id = :vendorId
+              and salesOrder.deliveryDate between :startDate and :endDate
+            order by salesOrder.deliveryDate desc, salesOrder.id desc, item.id asc
+            """)
+    List<SalesItemEntity> findForVendorPeriod(
+            @Param("vendorId") Long vendorId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+            select item
+            from SalesItemEntity item
+            join fetch item.salesOrder salesOrder
+            join fetch salesOrder.vendor vendor
             order by salesOrder.deliveryDate desc, salesOrder.id desc, item.id desc
             """)
     List<SalesItemEntity> findRecent(Pageable pageable);
