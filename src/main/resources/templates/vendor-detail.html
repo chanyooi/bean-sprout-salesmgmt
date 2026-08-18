@@ -87,7 +87,14 @@
                        th:classappend="${row.month == selectedMonth} ? ' active'">
                         <span th:text="|${row.monthNumber}월|">8월</span>
                         <strong th:text="|${#numbers.formatDecimal(row.amount,0,'COMMA',0,'POINT')}원|">0원</strong>
-                        <small th:if="${row.manuallyRegistered}" style="font-size:10px;color:#8b95a1">직접등록</small>
+                        <small style="font-size:10px;color:#8b95a1;line-height:1.45">
+                            <span th:if="${row.monthOverMonthGrowth != null}"
+                                  th:text="|전월 ${row.monthOverMonthGrowth.signum() > 0 ? '+' : ''}${row.monthOverMonthGrowth.stripTrailingZeros().toPlainString()}%|">전월 +0%</span>
+                            <span th:if="${row.monthOverMonthGrowth == null}">전월 -</span>
+                            <span style="margin-left:5px" th:if="${row.yearOverYearGrowth != null}"
+                                  th:text="|전년 ${row.yearOverYearGrowth.signum() > 0 ? '+' : ''}${row.yearOverYearGrowth.stripTrailingZeros().toPlainString()}%|">전년 +0%</span>
+                            <span style="margin-left:5px" th:if="${row.yearOverYearGrowth == null}">전년 -</span>
+                        </small>
                     </a>
                 </div>
 
