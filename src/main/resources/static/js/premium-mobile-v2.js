@@ -54,7 +54,7 @@
     appbar.innerHTML = `
         <button class="sp-appbar-button sp-left-action" type="button" aria-label="${path === '/' ? '메뉴 열기' : '뒤로 가기'}">${path === '/' ? icons.menu : icons.back}</button>
         <div class="sp-appbar-title">${esc(title())}</div>
-        <button class="sp-appbar-button sp-menu-action" type="button" aria-label="전체 메뉴 열기">${icons.menu}</button>
+        <span class="sp-appbar-button" aria-hidden="true"></span>
     `;
     body.appendChild(appbar);
 
@@ -116,7 +116,6 @@
         else if (history.length > 1) history.back();
         else location.href = '/';
     });
-    appbar.querySelector('.sp-menu-action').addEventListener('click', openDrawer);
     drawer.querySelector('.sp-drawer-close').addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
