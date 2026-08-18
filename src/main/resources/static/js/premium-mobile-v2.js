@@ -17,7 +17,7 @@
         statement: icon('<path d="M6 3h9l4 4v14H6zM15 3v5h5M9 12h6M9 16h6"/>'),
         vendor: icon('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9"/>'),
         payment: icon('<path d="M3 6h18v12H3zM3 10h18M7 15h4"/>'),
-        inventory: icon('<path d="m12 3 8 4-8 4-8-4 8-4ZM4 7v10l8 4 8-4V7M12 11v10"/>')
+        profit: icon('<path d="M4 19V9M10 19V5M16 19v-7M3 19h18M16 7l4-4M20 3v5"/>')
     };
 
     function title() {
@@ -31,7 +31,7 @@
         if (path.startsWith('/statement')) return 'statement';
         if (path.startsWith('/vendor') || path.startsWith('/sales') || path.startsWith('/promotion')) return 'vendor';
         if (path.startsWith('/payment')) return 'payment';
-        if (path.startsWith('/inventory')) return 'inventory';
+        if (path.startsWith('/profit') || path.startsWith('/bean-usage')) return 'profit';
         return '';
     }
 
@@ -79,8 +79,7 @@
             ${drawerLink('/statements', '▤', '거래명세서', 'statement')}
             ${drawerLink('/vendor-management', '◎', '거래처관리', 'vendor')}
             ${drawerLink('/payments', '₩', '입금관리', 'payment')}
-            ${drawerLink('/profit', '↗', '원가·이익', '')}
-            ${drawerLink('/inventory', '◇', '재고관리', 'inventory')}
+            ${drawerLink('/profit', '↗', '원가·이익', 'profit')}
             ${drawerLink('/admin/users', '♙', '사용자관리', '')}
         </nav>
     `;
@@ -94,7 +93,7 @@
         ${bottomLink('/statements', icons.statement, '명세서', 'statement')}
         ${bottomLink('/vendor-management', icons.vendor, '거래처', 'vendor')}
         ${bottomLink('/payments', icons.payment, '입금', 'payment')}
-        ${bottomLink('/inventory', icons.inventory, '재고', 'inventory')}
+        ${bottomLink('/profit', icons.profit, '원가', 'profit')}
     `;
     body.appendChild(bottom);
 
