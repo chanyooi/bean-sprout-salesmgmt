@@ -11,8 +11,7 @@
                 || path.startsWith('/promotion')) return 'vendor';
         if (path.startsWith('/vendors')) return 'route';
         if (path.startsWith('/payment')) return 'payment';
-        if (path.startsWith('/profit')) return 'profit';
-        if (path.startsWith('/inventory')) return 'inventory';
+        if (path.startsWith('/profit') || path.startsWith('/bean-usage')) return 'profit';
         if (path.startsWith('/admin/users')) return 'users';
         return '';
     }
@@ -69,7 +68,6 @@
                 ${link('/vendors', '⌖', '배송 코스', 'route')}
                 ${link('/payments', '₩', '입금 관리', 'payment')}
                 ${link('/profit', '↗', '원가·이익', 'profit')}
-                ${link('/inventory', '◇', '재고 관리', 'inventory')}
             </nav>
 
             <div class="dgs-bottom">

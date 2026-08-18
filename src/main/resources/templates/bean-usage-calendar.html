@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>콩 사용 관리</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
+    <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260818_2)}">
+    <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/bean-usage-calendar.css(v=20260818_1)}">
+</head>
+<body>
+<main class="bean-calendar-shell">
+    <section class="bean-calendar-hero">
+        <div>
+            <p class="eyebrow">원가·이익</p>
+            <h1>콩 사용 관리</h1>
+            <p>날짜를 눌러 하루 사용 포대 수를 빠르게 추가합니다.</p>
+        </div>
+        <a class="secondary-link" th:href="@{/profit(month=${selectedMonth})}">원가·이익으로</a>
+    </section>
+
+    <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
+    <div class="alert error" th:if="${inventoryError}" th:text="${inventoryError}"></div>
+
+    <section class="bean-month-bar">
+        <a th:href="@{/bean-usage(month=${previousMonth})}">‹</a>
+        <form method="get" th:action="@{/bean-usage}">
+            <input type="month" name="month" th:value="${selectedMonth}" onchange="this.form.submit()">
+        </form>
+        <a th:href="@{/bean-usage(month=${nextMonth})}">›</a>
+    </section>
+
+    <section class="bean-month-summary">
+        <article><span>대립</span><strong th:text="${calendar.largeTotal.stripTrailingZeros().toPlainString()}">0</strong><small>포</small></article>
+        <article><span>중립</span><strong th:text="${calendar.mediumTotal.stripTrailingZeros().toPlainString()}">0</strong><small>포</small></article>
+        <article><span>소립</span><strong th:text="${calendar.smallTotal.stripTrailingZeros().toPlainString()}">0</strong><small>포</small></article>
+    </section>
+
+    <section class="bean-calendar-card">
+        <div class="bean-weekdays">
+            <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span>
+        </div>
+        <div class="bean-calendar-grid">
+            <button type="button"
+                    th:each="cell : ${calendar.cells}"
+                    class="bean-day"
+                    th:classappend="${!cell.inMonth} ? ' other-month' : ''"
+                    th:disabled="${!cell.inMonth}"
+                    th:data-date="${cell.date}"
+                    th:data-large="${cell.largeBags.stripTrailingZeros().toPlainString()}"
+                    th:data-medium="${cell.mediumBags.stripTrailingZeros().toPlainString()}"
+                    th:data-small="${cell.smallBags.stripTrailingZeros().toPlainString()}">
+                <span class="bean-day-number" th:text="${cell.dayOfMonth}">1</span>
+                <div class="bean-day-usage" th:if="${cell.inMonth}">
+                    <span th:text="|대 ${cell.largeBags.stripTrailingZeros().toPlainString()}|">대 0</span>
+                    <span th:text="|중 ${cell.mediumBags.stripTrailingZeros().toPlainString()}|">중 0</span>
+                    <span th:text="|소 ${cell.smallBags.stripTrailingZeros().toPlainString()}|">소 0</span>
+                </div>
+            </button>
+        </div>
+    </section>
+
+    <p class="bean-calendar-help">표시 순서: 대립 · 중립 · 소립. 날짜를 누르면 사용량 추가 화면이 열립니다.</p>
+</main>
+
+<div id="beanUsageModal" class="bean-modal" hidden>
+    <div class="bean-modal-backdrop" data-close-modal></div>
+    <section class="bean-modal-card" role="dialog" aria-modal="true" aria-labelledby="beanModalTitle">
+        <div class="bean-modal-header">
+            <div>
+                <small>콩 사용 추가</small>
+                <h2 id="beanModalTitle">날짜</h2>
+            </div>
+            <button type="button" class="bean-modal-close" data-close-modal>×</button>
+        </div>
+
+        <div class="bean-existing" id="beanExisting">현재 사용량</div>
+
+        <form th:action="@{/bean-usage/add}" method="post" id="beanUsageForm">
+            <input type="hidden" name="usageDate" id="beanUsageDate">
+
+            <div class="bean-input-row">
+                <div class="bean-input-label"><strong>대립</strong><small>포</small></div>
+                <div class="bean-stepper">
+                    <button type="button" data-step="-1" data-target="largeBags">−</button>
+                    <input id="largeBags" name="largeBags" type="number" min="0" step="1" value="0" inputmode="decimal">
+                    <button type="button" data-step="1" data-target="largeBags">+</button>
+                </div>
+                <select name="largeOrigin" aria-label="대립 원산지">
+                    <option th:each="origin : ${origins}" th:if="${origin.name() != 'CHILE'}" th:value="${origin.name()}" th:text="${origin.label}" th:selected="${origin.name() == 'CANADA'}"></option>
+                </select>
+            </div>
+
+            <div class="bean-input-row">
+                <div class="bean-input-label"><strong>중립</strong><small>포</small></div>
+                <div class="bean-stepper">
+                    <button type="button" data-step="-1" data-target="mediumBags">−</button>
+                    <input id="mediumBags" name="mediumBags" type="number" min="0" step="1" value="0" inputmode="decimal">
+                    <button type="button" data-step="1" data-target="mediumBags">+</button>
+                </div>
+                <select name="mediumOrigin" aria-label="중립 원산지">
+                    <option th:each="origin : ${origins}" th:if="${origin.name() != 'CHILE'}" th:value="${origin.name()}" th:text="${origin.label}" th:selected="${origin.name() == 'CANADA'}"></option>
+                </select>
+            </div>
+
+            <div class="bean-input-row">
+                <div class="bean-input-label"><strong>소립</strong><small>포</small></div>
+                <div class="bean-stepper">
+                    <button type="button" data-step="-1" data-target="smallBags">−</button>
+                    <input id="smallBags" name="smallBags" type="number" min="0" step="1" value="0" inputmode="decimal">
+                    <button type="button" data-step="1" data-target="smallBags">+</button>
+                </div>
+                <select name="smallOrigin" aria-label="소립 원산지">
+                    <option th:each="origin : ${origins}" th:if="${origin.name() != 'CHILE'}" th:value="${origin.name()}" th:text="${origin.label}" th:selected="${origin.name() == 'CANADA'}"></option>
+                </select>
+            </div>
+
+            <p class="bean-origin-note">원산지는 원가 계산에 필요해서 기본값만 잡아뒀습니다. 필요할 때만 바꾸면 됩니다.</p>
+            <button type="submit" class="bean-save-button">추가하기</button>
+        </form>
+    </section>
+</div>
+
+<form id="songcheonPcLogoutForm" th:action="@{/logout}" method="post" style="display:none" aria-hidden="true"></form>
+<script defer th:src="@{/js/premium-mobile-v2.js(v=20260818_2)}"></script>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260818_2)}"></script>
+<script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/bean-usage-calendar.js(v=20260818_1)}"></script>
+</body>
+</html>
