@@ -10,7 +10,6 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -195,7 +194,7 @@ public class StatementWorkbookService {
                 );
             }
 
-            recalculateFormulas(workbook);
+            prepareFormulaRecalculation(workbook);
 
             workbook.write(outputStream);
 
@@ -399,11 +398,6 @@ public class StatementWorkbookService {
         String label =
                 rawLabel.trim();
 
-        /*
-         * template1.xlsx 팔공식품 시트의 '일소' 열은
-         * 실제 합계수식에서 -F*3000으로 사용되므로
-         * 회수통 수량 열로 처리합니다.
-         */
         if ("일소".equals(label)) {
             return "회수통";
         }
@@ -489,15 +483,13 @@ public class StatementWorkbookService {
                 warnings
         );
 
-        Map<LocalDate, Map<String, BigDecimal>>
-                quantityPivot =
+        Map<LocalDate, Map<String, BigDecimal>> quantityPivot =
                 createQuantityPivot(items);
 
         List<LocalDate> dates =
                 period.startDate()
                         .datesUntil(
-                                period.endDate()
-                                        .plusDays(1)
+                                period.endDate().plusDays(1)
                         )
                         .toList();
 
@@ -509,8 +501,7 @@ public class StatementWorkbookService {
         if (dates.size() > availableRows) {
             throw new IllegalArgumentException(
                     sheet.getSheetName()
-                            + " 시트의 날짜 입력 행이 "
-                            + "부족합니다. 필요 "
+                            + " 시트의 날짜 입력 행이 부족합니다. 필요 "
                             + dates.size()
                             + "행 / 템플릿 "
                             + availableRows
@@ -518,81 +509,29 @@ public class StatementWorkbookService {
             );
         }
 
-        for (
-                int offset = 0;
-                offset < dates.size();
-                offset++
-        ) {
-            LocalDate date =
-                    dates.get(offset);
+        for (int offset = 0; offset < dates.size(); offset++) {
+            LocalDate date = dates.get(offset);
+            int rowIndex = layout.dataStartRowIndex() + offset;
+            Row row = getOrCreateRow(sheet, rowIndex);
 
-            int rowIndex =
-                    layout.dataStartRowIndex()
-                            + offset;
-
-            Row row =
-                    getOrCreateRow(
-                            sheet,
-                            rowIndex
-                    );
-
-            Cell dateCell =
-                    getOrCreateCell(
-                            row,
-                            DATE_COLUMN_INDEX
-                    );
-
-            dateCell.setCellValue(
-                    Date.valueOf(date)
-            );
+            Cell dateCell = getOrCreateCell(row, DATE_COLUMN_INDEX);
+            dateCell.setCellValue(Date.valueOf(date));
 
             Map<String, BigDecimal> quantities =
-                    quantityPivot
-                            .getOrDefault(
-                                    date,
-                                    Map.of()
-                            );
+                    quantityPivot.getOrDefault(date, Map.of());
 
-            for (
-                    Map.Entry<String, Integer> entry
-                    : layout.itemColumns().entrySet()
-            ) {
-                BigDecimal quantity =
-                        quantities.get(
-                                entry.getKey()
-                        );
+            for (Map.Entry<String, Integer> entry
+                    : layout.itemColumns().entrySet()) {
+                BigDecimal quantity = quantities.get(entry.getKey());
 
-                if (
-                        quantity == null
-                        || quantity.signum() == 0
-                ) {
+                if (quantity == null || quantity.signum() == 0) {
                     continue;
                 }
 
                 Cell quantityCell =
-                        getOrCreateCell(
-                                row,
-                                entry.getValue()
-                        );
-
-                quantityCell.setCellValue(
-                        quantity.doubleValue()
-                );
+                        getOrCreateCell(row, entry.getValue());
+                quantityCell.setCellValue(quantity.doubleValue());
             }
-
-            /*
-             * 중요:
-             * 회수통 합계 수식은 수정하지 않습니다.
-             *
-             * template.xlsx 원래 수식:
-             * =I29*6000+...+C29*1800-F29*3000
-             *
-             * 여기서는 F29 같은 수량 셀에만 회수통 수량을 넣고,
-             * 수식 자체는 Excel 템플릿 원본을 그대로 유지합니다.
-             *
-             * 따라서 회수통이 없는 날은 F=0 -> 차감 0원,
-             * 회수통이 11개면 F=11 -> -33,000원이 됩니다.
-             */
         }
     }
 
@@ -621,31 +560,17 @@ public class StatementWorkbookService {
             TemplateLayout layout
     ) {
         for (
-                int rowIndex =
-                        layout.dataStartRowIndex();
-                rowIndex <=
-                        layout.dataEndRowIndex();
+                int rowIndex = layout.dataStartRowIndex();
+                rowIndex <= layout.dataEndRowIndex();
                 rowIndex++
         ) {
-            Row row =
-                    getOrCreateRow(
-                            sheet,
-                            rowIndex
-                    );
+            Row row = getOrCreateRow(sheet, rowIndex);
 
-            getOrCreateCell(
-                    row,
-                    DATE_COLUMN_INDEX
-            ).setBlank();
+            getOrCreateCell(row, DATE_COLUMN_INDEX).setBlank();
 
-            for (
-                    Integer columnIndex
-                    : layout.itemColumns().values()
-            ) {
-                getOrCreateCell(
-                        row,
-                        columnIndex
-                ).setBlank();
+            for (Integer columnIndex
+                    : layout.itemColumns().values()) {
+                getOrCreateCell(row, columnIndex).setBlank();
             }
         }
     }
@@ -657,19 +582,11 @@ public class StatementWorkbookService {
             int headerRowIndex,
             List<GenerationWarning> warnings
     ) {
-        for (
-                SalesItemEntity item : items
-        ) {
+        for (SalesItemEntity item : items) {
             String normalizedItem =
-                    normalizeItemName(
-                            item.getItemName()
-                    );
+                    normalizeItemName(item.getItemName());
 
-            if (
-                    availableItems.contains(
-                            normalizedItem
-                    )
-            ) {
+            if (availableItems.contains(normalizedItem)) {
                 continue;
             }
 
@@ -677,29 +594,23 @@ public class StatementWorkbookService {
                     new GenerationWarning(
                             "품목 열 없음",
                             statementName,
-                            item.getSalesOrder()
-                                    .getDeliveryDate(),
+                            item.getSalesOrder().getDeliveryDate(),
                             item.getItemName(),
                             item.getQuantity(),
                             "template.xlsx의 "
                                     + (headerRowIndex + 1)
-                                    + "행에 해당 품목 열이 없어 "
-                                    + "수량을 입력하지 못했습니다."
+                                    + "행에 해당 품목 열이 없어 수량을 입력하지 못했습니다."
                     )
             );
         }
     }
 
-    private Map<String, List<SalesItemEntity>>
-    groupByStatementName(
+    private Map<String, List<SalesItemEntity>> groupByStatementName(
             List<SalesItemEntity> items
     ) {
-        Map<String, List<SalesItemEntity>> grouped =
-                new HashMap<>();
+        Map<String, List<SalesItemEntity>> grouped = new HashMap<>();
 
-        for (
-                SalesItemEntity item : items
-        ) {
+        for (SalesItemEntity item : items) {
             String statementName =
                     normalizeName(
                             item.getSalesOrder()
@@ -723,11 +634,7 @@ public class StatementWorkbookService {
             LocalDate normalEnd,
             LocalDate sunsanStart
     ) {
-        if (
-                SUNSAN_STATEMENT_NAME.equals(
-                        statementName
-                )
-        ) {
+        if (SUNSAN_STATEMENT_NAME.equals(statementName)) {
             return new StatementPeriod(
                     sunsanStart,
                     month.atDay(25),
@@ -755,42 +662,26 @@ public class StatementWorkbookService {
     }
 
     private void addMissingTemplateWarnings(
-            Map<String, List<SalesItemEntity>>
-                    itemsByStatementName,
+            Map<String, List<SalesItemEntity>> itemsByStatementName,
             Set<String> templateStatementNames,
             YearMonth month,
             List<GenerationWarning> warnings
     ) {
-        LocalDate normalStart =
-                month.atDay(1);
+        LocalDate normalStart = month.atDay(1);
+        LocalDate normalEnd = month.atEndOfMonth();
 
-        LocalDate normalEnd =
-                month.atEndOfMonth();
-
-        for (
-                Map.Entry<String, List<SalesItemEntity>> entry
-                : itemsByStatementName.entrySet()
-        ) {
-            if (
-                    templateStatementNames.contains(
-                            entry.getKey()
-                    )
-            ) {
+        for (Map.Entry<String, List<SalesItemEntity>> entry
+                : itemsByStatementName.entrySet()) {
+            if (templateStatementNames.contains(entry.getKey())) {
                 continue;
             }
 
-            for (
-                    SalesItemEntity item
-                    : entry.getValue()
-            ) {
+            for (SalesItemEntity item : entry.getValue()) {
                 LocalDate date =
-                        item.getSalesOrder()
-                                .getDeliveryDate();
+                        item.getSalesOrder().getDeliveryDate();
 
-                if (
-                        date.isBefore(normalStart)
-                        || date.isAfter(normalEnd)
-                ) {
+                if (date.isBefore(normalStart)
+                        || date.isAfter(normalEnd)) {
                     continue;
                 }
 
@@ -801,8 +692,7 @@ public class StatementWorkbookService {
                                 date,
                                 item.getItemName(),
                                 item.getQuantity(),
-                                "template.xlsx에 거래처 시트가 없어 "
-                                        + "명세서를 만들지 못했습니다."
+                                "template.xlsx에 거래처 시트가 없어 명세서를 만들지 못했습니다."
                         )
                 );
             }
@@ -814,56 +704,29 @@ public class StatementWorkbookService {
             List<GenerationWarning> warnings
     ) {
         String sheetName =
-                workbook.getSheet(
-                        WARNING_SHEET_NAME
-                ) == null
+                workbook.getSheet(WARNING_SHEET_NAME) == null
                         ? WARNING_SHEET_NAME
                         : "생성확인_경고";
 
-        XSSFSheet sheet =
-                workbook.createSheet(sheetName);
+        XSSFSheet sheet = workbook.createSheet(sheetName);
+        workbook.setSheetOrder(sheetName, 0);
 
-        workbook.setSheetOrder(
-                sheetName,
-                0
-        );
-
-        CellStyle headerStyle =
-                workbook.createCellStyle();
-
-        Font headerFont =
-                workbook.createFont();
-
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
         headerFont.setBold(true);
-
-        headerStyle.setFont(
-                headerFont
-        );
-
+        headerStyle.setFont(headerFont);
         headerStyle.setFillForegroundColor(
-                IndexedColors.LIGHT_YELLOW
-                        .getIndex()
+                IndexedColors.LIGHT_YELLOW.getIndex()
         );
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-        headerStyle.setFillPattern(
-                FillPatternType.SOLID_FOREGROUND
-        );
-
-        Row titleRow =
-                sheet.createRow(0);
-
-        Cell titleCell =
-                titleRow.createCell(0);
-
+        Row titleRow = sheet.createRow(0);
+        Cell titleCell = titleRow.createCell(0);
         titleCell.setCellValue(
-                "아래 판매자료는 템플릿에 맞는 "
-                        + "시트 또는 품목 열이 없어 "
-                        + "명세서에 반영되지 않았습니다."
+                "아래 판매자료는 템플릿에 맞는 시트 또는 품목 열이 없어 명세서에 반영되지 않았습니다."
         );
 
-        Row headerRow =
-                sheet.createRow(2);
-
+        Row headerRow = sheet.createRow(2);
         String[] headers = {
                 "구분",
                 "거래처",
@@ -873,121 +736,45 @@ public class StatementWorkbookService {
                 "사유"
         };
 
-        for (
-                int column = 0;
-                column < headers.length;
-                column++
-        ) {
-            Cell cell =
-                    headerRow.createCell(column);
-
-            cell.setCellValue(
-                    headers[column]
-            );
-
-            cell.setCellStyle(
-                    headerStyle
-            );
+        for (int column = 0; column < headers.length; column++) {
+            Cell cell = headerRow.createCell(column);
+            cell.setCellValue(headers[column]);
+            cell.setCellStyle(headerStyle);
         }
 
         int rowIndex = 3;
 
-        for (
-                GenerationWarning warning
-                : warnings
-        ) {
-            Row row =
-                    sheet.createRow(
-                            rowIndex++
-                    );
-
-            row.createCell(0)
-                    .setCellValue(
-                            warning.type()
-                    );
-
-            row.createCell(1)
-                    .setCellValue(
-                            warning.statementName()
-                    );
-
-            row.createCell(2)
-                    .setCellValue(
-                            warning.deliveryDate()
-                                    .toString()
-                    );
-
-            row.createCell(3)
-                    .setCellValue(
-                            warning.itemName()
-                    );
-
-            row.createCell(4)
-                    .setCellValue(
-                            warning.quantity()
-                                    .doubleValue()
-                    );
-
-            row.createCell(5)
-                    .setCellValue(
-                            warning.reason()
-                    );
+        for (GenerationWarning warning : warnings) {
+            Row row = sheet.createRow(rowIndex++);
+            row.createCell(0).setCellValue(warning.type());
+            row.createCell(1).setCellValue(warning.statementName());
+            row.createCell(2).setCellValue(warning.deliveryDate().toString());
+            row.createCell(3).setCellValue(warning.itemName());
+            row.createCell(4).setCellValue(warning.quantity().doubleValue());
+            row.createCell(5).setCellValue(warning.reason());
         }
 
-        sheet.setColumnWidth(
-                0,
-                18 * 256
-        );
-
-        sheet.setColumnWidth(
-                1,
-                26 * 256
-        );
-
-        sheet.setColumnWidth(
-                2,
-                14 * 256
-        );
-
-        sheet.setColumnWidth(
-                3,
-                18 * 256
-        );
-
-        sheet.setColumnWidth(
-                4,
-                12 * 256
-        );
-
-        sheet.setColumnWidth(
-                5,
-                65 * 256
-        );
-
-        sheet.createFreezePane(
-                0,
-                3
-        );
+        sheet.setColumnWidth(0, 18 * 256);
+        sheet.setColumnWidth(1, 26 * 256);
+        sheet.setColumnWidth(2, 14 * 256);
+        sheet.setColumnWidth(3, 18 * 256);
+        sheet.setColumnWidth(4, 12 * 256);
+        sheet.setColumnWidth(5, 65 * 256);
+        sheet.createFreezePane(0, 3);
     }
 
-    private Map<LocalDate, Map<String, BigDecimal>>
-    createQuantityPivot(
+    private Map<LocalDate, Map<String, BigDecimal>> createQuantityPivot(
             List<SalesItemEntity> items
     ) {
         Map<LocalDate, Map<String, BigDecimal>> pivot =
                 new LinkedHashMap<>();
 
-        for (
-                SalesItemEntity item : items
-        ) {
+        for (SalesItemEntity item : items) {
             LocalDate date =
-                    item.getSalesOrder()
-                            .getDeliveryDate();
+                    item.getSalesOrder().getDeliveryDate();
 
             String normalizedItem =
-                    normalizeItemName(
-                            item.getItemName()
-                    );
+                    normalizeItemName(item.getItemName());
 
             pivot.computeIfAbsent(
                     date,
@@ -1006,9 +793,7 @@ public class StatementWorkbookService {
             String rawItemName
     ) {
         String normalized =
-                ItemCatalog.normalizeTemplateLabel(
-                        rawItemName
-                );
+                ItemCatalog.normalizeTemplateLabel(rawItemName);
 
         if (normalized != null) {
             return normalized;
@@ -1025,38 +810,18 @@ public class StatementWorkbookService {
             LocalDate endDate
     ) {
         LocalDate deliveryDate =
-                item.getSalesOrder()
-                        .getDeliveryDate();
+                item.getSalesOrder().getDeliveryDate();
 
-        return !deliveryDate.isBefore(
-                startDate
-        )
-                && !deliveryDate.isAfter(
-                endDate
-        );
+        return !deliveryDate.isBefore(startDate)
+                && !deliveryDate.isAfter(endDate);
     }
 
-    private void recalculateFormulas(
+    private void prepareFormulaRecalculation(
             XSSFWorkbook workbook
     ) {
+        // Railway에서 모든 수식을 서버 CPU로 계산하면 POI가 큰 부하를 만들 수 있다.
+        // 계산은 Excel이 파일을 열 때 하도록 플래그만 설정한다.
         workbook.setForceFormulaRecalculation(true);
-
-        try {
-            FormulaEvaluator evaluator =
-                    workbook
-                            .getCreationHelper()
-                            .createFormulaEvaluator();
-
-            evaluator.evaluateAll();
-
-        } catch (
-                RuntimeException ignored
-        ) {
-            /*
-             * POI가 일부 Excel 수식을 계산하지 못해도
-             * Excel에서 열 때 재계산되도록 설정합니다.
-             */
-        }
     }
 
     private String formatted(
@@ -1075,8 +840,7 @@ public class StatementWorkbookService {
             XSSFSheet sheet,
             int rowIndex
     ) {
-        Row row =
-                sheet.getRow(rowIndex);
+        Row row = sheet.getRow(rowIndex);
 
         return row == null
                 ? sheet.createRow(rowIndex)
@@ -1087,8 +851,7 @@ public class StatementWorkbookService {
             Row row,
             int columnIndex
     ) {
-        Cell cell =
-                row.getCell(columnIndex);
+        Cell cell = row.getCell(columnIndex);
 
         return cell == null
                 ? row.createCell(
@@ -1101,43 +864,30 @@ public class StatementWorkbookService {
     private InputStream openTemplate(
             MultipartFile templateFile
     ) throws IOException {
-        if (
-                templateFile != null
-                && !templateFile.isEmpty()
-        ) {
+        if (templateFile != null
+                && !templateFile.isEmpty()) {
             String originalFilename =
-                    templateFile
-                            .getOriginalFilename();
+                    templateFile.getOriginalFilename();
 
-            if (
-                    originalFilename == null
+            if (originalFilename == null
                     || !originalFilename
-                            .toLowerCase(
-                                    Locale.ROOT
-                            )
-                            .endsWith(".xlsx")
-            ) {
+                            .toLowerCase(Locale.ROOT)
+                            .endsWith(".xlsx")) {
                 throw new IllegalArgumentException(
-                        ".xlsx 형식의 템플릿만 "
-                                + "사용할 수 있습니다."
+                        ".xlsx 형식의 템플릿만 사용할 수 있습니다."
                 );
             }
 
-            return templateFile
-                    .getInputStream();
+            return templateFile.getInputStream();
         }
 
         ClassPathResource resource =
-                new ClassPathResource(
-                        DEFAULT_TEMPLATE_PATH
-                );
+                new ClassPathResource(DEFAULT_TEMPLATE_PATH);
 
         if (!resource.exists()) {
             throw new IllegalArgumentException(
-                    "기본 template.xlsx 파일을 "
-                            + "찾을 수 없습니다. "
-                            + "src/main/resources/template.xlsx를 "
-                            + "확인해주세요."
+                    "기본 template.xlsx 파일을 찾을 수 없습니다. "
+                            + "src/main/resources/template.xlsx를 확인해주세요."
             );
         }
 
