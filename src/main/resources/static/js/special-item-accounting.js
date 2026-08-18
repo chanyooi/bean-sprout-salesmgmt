@@ -11,6 +11,7 @@
     document.querySelectorAll('table tbody tr').forEach(function(tr){
       var t=rowText(tr);
       if(t.indexOf('손두부')>=0 || t.indexOf('두부판')>=0 || t.indexOf('회수통')>=0){
+        // 품목별 판매 집계표에서만 숨김. 판매내역 상세표는 그대로 둔다.
         var table=tr.closest('table');
         var head=table ? rowText(table.querySelector('thead')||table) : '';
         if(head.indexOf('판매 수량')>=0 && head.indexOf('매출')>=0) tr.classList.add('special-hidden-row');
