@@ -5,6 +5,7 @@ import com.example.salesmgmt.domain.StatementWorkbookResult;
 import com.example.salesmgmt.service.FilteredStatementWorkbookService;
 import com.example.salesmgmt.service.SalesManagementService;
 import com.example.salesmgmt.service.SingleVendorStatementWorkbookService;
+import com.example.salesmgmt.service.StatementTemplateStorageService;
 import com.example.salesmgmt.service.StatementWorkbookV2Service;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -35,17 +36,20 @@ public class StatementController {
     private final FilteredStatementWorkbookService filteredStatementWorkbookService;
     private final SingleVendorStatementWorkbookService singleVendorStatementWorkbookService;
     private final SalesManagementService salesManagementService;
+    private final StatementTemplateStorageService statementTemplateStorageService;
 
     public StatementController(
             StatementWorkbookV2Service statementWorkbookService,
             FilteredStatementWorkbookService filteredStatementWorkbookService,
             SingleVendorStatementWorkbookService singleVendorStatementWorkbookService,
-            SalesManagementService salesManagementService
+            SalesManagementService salesManagementService,
+            StatementTemplateStorageService statementTemplateStorageService
     ) {
         this.statementWorkbookService = statementWorkbookService;
         this.filteredStatementWorkbookService = filteredStatementWorkbookService;
         this.singleVendorStatementWorkbookService = singleVendorStatementWorkbookService;
         this.salesManagementService = salesManagementService;
+        this.statementTemplateStorageService = statementTemplateStorageService;
     }
 
     @GetMapping
@@ -55,6 +59,8 @@ public class StatementController {
     ) {
         YearMonth selectedMonth = salesManagementService.resolveMonth(month);
         model.addAttribute("selectedMonth", selectedMonth.toString());
+        model.addAttribute("currentTemplateFilename", statementTemplateStorageService.currentFilename());
+        model.addAttribute("currentTemplateUpdatedAt", statementTemplateStorageService.currentUpdatedAt());
         return "statements";
     }
 
@@ -85,15 +91,17 @@ public class StatementController {
     ) {
         try {
             YearMonth selectedMonth = YearMonth.parse(month);
+            MultipartFile effectiveTemplate =
+                    statementTemplateStorageService.resolveAndSaveIfUploaded(templateFile);
 
             StatementWorkbookResult result = deliveryMethod == null
                     ? statementWorkbookService.generate(
-                            templateFile,
+                            effectiveTemplate,
                             selectedMonth,
                             includeEmpty
                     )
                     : filteredStatementWorkbookService.generate(
-                            templateFile,
+                            effectiveTemplate,
                             selectedMonth,
                             includeEmpty,
                             deliveryMethod
