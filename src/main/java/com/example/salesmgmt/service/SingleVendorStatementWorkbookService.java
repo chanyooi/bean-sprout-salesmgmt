@@ -12,7 +12,6 @@ import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,19 +31,21 @@ import java.util.Map;
 @Service
 public class SingleVendorStatementWorkbookService {
 
-    private static final String DEFAULT_TEMPLATE_PATH = "template.xlsx";
     private static final String SUNSAN_STATEMENT_NAME = "선산식자재마트";
 
     private final VendorRepository vendorRepository;
     private final SalesItemRepository salesItemRepository;
+    private final StatementTemplateStorageService statementTemplateStorageService;
     private final DataFormatter formatter = new DataFormatter(Locale.KOREA);
 
     public SingleVendorStatementWorkbookService(
             VendorRepository vendorRepository,
-            SalesItemRepository salesItemRepository
+            SalesItemRepository salesItemRepository,
+            StatementTemplateStorageService statementTemplateStorageService
     ) {
         this.vendorRepository = vendorRepository;
         this.salesItemRepository = salesItemRepository;
+        this.statementTemplateStorageService = statementTemplateStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -64,20 +65,13 @@ public class SingleVendorStatementWorkbookService {
                 period.end()
         );
 
-        ClassPathResource resource = new ClassPathResource(DEFAULT_TEMPLATE_PATH);
-        if (!resource.exists()) {
-            throw new IllegalArgumentException("기본 template.xlsx 파일을 찾을 수 없습니다.");
-        }
-
         try (
-                InputStream input = resource.getInputStream();
+                InputStream input = statementTemplateStorageService.openCurrentTemplate();
                 XSSFWorkbook workbook = new XSSFWorkbook(input);
                 ByteArrayOutputStream output = new ByteArrayOutputStream()
         ) {
             XSSFSheet target = prepareTargetSheet(workbook, statementName);
 
-            // 여기서부터는 거래처 한 장만 남긴 상태에서 작업한다.
-            // 기존 방식처럼 전체 거래처를 계산하고 다시 지우지 않는다.
             removeAllOtherSheets(workbook, target);
             patchSheetFromDatabase(target, statementName, period, items);
 
