@@ -36,6 +36,43 @@
         `;
     }
 
+    function statementMenu() {
+        const isStatementGroup =
+            group() === 'statement';
+
+        const excelActive =
+            path === '/statements'
+                    || path.startsWith('/statements/');
+
+        const smsActive =
+            path.startsWith('/statement-export')
+                    || path.startsWith('/statement-send');
+
+        return `
+            <div class="dgs-menu-group ${isStatementGroup ? 'open active' : ''}"
+                 data-dgs-statement-group>
+                <button type="button"
+                        class="dgs-menu-toggle"
+                        data-dgs-statement-toggle
+                        aria-expanded="${isStatementGroup ? 'true' : 'false'}">
+                    <span class="dgs-icon">▤</span>
+                    <strong>거래명세서</strong>
+                    <span class="dgs-menu-arrow">⌄</span>
+                </button>
+                <div class="dgs-submenu">
+                    <a href="/statements"
+                       class="${excelActive ? 'active' : ''}">
+                        <span>엑셀 명세서</span>
+                    </a>
+                    <a href="/statement-export"
+                       class="${smsActive ? 'active' : ''}">
+                        <span>문자발송</span>
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
     if (
         window.matchMedia(
             '(min-width: 641px)'
@@ -63,7 +100,7 @@
             <nav class="dgs-nav">
                 ${link('/', '⌂', '대시보드', 'dashboard')}
                 ${link('/upload', '↑', '주문 업로드', 'upload')}
-                ${link('/statements', '▤', '거래명세서', 'statement')}
+                ${statementMenu()}
                 ${link('/vendor-management', '◎', '거래처 관리', 'vendor')}
                 ${link('/vendors', '⌖', '배송 코스', 'route')}
                 ${link('/payments', '₩', '입금 관리', 'payment')}
@@ -78,6 +115,33 @@
         document.body.appendChild(
             sidebar
         );
+
+        const statementGroup =
+            sidebar.querySelector(
+                '[data-dgs-statement-group]'
+            );
+
+        const statementToggle =
+            sidebar.querySelector(
+                '[data-dgs-statement-toggle]'
+            );
+
+        if (statementGroup && statementToggle) {
+            statementToggle.addEventListener(
+                'click',
+                () => {
+                    const open =
+                        statementGroup.classList.toggle(
+                            'open'
+                        );
+
+                    statementToggle.setAttribute(
+                        'aria-expanded',
+                        open ? 'true' : 'false'
+                    );
+                }
+            );
+        }
     }
 
     if (path.startsWith('/upload')) {
