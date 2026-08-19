@@ -54,10 +54,7 @@ public class PriceManagementService {
 
                 if (existingVendor.isPresent()) {
                     vendor = existingVendor.get();
-                    vendor.updateStatementSettings(
-                            row.statementVendor(),
-                            true
-                    );
+                    vendor.updateStatementSettings(row.statementVendor(), true);
                 } else {
                     vendor = vendorRepository.save(new VendorEntity(
                             row.inputVendor(),
@@ -71,28 +68,30 @@ public class PriceManagementService {
             }
 
             var existingPrice = vendorPriceRepository.findByVendor_IdAndItemName(
-                    vendor.getId(),
-                    row.itemName()
+                    vendor.getId(), row.itemName()
             );
+
+            BigDecimal normalizedPrice = normalizePrice(row.unitPrice());
 
             if (existingPrice.isEmpty()) {
                 vendorPriceRepository.save(new VendorPriceEntity(
                         vendor,
                         row.itemName(),
-                        normalizePrice(row.unitPrice()),
+                        normalizedPrice,
                         row.sourceSheet()
                 ));
+                applyBasePriceToSales(vendor.getId(), row.itemName(), normalizedPrice);
                 createdPrices++;
                 continue;
             }
 
             VendorPriceEntity priceEntity = existingPrice.get();
-            BigDecimal normalizedPrice = normalizePrice(row.unitPrice());
 
             if (priceEntity.getUnitPrice().compareTo(normalizedPrice) == 0) {
                 unchangedPrices++;
             } else {
                 priceEntity.update(normalizedPrice, row.sourceSheet());
+                applyBasePriceToSales(vendor.getId(), row.itemName(), normalizedPrice);
                 updatedPrices++;
             }
         }
@@ -163,8 +162,14 @@ public class PriceManagementService {
                         "수정할 단가 정보를 찾을 수 없습니다."
                 ));
 
-        entity.update(normalizePrice(unitPrice), entity.getSourceSheet());
-        return applyPricesToUnpricedSales();
+        BigDecimal normalized = normalizePrice(unitPrice);
+        entity.update(normalized, entity.getSourceSheet());
+        int updated = applyBasePriceToSales(
+                entity.getVendor().getId(),
+                entity.getItemName(),
+                normalized
+        );
+        return updated + applyPricesToUnpricedSales();
     }
 
     @Transactional
@@ -184,23 +189,38 @@ public class PriceManagementService {
                         "거래처를 찾을 수 없습니다."
                 ));
 
-        var existing = vendorPriceRepository.findByVendor_IdAndItemName(
-                vendorId,
-                itemName
-        );
+        BigDecimal normalized = normalizePrice(unitPrice);
+        var existing = vendorPriceRepository.findByVendor_IdAndItemName(vendorId, itemName);
 
         if (existing.isPresent()) {
-            existing.get().update(normalizePrice(unitPrice), "웹 직접 입력");
+            existing.get().update(normalized, "웹 직접 입력");
         } else {
             vendorPriceRepository.save(new VendorPriceEntity(
                     vendor,
                     itemName,
-                    normalizePrice(unitPrice),
+                    normalized,
                     "웹 직접 입력"
             ));
         }
 
-        return applyPricesToUnpricedSales();
+        int updated = applyBasePriceToSales(vendorId, itemName, normalized);
+        return updated + applyPricesToUnpricedSales();
+    }
+
+    private int applyBasePriceToSales(
+            Long vendorId,
+            String itemName,
+            BigDecimal configuredPrice
+    ) {
+        int updated = 0;
+        for (SalesItemEntity item : salesItemRepository.findBasePriceManagedItems(vendorId, itemName)) {
+            BigDecimal salesPrice = "회수통".equals(itemName)
+                    ? ReturnContainerPricePolicy.toSalesUnitPrice(configuredPrice)
+                    : configuredPrice;
+            item.applyBaseUnitPrice(salesPrice);
+            updated++;
+        }
+        return updated;
     }
 
     private int applyPricesToUnpricedSales() {
@@ -219,7 +239,7 @@ public class PriceManagementService {
             BigDecimal unitPrice = resolveUnitPrice(salesItem, priceMap);
 
             if (unitPrice != null) {
-                salesItem.applyUnitPrice(unitPrice);
+                salesItem.applyBaseUnitPrice(unitPrice);
                 applied++;
             }
         }
@@ -233,8 +253,7 @@ public class PriceManagementService {
     ) {
         if ("회수통".equals(salesItem.getItemName())) {
             BigDecimal configuredPrice =
-                    salesItem.getSalesOrder()
-                            .getReturnContainerUnitPrice();
+                    salesItem.getSalesOrder().getReturnContainerUnitPrice();
 
             if (configuredPrice == null) {
                 configuredPrice = priceMap.get(priceKey(
@@ -243,9 +262,7 @@ public class PriceManagementService {
                 ));
             }
 
-            return ReturnContainerPricePolicy.toSalesUnitPrice(
-                    configuredPrice
-            );
+            return ReturnContainerPricePolicy.toSalesUnitPrice(configuredPrice);
         }
 
         return priceMap.get(priceKey(
