@@ -78,12 +78,13 @@
 
 #statementCapture .classic-summary-table {
     font-size: 14px;
+    align-self: start;
 }
 
 #statementCapture .classic-summary-table th,
 #statementCapture .classic-summary-table td {
-    height: 31px;
-    padding: 2px 7px;
+    height: 20px;
+    padding: 1px 7px;
     text-align: center;
 }
 
@@ -145,8 +146,8 @@
 
 #statementCapture .classic-net-row {
     width: 50.8%;
-    min-height: 55px;
-    margin-top: -1px;
+    min-height: 76px;
+    margin-top: -76px;
     display: grid;
     grid-template-columns: 50% 50%;
     border: 1px solid #111;
