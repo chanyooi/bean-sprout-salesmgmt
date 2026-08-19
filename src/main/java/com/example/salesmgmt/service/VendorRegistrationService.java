@@ -49,8 +49,18 @@ public class VendorRegistrationService {
                 ? safeInputName
                 : statementName.trim();
 
+        validateStatementName(safeStatementName);
+
         if (vendorRepository.findByInputName(safeInputName).isPresent()) {
             throw new IllegalArgumentException("이미 등록된 거래처명입니다: " + safeInputName);
+        }
+
+        boolean duplicateStatementName = vendorRepository.findAll().stream()
+                .anyMatch(vendor -> safeStatementName.equals(vendor.getStatementName()));
+        if (duplicateStatementName) {
+            throw new IllegalArgumentException(
+                    "같은 명세서명을 사용하는 거래처가 이미 있습니다: " + safeStatementName
+            );
         }
 
         VendorEntity vendor = new VendorEntity(
@@ -97,6 +107,15 @@ public class VendorRegistrationService {
         }
 
         return vendor.getId();
+    }
+
+    private void validateStatementName(String value) {
+        if (value.length() > 31) {
+            throw new IllegalArgumentException("명세서명은 엑셀 시트명 기준 31자 이하로 입력해주세요.");
+        }
+        if (value.matches(".*[\\\\/?*\\[\\]:].*")) {
+            throw new IllegalArgumentException("명세서명에는 \\ / ? * [ ] : 문자를 사용할 수 없습니다.");
+        }
     }
 
     private String normalizeName(String value, String errorMessage) {
