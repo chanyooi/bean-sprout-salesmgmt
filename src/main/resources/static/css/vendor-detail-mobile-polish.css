@@ -1,0 +1,198 @@
+@media (max-width: 640px) {
+    body {
+        background: #f5f7fa;
+    }
+
+    .vendor-v2-shell {
+        width: 100%;
+        max-width: none;
+        padding: 14px 12px 96px;
+    }
+
+    .vendor-v2-hero {
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .vendor-v2-hero h1 {
+        margin: 7px 0 5px;
+        font-size: 26px;
+        line-height: 1.15;
+        letter-spacing: -.04em;
+    }
+
+    .profile-line {
+        gap: 5px 9px;
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    .vendor-v2-hero > div:last-child {
+        width: 100%;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px !important;
+    }
+
+    .vendor-v2-hero > div:last-child .secondary-link {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        border-radius: 13px;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    .v2-panel {
+        margin-bottom: 10px;
+        padding: 16px 14px;
+        border-radius: 17px;
+        border-color: #e8ebef;
+        box-shadow: 0 3px 12px rgba(15,23,42,.035);
+    }
+
+    .v2-panel h2 {
+        margin-bottom: 12px;
+        font-size: 17px;
+        letter-spacing: -.025em;
+    }
+
+    .detail-grid {
+        gap: 0;
+    }
+
+    /* 명세서 전달 방식은 손가락으로 누르기 편한 2열 칩 */
+    .v2-panel form[action*="statement-delivery"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px !important;
+        align-items: stretch !important;
+    }
+
+    .v2-panel form[action*="statement-delivery"] label {
+        min-height: 44px;
+        padding: 9px 10px !important;
+        justify-content: flex-start;
+        border-radius: 12px !important;
+        font-size: 12px;
+    }
+
+    .v2-panel form[action*="statement-delivery"] > button {
+        grid-column: 1 / -1;
+        min-height: 44px;
+        margin-top: 1px;
+        border-radius: 12px !important;
+    }
+
+    /* 기본단가: 품목명 / 단가 / 저장 버튼이 답답하지 않도록 */
+    .price-row {
+        grid-template-columns: minmax(0,1fr) 92px 52px;
+        gap: 6px;
+        padding: 8px 0;
+    }
+
+    .price-row strong {
+        min-width: 0;
+        font-size: 12px;
+        line-height: 1.25;
+        word-break: keep-all;
+    }
+
+    .price-row input,
+    .add-price select,
+    .add-price input {
+        min-height: 40px;
+        padding: 0 8px;
+        font-size: 13px;
+    }
+
+    .price-row button,
+    .add-price button {
+        min-height: 40px;
+        padding: 0 7px;
+        font-size: 11px;
+    }
+
+    .add-price {
+        grid-template-columns: minmax(0,1fr) 92px 52px;
+        gap: 6px;
+    }
+
+    /* 12개월 금액은 한눈에 보이되 카드가 너무 커지지 않게 */
+    .month-strip {
+        grid-template-columns: repeat(3, minmax(0,1fr));
+        gap: 6px;
+    }
+
+    .month-strip a {
+        min-width: 0;
+        padding: 10px 8px;
+        border-radius: 12px;
+    }
+
+    .month-strip a > span {
+        font-size: 11px;
+    }
+
+    .month-strip strong {
+        overflow: hidden;
+        margin-top: 3px;
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .month-strip small {
+        display: block;
+        margin-top: 5px;
+        font-size: 8.5px !important;
+        line-height: 1.35 !important;
+    }
+
+    .month-strip small span {
+        display: block;
+        margin-left: 0 !important;
+    }
+
+    .month-nav {
+        gap: 5px;
+    }
+
+    .month-nav a {
+        min-height: 36px;
+        padding: 8px 9px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 10px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .summary-line {
+        gap: 6px 12px;
+        margin-bottom: 10px;
+        font-size: 11px;
+    }
+
+    /* 과거 금액 직접 입력 폼 */
+    .v2-panel form[action*="historical-spend"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px !important;
+    }
+
+    .v2-panel form[action*="historical-spend"] input {
+        width: 100%;
+        min-width: 0 !important;
+        min-height: 42px !important;
+        font-size: 12px;
+    }
+
+    .v2-panel form[action*="historical-spend"] button {
+        grid-column: 1 / -1;
+        min-height: 42px !important;
+    }
+}

@@ -21,13 +21,8 @@
     text-align: center;
 }
 
-.vendor-order-calendar-weekdays span:first-child {
-    color: #e05252;
-}
-
-.vendor-order-calendar-weekdays span:last-child {
-    color: #3182f6;
-}
+.vendor-order-calendar-weekdays span:first-child { color: #e05252; }
+.vendor-order-calendar-weekdays span:last-child { color: #3182f6; }
 
 .vendor-order-day {
     min-height: 112px;
@@ -47,23 +42,13 @@ button.vendor-order-day {
     cursor: pointer;
     transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, background .14s ease;
 }
-
 button.vendor-order-day:hover {
     transform: translateY(-1px);
     border-color: #9ec5ff;
     box-shadow: 0 8px 18px rgba(49, 130, 246, .10);
 }
-
-.vendor-order-day.is-empty-slot {
-    border-color: transparent;
-    background: transparent;
-}
-
-.vendor-order-day.has-order {
-    border-color: #d7e7ff;
-    background: #f9fbff;
-}
-
+.vendor-order-day.is-empty-slot { border-color: transparent; background: transparent; }
+.vendor-order-day.has-order { border-color: #d7e7ff; background: #f9fbff; }
 .vendor-order-day-number {
     width: 28px;
     height: 28px;
@@ -74,27 +59,10 @@ button.vendor-order-day:hover {
     font-size: 13px;
     font-weight: 850;
 }
-
-.vendor-order-day.sunday .vendor-order-day-number {
-    color: #d94c4c;
-}
-
-.vendor-order-day.saturday .vendor-order-day-number {
-    color: #2878e5;
-}
-
-.vendor-order-day.has-order .vendor-order-day-number {
-    background: #3182f6;
-    color: #fff;
-}
-
-.vendor-order-day-summary {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
+.vendor-order-day.sunday .vendor-order-day-number { color: #d94c4c; }
+.vendor-order-day.saturday .vendor-order-day-number { color: #2878e5; }
+.vendor-order-day.has-order .vendor-order-day-number { background: #3182f6; color: #fff; }
+.vendor-order-day-summary { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .vendor-order-day-summary strong {
     overflow: hidden;
     color: #333d4b;
@@ -104,29 +72,10 @@ button.vendor-order-day:hover {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-
-.vendor-order-day-summary small {
-    color: #8b95a1;
-    font-size: 10.5px;
-    line-height: 1.35;
-}
-
-.vendor-order-day-total {
-    margin-top: auto;
-    color: #3182f6;
-    font-size: 11px;
-    font-weight: 850;
-}
-
-.vendor-order-calendar-help {
-    margin: 12px 0 0;
-    color: #8b95a1;
-    font-size: 12px;
-}
-
-.vendor-order-source-table {
-    display: none !important;
-}
+.vendor-order-day-summary small { color: #8b95a1; font-size: 10.5px; line-height: 1.35; }
+.vendor-order-day-total { margin-top: auto; color: #3182f6; font-size: 11px; font-weight: 850; }
+.vendor-order-calendar-help { margin: 12px 0 0; color: #8b95a1; font-size: 12px; }
+.vendor-order-source-table { display: none !important; }
 
 .vendor-order-modal-backdrop {
     position: fixed;
@@ -139,11 +88,7 @@ button.vendor-order-day:hover {
     background: rgba(17, 24, 39, .42);
     backdrop-filter: blur(2px);
 }
-
-.vendor-order-modal-backdrop.open {
-    display: flex;
-}
-
+.vendor-order-modal-backdrop.open { display: flex; }
 .vendor-order-modal {
     width: min(640px, 100%);
     max-height: min(82vh, 760px);
@@ -155,7 +100,6 @@ button.vendor-order-day:hover {
     background: #fff;
     box-shadow: 0 24px 70px rgba(15, 23, 42, .22);
 }
-
 .vendor-order-modal-head {
     padding: 22px 22px 16px;
     display: flex;
@@ -164,20 +108,8 @@ button.vendor-order-day:hover {
     gap: 16px;
     border-bottom: 1px solid #f0f2f5;
 }
-
-.vendor-order-modal-head h3 {
-    margin: 0;
-    color: #191f28;
-    font-size: 21px;
-    letter-spacing: -.03em;
-}
-
-.vendor-order-modal-head p {
-    margin: 6px 0 0;
-    color: #8b95a1;
-    font-size: 12px;
-}
-
+.vendor-order-modal-head h3 { margin: 0; color: #191f28; font-size: 21px; letter-spacing: -.03em; }
+.vendor-order-modal-head p { margin: 6px 0 0; color: #8b95a1; font-size: 12px; }
 .vendor-order-modal-close {
     width: 36px;
     height: 36px;
@@ -189,18 +121,8 @@ button.vendor-order-day:hover {
     font-size: 20px;
     cursor: pointer;
 }
-
-.vendor-order-modal-body {
-    padding: 16px 22px 22px;
-    overflow-y: auto;
-}
-
-.vendor-order-modal-empty {
-    padding: 28px 12px;
-    color: #8b95a1;
-    text-align: center;
-}
-
+.vendor-order-modal-body { padding: 16px 22px 22px; overflow-y: auto; }
+.vendor-order-modal-empty { padding: 28px 12px; color: #8b95a1; text-align: center; }
 .vendor-order-edit-card {
     padding: 15px;
     display: grid;
@@ -211,43 +133,12 @@ button.vendor-order-day:hover {
     border-radius: 15px;
     background: #fbfcfe;
 }
-
-.vendor-order-edit-card + .vendor-order-edit-card {
-    margin-top: 10px;
-}
-
-.vendor-order-edit-info {
-    min-width: 0;
-}
-
-.vendor-order-edit-info strong {
-    display: block;
-    color: #191f28;
-    font-size: 15px;
-}
-
-.vendor-order-edit-meta {
-    margin-top: 5px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px 10px;
-    color: #8b95a1;
-    font-size: 11px;
-}
-
-.vendor-order-edit-amount {
-    margin-top: 7px;
-    color: #4e5968;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.vendor-order-edit-form {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-
+.vendor-order-edit-card + .vendor-order-edit-card { margin-top: 10px; }
+.vendor-order-edit-info { min-width: 0; }
+.vendor-order-edit-info strong { display: block; color: #191f28; font-size: 15px; }
+.vendor-order-edit-meta { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px 10px; color: #8b95a1; font-size: 11px; }
+.vendor-order-edit-amount { margin-top: 7px; color: #4e5968; font-size: 12px; font-weight: 800; }
+.vendor-order-edit-form { display: flex; align-items: center; gap: 7px; }
 .vendor-order-edit-form input[type="number"] {
     width: 112px;
     min-height: 40px;
@@ -258,7 +149,6 @@ button.vendor-order-day:hover {
     font: inherit;
     text-align: right;
 }
-
 .vendor-order-edit-form button {
     min-height: 40px;
     padding: 0 13px;
@@ -273,51 +163,58 @@ button.vendor-order-day:hover {
 
 @media (max-width: 900px) {
     .vendor-order-calendar-weekdays,
-    .vendor-order-calendar-grid {
-        gap: 5px;
-    }
-
-    .vendor-order-day {
-        min-height: 88px;
-        padding: 7px;
-        border-radius: 12px;
-    }
-
-    .vendor-order-day-summary strong {
-        font-size: 10px;
-    }
-
+    .vendor-order-calendar-grid { gap: 5px; }
+    .vendor-order-day { min-height: 88px; padding: 7px; border-radius: 12px; }
+    .vendor-order-day-summary strong { font-size: 10px; }
     .vendor-order-day-summary small,
-    .vendor-order-day-total {
-        font-size: 9.5px;
-    }
+    .vendor-order-day-total { font-size: 9.5px; }
 }
 
 @media (max-width: 640px) {
+    .vendor-order-calendar-wrap {
+        margin: 2px -2px 0;
+    }
+
     .vendor-order-calendar-weekdays,
     .vendor-order-calendar-grid {
         gap: 3px;
     }
 
+    .vendor-order-calendar-weekdays {
+        margin-bottom: 4px;
+    }
+
     .vendor-order-calendar-weekdays span {
-        font-size: 10px;
+        padding: 2px 0;
+        font-size: 9.5px;
+        font-weight: 750;
     }
 
     .vendor-order-day {
-        min-height: 72px;
-        padding: 5px;
-        gap: 4px;
-        border-radius: 10px;
+        min-width: 0;
+        min-height: 62px;
+        padding: 4px;
+        gap: 3px;
+        border-radius: 9px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    button.vendor-order-day:active {
+        transform: scale(.97);
+        background: #eef6ff;
     }
 
     .vendor-order-day-number {
-        width: 24px;
-        height: 24px;
-        font-size: 11px;
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        font-size: 10.5px;
     }
 
     .vendor-order-day-summary strong {
-        font-size: 9px;
+        font-size: 8.5px;
+        line-height: 1.25;
     }
 
     .vendor-order-day-summary small {
@@ -326,35 +223,110 @@ button.vendor-order-day:hover {
 
     .vendor-order-day-total {
         overflow: hidden;
-        font-size: 8.5px;
+        width: 100%;
+        font-size: 8px;
+        line-height: 1.2;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
+    .vendor-order-calendar-help {
+        margin-top: 10px;
+        font-size: 10.5px;
+        line-height: 1.45;
+    }
+
     .vendor-order-modal-backdrop {
-        padding: 10px;
+        padding: 0;
         align-items: flex-end;
+        background: rgba(17,24,39,.48);
     }
 
     .vendor-order-modal {
-        max-height: 86vh;
-        border-radius: 20px 20px 14px 14px;
+        width: 100%;
+        max-height: 88dvh;
+        border: 0;
+        border-radius: 22px 22px 0 0;
+        box-shadow: 0 -12px 40px rgba(15,23,42,.18);
+    }
+
+    .vendor-order-modal::before {
+        content: "";
+        width: 38px;
+        height: 4px;
+        flex: 0 0 4px;
+        margin: 9px auto 0;
+        border-radius: 999px;
+        background: #d1d6db;
     }
 
     .vendor-order-modal-head {
-        padding: 18px 16px 14px;
+        padding: 13px 16px 12px;
+        align-items: center;
+    }
+
+    .vendor-order-modal-head h3 {
+        font-size: 19px;
+    }
+
+    .vendor-order-modal-head p {
+        margin-top: 4px;
+        font-size: 11px;
+    }
+
+    .vendor-order-modal-close {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+        border-radius: 50%;
+        font-size: 18px;
     }
 
     .vendor-order-modal-body {
-        padding: 12px 14px 18px;
+        padding: 12px 14px calc(18px + env(safe-area-inset-bottom));
+        overscroll-behavior: contain;
     }
 
     .vendor-order-edit-card {
+        padding: 13px;
         grid-template-columns: 1fr;
+        gap: 11px;
+        border-radius: 15px;
+        background: #fff;
+    }
+
+    .vendor-order-edit-info strong {
+        font-size: 14px;
+    }
+
+    .vendor-order-edit-meta {
+        margin-top: 4px;
+        font-size: 10.5px;
+    }
+
+    .vendor-order-edit-amount {
+        margin-top: 6px;
+        font-size: 11.5px;
+    }
+
+    .vendor-order-edit-form {
+        display: grid;
+        grid-template-columns: minmax(0,1fr) 72px;
+        gap: 7px;
     }
 
     .vendor-order-edit-form input[type="number"] {
-        flex: 1;
-        width: auto;
+        width: 100%;
+        min-height: 46px;
+        padding: 0 12px;
+        border-radius: 12px;
+        font-size: 16px;
+    }
+
+    .vendor-order-edit-form button {
+        min-height: 46px;
+        padding: 0 12px;
+        border-radius: 12px;
+        font-size: 12px;
     }
 }
