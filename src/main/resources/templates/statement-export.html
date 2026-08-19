@@ -14,6 +14,7 @@
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/statement-polish.css(v=20260819_2)}">
+    <link rel="stylesheet" th:href="@{/css/statement-export-classic.css(v=20260819_1)}">
 </head>
 <body>
 <main class="container statement-export-page">
@@ -78,7 +79,7 @@
                             th:text="|${statement.month.year}년 ${statement.month.monthValue}월|">2026년 8월</td>
                         <td class="classic-doc-name">납품내역및청구서</td>
                         <td class="classic-delivery"
-                            th:text="${statement.deliveryLabel == null or #strings.isEmpty(statement.deliveryLabel) or statement.deliveryLabel == '미분류' ? '' : '(' + statement.deliveryLabel + ')'}">(FAX)</td>
+                            th:text="${statement.deliveryLabel == '팩스' ? '(FAX)' : (statement.deliveryLabel == '문자' ? '(SMS)' : (statement.deliveryLabel == '우편' ? '(우편)' : ''))}">(FAX)</td>
                     </tr>
                 </table>
 
@@ -100,9 +101,18 @@
 
                     <div class="classic-side-summary">
                         <table>
-                            <tr><th>회수통 수량</th><td th:text="${statement.itemNames.contains('회수통') ? '' : '0'}"></td></tr>
-                            <tr><th>회수통 차감</th><td class="number" th:text="${#numbers.formatDecimal(statement.returnContainerAmount,0,'COMMA',0,'POINT')}">0</td></tr>
-                            <tr><th>이달 합계금</th><td class="number" th:text="${#numbers.formatDecimal(statement.grossAmount,0,'COMMA',0,'POINT')}">0</td></tr>
+                            <tr>
+                                <th>회수통 수량</th>
+                                <td class="number" th:text="${statement.returnContainerQuantity.stripTrailingZeros().toPlainString()}">0</td>
+                            </tr>
+                            <tr>
+                                <th>회수통 차감</th>
+                                <td class="number" th:text="${#numbers.formatDecimal(statement.returnContainerAmount,0,'COMMA',0,'POINT')}">0</td>
+                            </tr>
+                            <tr>
+                                <th>이달 합계금</th>
+                                <td class="number" th:text="${#numbers.formatDecimal(statement.grossAmount,0,'COMMA',0,'POINT')}">0</td>
+                            </tr>
                             <tr><th>미수잔액</th><td class="number">-</td></tr>
                             <tr><th>행사금액</th><td class="number">-</td></tr>
                         </table>
@@ -114,7 +124,7 @@
                 </div>
 
                 <div class="classic-net-row">
-                    <span>회수통금액을 차감한 이달 합계금</span>
+                    <span>회수통금액을 차감한<br>이달 합계금</span>
                     <strong th:text="${#numbers.formatDecimal(statement.totalAmount,0,'COMMA',0,'POINT')}">0</strong>
                 </div>
 
@@ -139,9 +149,9 @@
                     <tfoot>
                     <tr>
                         <th>합계</th>
-                        <th th:each="name, stat : ${statement.itemNames}"
+                        <th th:each="qty : ${statement.itemQuantityTotals}"
                             class="number"
-                            th:text="${#aggregates.sum(statement.dailyRows.![quantities[__${stat.index}__]]) == null ? '' : #aggregates.sum(statement.dailyRows.![quantities[__${stat.index}__]]).stripTrailingZeros().toPlainString()}"></th>
+                            th:text="${qty.signum() == 0 ? '0' : qty.stripTrailingZeros().toPlainString()}"></th>
                         <th class="number" th:text="${#numbers.formatDecimal(statement.totalAmount,0,'COMMA',0,'POINT')}">0</th>
                     </tr>
                     </tfoot>
@@ -228,7 +238,9 @@
             try {
                 await navigator.clipboard.writeText(phone);
                 copyPhoneButton.textContent = '전화번호 복사됨';
-            } catch (error) { prompt('전화번호를 복사해주세요.', phone); }
+            } catch (error) {
+                prompt('전화번호를 복사해주세요.', phone);
+            }
         });
     }
 
