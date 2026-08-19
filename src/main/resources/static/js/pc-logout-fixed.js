@@ -1,14 +1,23 @@
 (function () {
-    loadVendorOrderCalendar();
+    loadVendorDetailEnhancements();
 
-    function loadVendorOrderCalendar() {
+    function loadVendorDetailEnhancements() {
         if (!window.location.pathname.startsWith('/vendor-management/')) return;
+
+        if (!document.querySelector('link[data-vendor-detail-mobile-polish]')) {
+            var mobileLink = document.createElement('link');
+            mobileLink.rel = 'stylesheet';
+            mobileLink.href = '/css/vendor-detail-mobile-polish.css?v=20260819_1';
+            mobileLink.dataset.vendorDetailMobilePolish = 'true';
+            document.head.appendChild(mobileLink);
+        }
+
         if (!document.querySelector('.order-table')) return;
 
         if (!document.querySelector('link[data-vendor-order-calendar]')) {
             var link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = '/css/vendor-order-calendar.css?v=20260819_1';
+            link.href = '/css/vendor-order-calendar.css?v=20260819_2';
             link.dataset.vendorOrderCalendar = 'true';
             document.head.appendChild(link);
         }
