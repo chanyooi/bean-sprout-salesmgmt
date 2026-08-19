@@ -44,6 +44,9 @@ public class SalesItemEntity {
     @Column(name = "line_amount", precision = 18, scale = 2)
     private BigDecimal lineAmount;
 
+    @Column(name = "manual_price_override", nullable = false)
+    private boolean manualPriceOverride = false;
+
     protected SalesItemEntity() {
     }
 
@@ -55,7 +58,11 @@ public class SalesItemEntity {
     ) {
         this.salesOrder = salesOrder;
         this.itemName = itemName;
-        updateManually(quantity, unitPrice);
+        validateQuantity(quantity);
+        validateUnitPrice(unitPrice);
+        this.quantity = normalizeQuantity(quantity);
+        applyUnitPrice(unitPrice);
+        this.manualPriceOverride = false;
     }
 
     public Long getId() {
@@ -82,15 +89,11 @@ public class SalesItemEntity {
         return lineAmount;
     }
 
-    /**
-     * 재업로드된 장부 내용을 기존 판매품목에 반영합니다.
-     *
-     * 일반 품목은 판매 당시 단가를 보존합니다. 기존 단가가 없을 때만
-     * 현재 거래처 단가를 채우며, 회수통처럼 업로드 파일에 명시된 단가는
-     * replaceUnitPrice가 true인 경우 갱신할 수 있습니다.
-     *
-     * @return 수량 또는 단가가 실제로 변경되었으면 true
-     */
+    public boolean isManualPriceOverride() {
+        return manualPriceOverride;
+    }
+
+    /** 재업로드 시 수량은 갱신하되 사용자가 직접 바꾼 판매단가는 보존합니다. */
     public boolean updateFromUpload(
             BigDecimal newQuantity,
             BigDecimal resolvedUnitPrice,
@@ -100,10 +103,12 @@ public class SalesItemEntity {
 
         BigDecimal targetUnitPrice = this.unitPrice;
 
-        if (replaceUnitPrice && resolvedUnitPrice != null) {
-            targetUnitPrice = resolvedUnitPrice;
-        } else if (targetUnitPrice == null && resolvedUnitPrice != null) {
-            targetUnitPrice = resolvedUnitPrice;
+        if (!manualPriceOverride) {
+            if (replaceUnitPrice && resolvedUnitPrice != null) {
+                targetUnitPrice = resolvedUnitPrice;
+            } else if (targetUnitPrice == null && resolvedUnitPrice != null) {
+                targetUnitPrice = resolvedUnitPrice;
+            }
         }
 
         boolean quantityChanged = this.quantity.compareTo(newQuantity) != 0;
@@ -118,10 +123,7 @@ public class SalesItemEntity {
         return true;
     }
 
-    /**
-     * 웹 수정 화면에서 입력한 수량과 판매단가를 그대로 적용합니다.
-     * 단가를 비워 저장하면 미등록 상태가 되고 금액도 비워집니다.
-     */
+    /** 거래처 상세에서 특정 주문의 단가를 수정하면 해당 주문만 수동단가로 고정합니다. */
     public void updateManually(
             BigDecimal newQuantity,
             BigDecimal newUnitPrice
@@ -131,6 +133,15 @@ public class SalesItemEntity {
 
         this.quantity = normalizeQuantity(newQuantity);
         applyUnitPrice(newUnitPrice);
+        this.manualPriceOverride = true;
+    }
+
+    /** 기본단가 변경 시 수동수정되지 않은 주문에만 새 기본단가를 반영합니다. */
+    public void applyBaseUnitPrice(BigDecimal unitPrice) {
+        if (manualPriceOverride) {
+            return;
+        }
+        applyUnitPrice(unitPrice);
     }
 
     private void validateQuantity(BigDecimal value) {
