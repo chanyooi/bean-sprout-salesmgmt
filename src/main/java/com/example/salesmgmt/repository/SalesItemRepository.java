@@ -20,11 +20,8 @@ public interface SalesItemRepository extends JpaRepository<SalesItemEntity, Long
     );
 
     List<SalesItemEntity> findAllBySalesOrder_Id(Long salesOrderId);
-
     List<SalesItemEntity> findAllByItemName(String itemName);
-
     long countBySalesOrder_Id(Long salesOrderId);
-
     long deleteAllBySalesOrder_Id(Long salesOrderId);
 
     @Query("""
@@ -48,6 +45,19 @@ public interface SalesItemRepository extends JpaRepository<SalesItemEntity, Long
             @Param("vendorId") Long vendorId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+            select item
+            from SalesItemEntity item
+            join fetch item.salesOrder salesOrder
+            join fetch salesOrder.vendor vendor
+            where vendor.id = :vendorId
+              and item.itemName = :itemName
+            """)
+    List<SalesItemEntity> findAllForVendorItem(
+            @Param("vendorId") Long vendorId,
+            @Param("itemName") String itemName
     );
 
     @Query("""
