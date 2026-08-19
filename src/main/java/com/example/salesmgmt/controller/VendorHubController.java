@@ -83,9 +83,7 @@ public class VendorHubController {
                     String raw = unitPrice != null && i < unitPrice.size()
                             ? unitPrice.get(i)
                             : null;
-                    if (raw == null || raw.isBlank()) {
-                        continue;
-                    }
+                    if (raw == null || raw.isBlank()) continue;
                     prices.put(itemName.get(i), new BigDecimal(raw.trim()));
                 }
             }
@@ -211,10 +209,15 @@ public class VendorHubController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            priceManagementService.updatePrice(priceId, unitPrice);
+            YearMonth selectedMonth = resolveMonth(month);
+            priceManagementService.updatePriceForMonth(
+                    priceId,
+                    unitPrice,
+                    selectedMonth
+            );
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "거래처 기본단가를 수정했습니다. 수동으로 바꾼 특정 날짜를 제외한 주문과 엑셀 명세서에도 반영됩니다."
+                    "기본단가를 수정했습니다. 이 달의 일반단가 주문만 새 단가로 바뀌고, 특정 날짜에 직접 수정한 행사단가는 그대로 유지됩니다."
             );
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
@@ -231,7 +234,12 @@ public class VendorHubController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            priceManagementService.createOrUpdatePrice(vendorId, itemName, unitPrice);
+            priceManagementService.createOrUpdatePriceForMonth(
+                    vendorId,
+                    itemName,
+                    unitPrice,
+                    resolveMonth(month)
+            );
             redirectAttributes.addFlashAttribute(
                     "successMessage",
                     "거래처 기본단가를 추가했습니다."
@@ -265,17 +273,13 @@ public class VendorHubController {
 
     private YearMonth resolveMonthAndYear(String month, Integer year) {
         YearMonth resolved = resolveMonth(month);
-        if (year == null) {
-            return resolved;
-        }
+        if (year == null) return resolved;
         int safeYear = Math.max(2000, Math.min(2100, year));
         return YearMonth.of(safeYear, resolved.getMonthValue());
     }
 
     private YearMonth resolveMonth(String month) {
-        if (month == null || month.isBlank()) {
-            return YearMonth.now();
-        }
+        if (month == null || month.isBlank()) return YearMonth.now();
         try {
             return YearMonth.parse(month);
         } catch (DateTimeParseException exception) {
