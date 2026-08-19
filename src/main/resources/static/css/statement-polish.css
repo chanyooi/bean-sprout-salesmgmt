@@ -1,15 +1,11 @@
 /* ============================================================
    거래명세서 페이지 PC 정렬/간격 보정
-   기존 기능/HTML은 건드리지 않고 레이아웃만 정돈
    ============================================================ */
 
 @media (min-width: 641px) {
-
     body.songcheon-statements-polished main,
     body.songcheon-statements-polished .container,
-    body.songcheon-statements-polished .page-container {
-        box-sizing: border-box;
-    }
+    body.songcheon-statements-polished .page-container { box-sizing: border-box; }
 
     body.songcheon-statements-polished main.container,
     body.songcheon-statements-polished main.page-container,
@@ -19,18 +15,12 @@
         margin-right: auto !important;
     }
 
-    /* 페이지 상단 */
     body.songcheon-statements-polished main > header,
     body.songcheon-statements-polished .page-header,
-    body.songcheon-statements-polished .hero {
-        position: relative;
-    }
+    body.songcheon-statements-polished .hero { position: relative; }
 
-    body.songcheon-statements-polished h1 {
-        letter-spacing: -.045em;
-    }
+    body.songcheon-statements-polished h1 { letter-spacing: -.045em; }
 
-    /* 상단 우측 버튼들 */
     body.songcheon-statements-polished .page-actions,
     body.songcheon-statements-polished .header-actions,
     body.songcheon-statements-polished .top-actions,
@@ -56,18 +46,12 @@
         line-height: 1 !important;
     }
 
-    /* 큰 흰 카드 / 패널 공통 */
     body.songcheon-statements-polished .panel,
     body.songcheon-statements-polished .card,
     body.songcheon-statements-polished section.panel,
-    body.songcheon-statements-polished section.card {
-        border-radius: 18px !important;
-    }
+    body.songcheon-statements-polished section.card { border-radius: 18px !important; }
 
-    /* 첫 번째 생성 폼 카드 */
-    body.songcheon-statements-polished form {
-        box-sizing: border-box;
-    }
+    body.songcheon-statements-polished form { box-sizing: border-box; }
 
     body.songcheon-statements-polished form input[type="month"],
     body.songcheon-statements-polished form input[type="file"],
@@ -77,13 +61,8 @@
         border-radius: 12px !important;
     }
 
-    body.songcheon-statements-polished form input[type="month"] {
-        padding: 0 16px !important;
-    }
-
-    body.songcheon-statements-polished form input[type="file"] {
-        padding: 8px 12px !important;
-    }
+    body.songcheon-statements-polished form input[type="month"] { padding: 0 16px !important; }
+    body.songcheon-statements-polished form input[type="file"] { padding: 8px 12px !important; }
 
     body.songcheon-statements-polished form input[type="file"]::file-selector-button {
         height: 34px !important;
@@ -97,7 +76,6 @@
         cursor: pointer;
     }
 
-    /* 흔한 form grid 구조의 기준선을 통일 */
     body.songcheon-statements-polished .form-grid,
     body.songcheon-statements-polished .statement-form-grid,
     body.songcheon-statements-polished .export-grid,
@@ -107,17 +85,13 @@
         row-gap: 16px !important;
     }
 
-    /* 스크린샷의 2열: 생성 월 / 템플릿 */
     body.songcheon-statements-polished .form-row,
     body.songcheon-statements-polished .statement-form-row {
         align-items: end !important;
         gap: 22px !important;
     }
 
-    /* label 텍스트/필드 간격 */
-    body.songcheon-statements-polished label {
-        line-height: 1.35 !important;
-    }
+    body.songcheon-statements-polished label { line-height: 1.35 !important; }
 
     body.songcheon-statements-polished label > span,
     body.songcheon-statements-polished .field-label,
@@ -126,7 +100,6 @@
         margin-bottom: 8px !important;
     }
 
-    /* 체크박스 줄 */
     body.songcheon-statements-polished input[type="checkbox"] {
         width: 20px !important;
         height: 20px !important;
@@ -141,7 +114,6 @@
         min-height: 34px !important;
     }
 
-    /* 주 액션 */
     body.songcheon-statements-polished form button[type="submit"],
     body.songcheon-statements-polished form .primary,
     body.songcheon-statements-polished form .btn-primary {
@@ -151,41 +123,70 @@
         white-space: nowrap !important;
     }
 
-    /* 생성 기준 카드들: 높이/간격 통일 */
-    body.songcheon-statements-polished .criteria-grid,
-    body.songcheon-statements-polished .guide-grid,
-    body.songcheon-statements-polished .rule-grid,
-    body.songcheon-statements-polished .info-grid {
-        display: grid !important;
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-        gap: 16px !important;
-        align-items: stretch !important;
-    }
-
-    body.songcheon-statements-polished .criteria-grid > *,
-    body.songcheon-statements-polished .guide-grid > *,
-    body.songcheon-statements-polished .rule-grid > *,
-    body.songcheon-statements-polished .info-grid > * {
-        min-height: 150px !important;
-        box-sizing: border-box !important;
-        padding: 22px !important;
-        border-radius: 14px !important;
-    }
-
-    /* 화면에 보이는 카드형 설명 영역이 클래스 없이 구성돼도 높이 흔들림 완화 */
-    body.songcheon-statements-polished section:last-of-type > div {
-        align-items: stretch !important;
-    }
-
-    /* 텍스트 줄 높이 */
-    body.songcheon-statements-polished p {
-        line-height: 1.6;
-    }
+    body.songcheon-statements-polished p { line-height: 1.6; }
 }
 
 @media (max-width: 640px) {
-    /* 모바일은 기존 premium mobile UI 우선 */
-    body.songcheon-statements-polished {
-        --statement-mobile-safe: 1;
-    }
+    body.songcheon-statements-polished { --statement-mobile-safe: 1; }
+}
+
+/* 문자/PDF/PNG로 보내는 명세서는 기존에 쓰던 흑백 엑셀 양식과 최대한 같은 인상을 유지한다. */
+#statementCapture.statement-paper {
+    background: #fff !important;
+    color: #111 !important;
+    border: 1px solid #111 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 18px 18px 20px !important;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif !important;
+}
+
+#statementCapture .statement-title {
+    color: #000 !important;
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    letter-spacing: .35em !important;
+    text-align: center !important;
+    margin: 2px 0 14px !important;
+}
+
+#statementCapture .statement-meta {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    color: #000 !important;
+    font-size: 12px !important;
+    margin-bottom: 7px !important;
+}
+
+#statementCapture .statement-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    color: #000 !important;
+    background: #fff !important;
+    font-size: 10px !important;
+}
+
+#statementCapture .statement-table th,
+#statementCapture .statement-table td {
+    border: 1px solid #111 !important;
+    background: #fff !important;
+    color: #000 !important;
+    padding: 3px 4px !important;
+    height: 22px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+}
+
+#statementCapture .statement-table thead th,
+#statementCapture .statement-table tfoot th {
+    font-weight: 800 !important;
+    background: #fff !important;
+}
+
+#statementCapture .statement-table .number {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums !important;
 }
