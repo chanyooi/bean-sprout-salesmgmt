@@ -35,13 +35,64 @@
         font-size: 10px !important;
     }
 
-    .dgs-nav,
+    /* 새 카드형 메뉴는 거래명세서 버튼의 크기/여백을 기준으로 모두 통일 */
+    .dgs-nav {
+        gap: 8px !important;
+    }
+
     .desktop-sidebar-nav {
         gap: 4px !important;
     }
 
-    .dgs-nav a,
-    .dgs-bottom > a,
+    .desktop-global-sidebar .dgs-card,
+    .desktop-global-sidebar .dgs-menu-toggle,
+    .desktop-global-sidebar .dgs-bottom .dgs-card {
+        min-height: 64px !important;
+        padding: 8px 12px 8px 9px !important;
+        gap: 11px !important;
+        border-radius: 17px !important;
+    }
+
+    .desktop-global-sidebar .dgs-icon {
+        flex: 0 0 43px !important;
+        width: 43px !important;
+        height: 43px !important;
+        border-radius: 14px !important;
+        font-size: inherit !important;
+    }
+
+    .desktop-global-sidebar .dgs-icon svg {
+        width: 23px !important;
+        height: 23px !important;
+    }
+
+    .desktop-global-sidebar .dgs-copy strong {
+        font-size: 14px !important;
+        font-weight: 820 !important;
+    }
+
+    .desktop-global-sidebar .dgs-copy small {
+        margin-top: 4px !important;
+        font-size: 10.5px !important;
+    }
+
+    /* 배송 코스: 경로 아이콘 대신 택배/배송 트럭 아이콘 */
+    .desktop-global-sidebar .dgs-card[data-tone="sky"] .dgs-icon svg {
+        display: none !important;
+    }
+
+    .desktop-global-sidebar .dgs-card[data-tone="sky"] .dgs-icon::before {
+        content: "";
+        width: 25px;
+        height: 25px;
+        display: block;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233198d1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h11v10H3z'/%3E%3Cpath d='M14 10h4l3 3v3h-7z'/%3E%3Ccircle cx='7' cy='18' r='2'/%3E%3Ccircle cx='18' cy='18' r='2'/%3E%3Cpath d='M5 18H3v-2M14 18h2M21 16v2h-1'/%3E%3C/svg%3E");
+    }
+
+    /* 예전 고정 사이드바가 남아있는 화면용 기존 크기 */
     .desktop-sidebar-nav a,
     .desktop-sidebar-bottom > a,
     .songcheon-pc-logout-btn {
@@ -51,7 +102,6 @@
         border-radius: 11px !important;
     }
 
-    .dgs-icon,
     .desktop-sidebar-nav span,
     .desktop-sidebar-bottom > a span,
     .songcheon-pc-logout-icon {
@@ -59,8 +109,6 @@
         font-size: 16px !important;
     }
 
-    .dgs-nav strong,
-    .dgs-bottom > a strong,
     .desktop-sidebar-nav strong,
     .desktop-sidebar-bottom > a strong,
     .songcheon-pc-logout-btn strong {
