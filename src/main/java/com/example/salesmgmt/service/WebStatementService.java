@@ -5,6 +5,7 @@ import com.example.salesmgmt.domain.VendorOption;
 import com.example.salesmgmt.domain.WebStatementView;
 import com.example.salesmgmt.entity.SalesItemEntity;
 import com.example.salesmgmt.repository.SalesItemRepository;
+import com.example.salesmgmt.repository.VendorPriceRepository;
 import com.example.salesmgmt.repository.VendorRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,16 +24,39 @@ import java.util.Map;
 public class WebStatementService {
 
     private static final String SUNSAN_STATEMENT_NAME = "선산식자재마트";
+    private static final String RETURN_CONTAINER = "회수통";
+
+    private static final List<String> CLASSIC_DAILY_ITEMS = List.of(
+            "두절kg",
+            "일반콩나물",
+            "곱슬콩나물",
+            "회수통",
+            "3.5kg일반",
+            "3.5kg곱슬",
+            "숙주"
+    );
+
+    private static final List<String> CLASSIC_SUMMARY_ITEMS = List.of(
+            "두절kg",
+            "일반콩나물",
+            "곱슬콩나물",
+            "3.5kg일반",
+            "3.5kg곱슬",
+            "숙주"
+    );
 
     private final SalesItemRepository salesItemRepository;
     private final VendorRepository vendorRepository;
+    private final VendorPriceRepository vendorPriceRepository;
 
     public WebStatementService(
             SalesItemRepository salesItemRepository,
-            VendorRepository vendorRepository
+            VendorRepository vendorRepository,
+            VendorPriceRepository vendorPriceRepository
     ) {
         this.salesItemRepository = salesItemRepository;
         this.vendorRepository = vendorRepository;
+        this.vendorPriceRepository = vendorPriceRepository;
     }
 
     @Transactional(readOnly = true)
@@ -73,7 +98,7 @@ public class WebStatementService {
                 end
         );
 
-        LinkedHashSet<String> orderedItems = new LinkedHashSet<>();
+        LinkedHashSet<String> orderedItems = new LinkedHashSet<>(CLASSIC_DAILY_ITEMS);
         for (String catalogItem : ItemCatalog.ALL_ITEMS) {
             if (items.stream().anyMatch(item -> catalogItem.equals(item.getItemName()))) {
                 orderedItems.add(catalogItem);
@@ -86,22 +111,51 @@ public class WebStatementService {
 
         Map<LocalDate, Map<String, BigDecimal>> quantities = new HashMap<>();
         Map<LocalDate, BigDecimal> amounts = new HashMap<>();
+        Map<String, BigDecimal> monthlyQuantities = new LinkedHashMap<>();
+        Map<String, BigDecimal> monthlyAmounts = new LinkedHashMap<>();
 
+        BigDecimal grossAmount = BigDecimal.ZERO;
+        BigDecimal returnContainerAmount = BigDecimal.ZERO;
         BigDecimal total = BigDecimal.ZERO;
         long missing = 0;
 
         for (SalesItemEntity item : items) {
             LocalDate date = item.getSalesOrder().getDeliveryDate();
+            String itemName = item.getItemName();
+
             quantities.computeIfAbsent(date, ignored -> new HashMap<>())
-                    .merge(item.getItemName(), item.getQuantity(), BigDecimal::add);
+                    .merge(itemName, item.getQuantity(), BigDecimal::add);
+            monthlyQuantities.merge(itemName, item.getQuantity(), BigDecimal::add);
 
             if (item.getLineAmount() == null) {
                 missing++;
+                continue;
+            }
+
+            BigDecimal lineAmount = item.getLineAmount();
+            amounts.merge(date, lineAmount, BigDecimal::add);
+            monthlyAmounts.merge(itemName, lineAmount, BigDecimal::add);
+            total = total.add(lineAmount);
+
+            if (RETURN_CONTAINER.equals(itemName)) {
+                returnContainerAmount = returnContainerAmount.add(lineAmount);
             } else {
-                amounts.merge(date, item.getLineAmount(), BigDecimal::add);
-                total = total.add(item.getLineAmount());
+                grossAmount = grossAmount.add(lineAmount);
             }
         }
+
+        Map<String, BigDecimal> configuredPrices = new HashMap<>();
+        vendorPriceRepository.findByVendor_IdOrderByItemNameAsc(vendorId)
+                .forEach(price -> configuredPrices.put(price.getItemName(), price.getUnitPrice()));
+
+        List<WebStatementView.ItemSummary> summaries = CLASSIC_SUMMARY_ITEMS.stream()
+                .map(itemName -> new WebStatementView.ItemSummary(
+                        itemName,
+                        monthlyQuantities.getOrDefault(itemName, BigDecimal.ZERO),
+                        configuredPrices.get(itemName),
+                        monthlyAmounts.getOrDefault(itemName, BigDecimal.ZERO)
+                ))
+                .toList();
 
         List<WebStatementView.DailyRow> dailyRows = new ArrayList<>();
         for (LocalDate date : start.datesUntil(end.plusDays(1)).toList()) {
@@ -117,15 +171,25 @@ public class WebStatementService {
             ));
         }
 
+        String vendorName = statementName == null || statementName.isBlank()
+                ? vendor.getInputName()
+                : statementName;
+
+        String deliveryLabel = vendor.getStatementDeliveryMethod() == null
+                ? ""
+                : vendor.getStatementDeliveryMethod().getLabel();
+
         return new WebStatementView(
                 month,
                 vendorId,
-                statementName == null || statementName.isBlank()
-                        ? vendor.getInputName()
-                        : statementName,
+                vendorName,
+                deliveryLabel,
+                grossAmount,
+                returnContainerAmount,
                 total,
                 missing,
                 itemNames,
+                List.copyOf(summaries),
                 List.copyOf(dailyRows)
         );
     }
