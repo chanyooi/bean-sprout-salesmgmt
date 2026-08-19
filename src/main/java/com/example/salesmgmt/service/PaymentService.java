@@ -167,7 +167,6 @@ public class PaymentService {
         }
 
         paymentRepository.saveAll(newPayments);
-
         return new BulkCompleteResult(completedCount, money(completedTotal));
     }
 
@@ -239,10 +238,6 @@ public class PaymentService {
         );
     }
 
-    /**
-     * 대시보드처럼 이미 같은 월 매출 보고서를 조회한 화면에서는 그 결과를 재사용한다.
-     * 행사 단가 수정으로 lineAmount가 바뀌면 이 보고서의 청구액도 즉시 같은 금액을 사용한다.
-     */
     @Transactional(readOnly = true)
     public MonthlyReceivableReport createMonthlyReport(
             YearMonth month,
@@ -261,7 +256,7 @@ public class PaymentService {
         }
 
         Map<Long, PaymentCycle> paymentCycles = new HashMap<>();
-        for (VendorProfileEntity profile : vendorProfileRepository.findAll()) {
+        for (VendorProfileEntity profile : vendorProfileRepository.findAllWithVendor()) {
             paymentCycles.put(profile.getVendor().getId(), profile.getPaymentCycle());
         }
 
@@ -273,8 +268,6 @@ public class PaymentService {
             }
         }
 
-        // 대시보드 월매출에서 이미 사용 중인 손두부/두부판 회계 기준을
-        // 미수금에도 동일하게 적용한다. 일반 행사 단가 변경은 위 lineAmount에 이미 반영된다.
         receivableBillingAdjustmentService.correctionsByVendor(month)
                 .forEach((vendorId, correction) ->
                         billedByVendor.merge(vendorId, correction, BigDecimal::add)
