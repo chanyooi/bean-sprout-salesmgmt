@@ -95,6 +95,19 @@ public interface SalesItemRepository extends JpaRepository<SalesItemEntity, Long
     );
 
     @Query("""
+            select item
+            from SalesItemEntity item
+            join fetch item.salesOrder salesOrder
+            join fetch salesOrder.vendor vendor
+            where salesOrder.deliveryDate between :startDate and :endDate
+              and item.itemName in ('손두부', '두부판')
+            """)
+    List<SalesItemEntity> findSpecialItemsForMonthlyBilling(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
             select max(item.salesOrder.deliveryDate)
             from SalesItemEntity item
             """)

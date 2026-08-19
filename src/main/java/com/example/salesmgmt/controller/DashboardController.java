@@ -47,52 +47,27 @@ public class DashboardController {
             @RequestParam(required = false) String date,
             Model model
     ) {
-        YearMonth selectedMonth =
-                month == null || month.isBlank()
-                        ? monthlySalesReportService
-                        .findLatestSalesMonth()
-                        .orElse(YearMonth.now())
-                        : YearMonth.parse(month);
+        YearMonth selectedMonth = month == null || month.isBlank()
+                ? monthlySalesReportService.findLatestSalesMonth().orElse(YearMonth.now())
+                : YearMonth.parse(month);
 
-        MonthlySalesReport sales =
-                monthlySalesReportService.createReport(
-                        selectedMonth
-                );
-
-        MonthlyProfitReport profit =
-                monthlyProfitService.createReport(
-                        selectedMonth
-                );
-
-        MonthlyReceivableReport receivables =
-                paymentService.createMonthlyReport(
-                        selectedMonth
-                );
-
-        BeanInventoryView inventory =
-                beanInventoryService.getInventory(
-                        LocalDate.now()
-                );
-
-        DailySalesCalendarView calendar =
-                dailySalesCalendarService.create(
-                        selectedMonth.toString(),
-                        date
-                );
-
-        model.addAttribute(
-                "selectedMonth",
-                selectedMonth.toString()
-        );
-        model.addAttribute(
-                "previousMonth",
-                selectedMonth.minusMonths(1).toString()
-        );
-        model.addAttribute(
-                "nextMonth",
-                selectedMonth.plusMonths(1).toString()
+        // 같은 월 판매자료는 한 번만 DB에서 읽고 이익/미수금 계산에 재사용한다.
+        MonthlySalesReport sales = monthlySalesReportService.createReport(selectedMonth);
+        MonthlyProfitReport profit = monthlyProfitService.createReport(selectedMonth, sales);
+        MonthlyReceivableReport receivables = paymentService.createMonthlyReport(
+                selectedMonth,
+                sales
         );
 
+        BeanInventoryView inventory = beanInventoryService.getInventory(LocalDate.now());
+        DailySalesCalendarView calendar = dailySalesCalendarService.create(
+                selectedMonth.toString(),
+                date
+        );
+
+        model.addAttribute("selectedMonth", selectedMonth.toString());
+        model.addAttribute("previousMonth", selectedMonth.minusMonths(1).toString());
+        model.addAttribute("nextMonth", selectedMonth.plusMonths(1).toString());
         model.addAttribute("sales", sales);
         model.addAttribute("profit", profit);
         model.addAttribute("receivables", receivables);
