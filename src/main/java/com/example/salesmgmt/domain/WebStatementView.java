@@ -11,10 +11,12 @@ public record WebStatementView(
         String vendorName,
         String deliveryLabel,
         BigDecimal grossAmount,
+        BigDecimal returnContainerQuantity,
         BigDecimal returnContainerAmount,
         BigDecimal totalAmount,
         long missingPriceCount,
         List<String> itemNames,
+        List<BigDecimal> itemQuantityTotals,
         List<ItemSummary> itemSummaries,
         List<DailyRow> dailyRows
 ) {
