@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,24 +74,11 @@ public class PriceManagementService {
                         normalizedPrice,
                         row.sourceSheet()
                 ));
-                applyNewBasePriceToUnpricedSales(vendor.getId(), row.itemName(), normalizedPrice);
                 createdPrices++;
-                continue;
-            }
-
-            VendorPriceEntity priceEntity = existingPrice.get();
-            BigDecimal oldBasePrice = priceEntity.getUnitPrice();
-
-            if (oldBasePrice.compareTo(normalizedPrice) == 0) {
+            } else if (existingPrice.get().getUnitPrice().compareTo(normalizedPrice) == 0) {
                 unchangedPrices++;
             } else {
-                priceEntity.update(normalizedPrice, row.sourceSheet());
-                updateSalesStillUsingOldBase(
-                        vendor.getId(),
-                        row.itemName(),
-                        oldBasePrice,
-                        normalizedPrice
-                );
+                existingPrice.get().update(normalizedPrice, row.sourceSheet());
                 updatedPrices++;
             }
         }
@@ -110,34 +98,25 @@ public class PriceManagementService {
         return vendorRepository.findAllByOrderByInputNameAsc()
                 .stream()
                 .map(vendor -> new VendorOption(
-                        vendor.getId(),
-                        vendor.getInputName(),
-                        vendor.getStatementName()
+                        vendor.getId(), vendor.getInputName(), vendor.getStatementName()
                 ))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<PriceViewRow> findPrices(Long vendorId) {
-        if (vendorId == null) {
-            return List.of();
-        }
+        if (vendorId == null) return List.of();
         return vendorPriceRepository.findByVendor_IdOrderByItemNameAsc(vendorId)
                 .stream()
                 .map(price -> new PriceViewRow(
-                        price.getId(),
-                        price.getItemName(),
-                        price.getUnitPrice(),
-                        price.getSourceSheet()
+                        price.getId(), price.getItemName(), price.getUnitPrice(), price.getSourceSheet()
                 ))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<String> findMissingItems(Long vendorId) {
-        if (vendorId == null) {
-            return List.of();
-        }
+        if (vendorId == null) return List.of();
         var registeredItems = vendorPriceRepository
                 .findByVendor_IdOrderByItemNameAsc(vendorId)
                 .stream()
@@ -148,24 +127,35 @@ public class PriceManagementService {
                 .toList();
     }
 
+    /** 기존 단가관리 화면 호환: 기본단가만 바꾸고 미단가 판매에만 채웁니다. */
     @Transactional
     public int updatePrice(Long priceId, BigDecimal unitPrice) {
         validateUnitPrice(unitPrice);
+        VendorPriceEntity entity = findPrice(priceId);
+        entity.update(normalizePrice(unitPrice), entity.getSourceSheet());
+        return applyPricesToUnpricedSales();
+    }
 
-        VendorPriceEntity entity = vendorPriceRepository.findById(priceId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "수정할 단가 정보를 찾을 수 없습니다."
-                ));
+    /** 거래처 상세에서 수정할 때는 선택한 월의 '기존 기본단가' 주문만 새 기본단가로 바꿉니다. */
+    @Transactional
+    public int updatePriceForMonth(
+            Long priceId,
+            BigDecimal unitPrice,
+            YearMonth month
+    ) {
+        validateUnitPrice(unitPrice);
+        VendorPriceEntity entity = findPrice(priceId);
+        BigDecimal oldConfiguredPrice = entity.getUnitPrice();
+        BigDecimal newConfiguredPrice = normalizePrice(unitPrice);
 
-        BigDecimal oldBasePrice = entity.getUnitPrice();
-        BigDecimal normalized = normalizePrice(unitPrice);
-        entity.update(normalized, entity.getSourceSheet());
+        entity.update(newConfiguredPrice, entity.getSourceSheet());
 
-        int updated = updateSalesStillUsingOldBase(
+        int updated = updateMonthSalesStillUsingOldBase(
                 entity.getVendor().getId(),
                 entity.getItemName(),
-                oldBasePrice,
-                normalized
+                oldConfiguredPrice,
+                newConfiguredPrice,
+                month
         );
         return updated + applyPricesToUnpricedSales();
     }
@@ -176,30 +166,48 @@ public class PriceManagementService {
             String itemName,
             BigDecimal unitPrice
     ) {
-        validateUnitPrice(unitPrice);
+        return createOrUpdatePriceInternal(vendorId, itemName, unitPrice, null);
+    }
 
+    @Transactional
+    public int createOrUpdatePriceForMonth(
+            Long vendorId,
+            String itemName,
+            BigDecimal unitPrice,
+            YearMonth month
+    ) {
+        return createOrUpdatePriceInternal(vendorId, itemName, unitPrice, month);
+    }
+
+    private int createOrUpdatePriceInternal(
+            Long vendorId,
+            String itemName,
+            BigDecimal unitPrice,
+            YearMonth month
+    ) {
+        validateUnitPrice(unitPrice);
         if (!ItemCatalog.ALL_ITEMS.contains(itemName)) {
             throw new IllegalArgumentException("지원하지 않는 품목입니다: " + itemName);
         }
 
         VendorEntity vendor = vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "거래처를 찾을 수 없습니다."
-                ));
-
+                .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
         BigDecimal normalized = normalizePrice(unitPrice);
         var existing = vendorPriceRepository.findByVendor_IdAndItemName(vendorId, itemName);
-        int updated;
+        int updated = 0;
 
         if (existing.isPresent()) {
-            BigDecimal oldBasePrice = existing.get().getUnitPrice();
+            BigDecimal oldConfiguredPrice = existing.get().getUnitPrice();
             existing.get().update(normalized, "웹 직접 입력");
-            updated = updateSalesStillUsingOldBase(
-                    vendorId,
-                    itemName,
-                    oldBasePrice,
-                    normalized
-            );
+            if (month != null) {
+                updated = updateMonthSalesStillUsingOldBase(
+                        vendorId,
+                        itemName,
+                        oldConfiguredPrice,
+                        normalized,
+                        month
+                );
+            }
         } else {
             vendorPriceRepository.save(new VendorPriceEntity(
                     vendor,
@@ -207,48 +215,37 @@ public class PriceManagementService {
                     normalized,
                     "웹 직접 입력"
             ));
-            updated = applyNewBasePriceToUnpricedSales(vendorId, itemName, normalized);
         }
 
         return updated + applyPricesToUnpricedSales();
     }
 
     /**
-     * 기본단가를 바꿀 때 과거 주문 중 '기존 기본단가와 동일한 주문'만 새 단가로 갱신합니다.
-     * 따라서 HS식자재도매유통 8/13처럼 특정 날짜만 따로 수정한 금액은 그대로 보존됩니다.
+     * 예: 기본단가 3,500원에서 4,000원으로 바꿀 때 선택 월의 3,500원 주문만 4,000원으로 변경합니다.
+     * 8/13을 행사단가 3,000원으로 직접 바꿨다면 3,000원은 일치하지 않으므로 보존됩니다.
      */
-    private int updateSalesStillUsingOldBase(
+    private int updateMonthSalesStillUsingOldBase(
             Long vendorId,
             String itemName,
             BigDecimal oldConfiguredPrice,
-            BigDecimal newConfiguredPrice
+            BigDecimal newConfiguredPrice,
+            YearMonth month
     ) {
+        if (month == null || oldConfiguredPrice == null) return 0;
+
         BigDecimal oldSalesPrice = toSalesPrice(itemName, oldConfiguredPrice);
         BigDecimal newSalesPrice = toSalesPrice(itemName, newConfiguredPrice);
         int updated = 0;
 
-        for (SalesItemEntity item : salesItemRepository.findAllForVendorItem(vendorId, itemName)) {
+        for (SalesItemEntity item : salesItemRepository.findForVendorPeriod(
+                vendorId,
+                month.atDay(1),
+                month.atEndOfMonth()
+        )) {
+            if (!itemName.equals(item.getItemName())) continue;
             BigDecimal current = item.getUnitPrice();
-            if (current != null
-                    && oldSalesPrice != null
-                    && current.compareTo(oldSalesPrice) == 0) {
+            if (current != null && current.compareTo(oldSalesPrice) == 0) {
                 item.applyUnitPrice(newSalesPrice);
-                updated++;
-            }
-        }
-        return updated;
-    }
-
-    private int applyNewBasePriceToUnpricedSales(
-            Long vendorId,
-            String itemName,
-            BigDecimal configuredPrice
-    ) {
-        BigDecimal salesPrice = toSalesPrice(itemName, configuredPrice);
-        int updated = 0;
-        for (SalesItemEntity item : salesItemRepository.findAllForVendorItem(vendorId, itemName)) {
-            if (item.getUnitPrice() == null) {
-                item.applyUnitPrice(salesPrice);
                 updated++;
             }
         }
@@ -299,6 +296,13 @@ public class PriceManagementService {
                 salesItem.getSalesOrder().getVendor().getId(),
                 salesItem.getItemName()
         ));
+    }
+
+    private VendorPriceEntity findPrice(Long priceId) {
+        return vendorPriceRepository.findById(priceId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "수정할 단가 정보를 찾을 수 없습니다."
+                ));
     }
 
     private String priceKey(Long vendorId, String itemName) {
