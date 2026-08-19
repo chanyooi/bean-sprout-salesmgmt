@@ -9,7 +9,6 @@ import com.example.salesmgmt.repository.VendorRepository;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -35,6 +34,7 @@ import java.util.Map;
 public class StatementWorkbookV2Service {
 
     private static final String SUNSAN_STATEMENT_NAME = "선산식자재마트";
+
     private final StatementWorkbookService legacyService;
     private final SalesItemRepository salesItemRepository;
     private final VendorRepository vendorRepository;
@@ -56,10 +56,11 @@ public class StatementWorkbookV2Service {
             YearMonth month,
             boolean includeEmptySheets
     ) {
+        // 항상 원본 템플릿 시트를 보존한 상태로 시작해야 새 거래처 시트를 복제할 수 있다.
         StatementWorkbookResult base = legacyService.generate(
                 templateFile,
                 month,
-                includeEmptySheets
+                true
         );
 
         LocalDate queryStart = month.minusMonths(1).atDay(26);
@@ -88,21 +89,39 @@ public class StatementWorkbookV2Service {
             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
                 XSSFSheet sheet = workbook.getSheetAt(i);
                 String statementName = normalize(sheet.getSheetName());
-                List<SalesItemEntity> items = byStatement.getOrDefault(statementName, List.of());
-                StatementPeriod period = periodFor(statementName, month);
-                List<SalesItemEntity> periodItems = items.stream()
-                        .filter(item -> within(
-                                item.getSalesOrder().getDeliveryDate(),
-                                period.start(),
-                                period.end()
-                        ))
-                        .toList();
+                List<SalesItemEntity> periodItems = periodItems(
+                        statementName,
+                        month,
+                        byStatement
+                );
 
                 if (!periodItems.isEmpty()) {
                     sheetsWithSales++;
                 }
 
-                patchSheetFromDatabase(sheet, statementName, period, periodItems);
+                patchSheetFromDatabase(
+                        sheet,
+                        statementName,
+                        periodFor(statementName, month),
+                        periodItems
+                );
+            }
+
+            int removedEmpty = 0;
+            if (!includeEmptySheets) {
+                for (int i = workbook.getNumberOfSheets() - 1; i >= 0; i--) {
+                    String statementName = normalize(workbook.getSheetName(i));
+                    if (periodItems(statementName, month, byStatement).isEmpty()) {
+                        workbook.removeSheetAt(i);
+                        removedEmpty++;
+                    }
+                }
+            }
+
+            if (workbook.getNumberOfSheets() == 0) {
+                throw new IllegalArgumentException(
+                        month + "에 생성할 명세서가 없습니다. 빈 명세서 포함을 선택하거나 판매자료를 확인해주세요."
+                );
             }
 
             workbook.setForceFormulaRecalculation(true);
@@ -113,7 +132,7 @@ public class StatementWorkbookV2Service {
                     base.filename(),
                     workbook.getNumberOfSheets(),
                     sheetsWithSales,
-                    base.removedEmptySheetCount(),
+                    removedEmpty,
                     0
             );
         } catch (IOException exception) {
@@ -122,6 +141,22 @@ public class StatementWorkbookV2Service {
                     exception
             );
         }
+    }
+
+    private List<SalesItemEntity> periodItems(
+            String statementName,
+            YearMonth month,
+            Map<String, List<SalesItemEntity>> byStatement
+    ) {
+        StatementPeriod period = periodFor(statementName, month);
+        return byStatement.getOrDefault(statementName, List.of())
+                .stream()
+                .filter(item -> within(
+                        item.getSalesOrder().getDeliveryDate(),
+                        period.start(),
+                        period.end()
+                ))
+                .toList();
     }
 
     private void createMissingVendorSheets(
@@ -133,11 +168,7 @@ public class StatementWorkbookV2Service {
         Map<String, VendorEntity> wanted = new LinkedHashMap<>();
         for (VendorEntity vendor : vendorRepository.findAllByOrderByInputNameAsc()) {
             String name = normalize(vendor.getStatementName());
-            boolean hasSales = byStatement.containsKey(name)
-                    && byStatement.get(name).stream().anyMatch(item -> {
-                        StatementPeriod p = periodFor(name, month);
-                        return within(item.getSalesOrder().getDeliveryDate(), p.start(), p.end());
-                    });
+            boolean hasSales = !periodItems(name, month, byStatement).isEmpty();
             if (includeEmptySheets || hasSales) {
                 wanted.put(name, vendor);
             }
@@ -278,10 +309,16 @@ public class StatementWorkbookV2Service {
             int dataEnd,
             Map<String, Integer> itemColumns
     ) {
-        int maxItem = itemColumns.values().stream().mapToInt(Integer::intValue).max().orElse(0);
+        int maxItem = itemColumns.values().stream()
+                .mapToInt(Integer::intValue)
+                .max()
+                .orElse(0);
+
         for (int r = dataStart; r <= Math.min(dataEnd, dataStart + 3); r++) {
             Row row = sheet.getRow(r);
-            if (row == null) continue;
+            if (row == null) {
+                continue;
+            }
             for (int c = Math.max(maxItem + 1, 1); c < Math.max(row.getLastCellNum(), 0); c++) {
                 Cell cell = row.getCell(c);
                 if (cell != null && cell.getCellType() == CellType.FORMULA) {
@@ -326,7 +363,9 @@ public class StatementWorkbookV2Service {
 
     private Map<String, Integer> detectItemColumns(Row header) {
         Map<String, Integer> result = new LinkedHashMap<>();
-        if (header == null) return result;
+        if (header == null) {
+            return result;
+        }
         for (int c = 0; c < Math.max(header.getLastCellNum(), 0); c++) {
             String item = normalizeItem(formatted(header.getCell(c)));
             if (ItemCatalog.ALL_ITEMS.contains(item)) {
@@ -337,7 +376,9 @@ public class StatementWorkbookV2Service {
     }
 
     private String normalizeItem(String raw) {
-        if (raw == null) return "";
+        if (raw == null) {
+            return "";
+        }
         String normalized = ItemCatalog.normalizeTemplateLabel(raw);
         return normalized == null ? raw.trim() : normalized;
     }
@@ -385,8 +426,12 @@ public class StatementWorkbookV2Service {
 
     private String uniqueSheetName(XSSFWorkbook workbook, String requested) {
         String base = requested.replaceAll("[\\\\/?*\\[\\]:]", " ").trim();
-        if (base.isBlank()) base = "거래처";
-        if (base.length() > 31) base = base.substring(0, 31);
+        if (base.isBlank()) {
+            base = "거래처";
+        }
+        if (base.length() > 31) {
+            base = base.substring(0, 31);
+        }
         String candidate = base;
         int number = 2;
         while (workbook.getSheet(candidate) != null) {
