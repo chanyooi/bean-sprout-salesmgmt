@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ExcelImportController {
@@ -41,7 +42,8 @@ public class ExcelImportController {
     public String importExcel(
             @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "preview") String action,
-            Model model
+            Model model,
+            RedirectAttributes redirectAttributes
     ) {
         try {
             ExcelImportResult result = excelImportService.importInputData(file);
@@ -79,7 +81,17 @@ public class ExcelImportController {
                             saveResult
                     );
 
-                    model.addAttribute("saveResult", saveResult);
+                    /*
+                     * 저장 성공 뒤에는 POST 응답으로 화면을 직접 반환하지 않고
+                     * GET /upload 로 이동한다. 새로고침/뒤로가기로 POST가 재전송되는
+                     * 문제를 막는 PRG(Post-Redirect-Get) 패턴이다.
+                     */
+                    redirectAttributes.addFlashAttribute("saveResult", saveResult);
+                    redirectAttributes.addFlashAttribute(
+                            "successMessage",
+                            "판매자료를 저장했습니다."
+                    );
+                    return "redirect:/upload";
                 }
             }
         } catch (SalesDataConflictException exception) {
@@ -88,6 +100,7 @@ public class ExcelImportController {
             model.addAttribute("fatalError", exception.getMessage());
         }
 
+        /* 미리보기/검증 오류는 같은 화면에 결과를 보여줘야 하므로 그대로 렌더링 */
         return "upload";
     }
 }
