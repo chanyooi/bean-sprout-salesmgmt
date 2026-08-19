@@ -4,6 +4,7 @@ import com.example.salesmgmt.domain.StatementDeliveryMethod;
 import com.example.salesmgmt.domain.StatementWorkbookResult;
 import com.example.salesmgmt.service.FilteredStatementWorkbookService;
 import com.example.salesmgmt.service.SalesManagementService;
+import com.example.salesmgmt.service.SingleVendorStatementWorkbookService;
 import com.example.salesmgmt.service.StatementWorkbookV2Service;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -32,15 +33,18 @@ public class StatementController {
 
     private final StatementWorkbookV2Service statementWorkbookService;
     private final FilteredStatementWorkbookService filteredStatementWorkbookService;
+    private final SingleVendorStatementWorkbookService singleVendorStatementWorkbookService;
     private final SalesManagementService salesManagementService;
 
     public StatementController(
             StatementWorkbookV2Service statementWorkbookService,
             FilteredStatementWorkbookService filteredStatementWorkbookService,
+            SingleVendorStatementWorkbookService singleVendorStatementWorkbookService,
             SalesManagementService salesManagementService
     ) {
         this.statementWorkbookService = statementWorkbookService;
         this.filteredStatementWorkbookService = filteredStatementWorkbookService;
+        this.singleVendorStatementWorkbookService = singleVendorStatementWorkbookService;
         this.salesManagementService = salesManagementService;
     }
 
@@ -52,6 +56,24 @@ public class StatementController {
         YearMonth selectedMonth = salesManagementService.resolveMonth(month);
         model.addAttribute("selectedMonth", selectedMonth.toString());
         return "statements";
+    }
+
+    @GetMapping("/vendor-download")
+    public ResponseEntity<byte[]> downloadSingleVendor(
+            @RequestParam Long vendorId,
+            @RequestParam String month
+    ) {
+        try {
+            StatementWorkbookResult result = singleVendorStatementWorkbookService.generate(
+                    vendorId,
+                    YearMonth.parse(month)
+            );
+            return fileResponse(result);
+        } catch (DateTimeParseException exception) {
+            return badRequest("생성 월 형식이 올바르지 않습니다.");
+        } catch (IllegalArgumentException exception) {
+            return badRequest(exception.getMessage());
+        }
     }
 
     @PostMapping("/download")
@@ -77,26 +99,30 @@ public class StatementController {
                             deliveryMethod
                     );
 
-            String encodedFilename = URLEncoder.encode(
-                    result.filename(),
-                    StandardCharsets.UTF_8
-            ).replace("+", "%20");
-
-            return ResponseEntity.ok()
-                    .header(
-                            HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename*=UTF-8''" + encodedFilename
-                    )
-                    .header("X-Generated-Sheets", Integer.toString(result.generatedSheetCount()))
-                    .header("X-Sheets-With-Sales", Integer.toString(result.sheetWithSalesCount()))
-                    .header("X-Generation-Warnings", Integer.toString(result.warningCount()))
-                    .contentType(XLSX_MEDIA_TYPE)
-                    .body(result.fileBytes());
+            return fileResponse(result);
         } catch (DateTimeParseException exception) {
             return badRequest("생성 월 형식이 올바르지 않습니다.");
         } catch (IllegalArgumentException exception) {
             return badRequest(exception.getMessage());
         }
+    }
+
+    private ResponseEntity<byte[]> fileResponse(StatementWorkbookResult result) {
+        String encodedFilename = URLEncoder.encode(
+                result.filename(),
+                StandardCharsets.UTF_8
+        ).replace("+", "%20");
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename*=UTF-8''" + encodedFilename
+                )
+                .header("X-Generated-Sheets", Integer.toString(result.generatedSheetCount()))
+                .header("X-Sheets-With-Sales", Integer.toString(result.sheetWithSalesCount()))
+                .header("X-Generation-Warnings", Integer.toString(result.warningCount()))
+                .contentType(XLSX_MEDIA_TYPE)
+                .body(result.fileBytes());
     }
 
     private ResponseEntity<byte[]> badRequest(String message) {
