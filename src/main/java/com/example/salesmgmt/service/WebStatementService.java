@@ -157,6 +157,13 @@ public class WebStatementService {
                 ))
                 .toList();
 
+        List<BigDecimal> itemQuantityTotals = itemNames.stream()
+                .map(itemName -> monthlyQuantities.getOrDefault(itemName, BigDecimal.ZERO))
+                .toList();
+
+        BigDecimal returnContainerQuantity =
+                monthlyQuantities.getOrDefault(RETURN_CONTAINER, BigDecimal.ZERO);
+
         List<WebStatementView.DailyRow> dailyRows = new ArrayList<>();
         for (LocalDate date : start.datesUntil(end.plusDays(1)).toList()) {
             Map<String, BigDecimal> byItem = quantities.getOrDefault(date, Map.of());
@@ -185,10 +192,12 @@ public class WebStatementService {
                 vendorName,
                 deliveryLabel,
                 grossAmount,
+                returnContainerQuantity,
                 returnContainerAmount,
                 total,
                 missing,
                 itemNames,
+                List.copyOf(itemQuantityTotals),
                 List.copyOf(summaries),
                 List.copyOf(dailyRows)
         );
