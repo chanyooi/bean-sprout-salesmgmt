@@ -1,4 +1,27 @@
 (function () {
+    loadVendorOrderCalendar();
+
+    function loadVendorOrderCalendar() {
+        if (!window.location.pathname.startsWith('/vendor-management/')) return;
+        if (!document.querySelector('.order-table')) return;
+
+        if (!document.querySelector('link[data-vendor-order-calendar]')) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '/css/vendor-order-calendar.css?v=20260819_1';
+            link.dataset.vendorOrderCalendar = 'true';
+            document.head.appendChild(link);
+        }
+
+        if (!document.querySelector('script[data-vendor-order-calendar]')) {
+            var script = document.createElement('script');
+            script.src = '/js/vendor-order-calendar.js?v=20260819_1';
+            script.defer = true;
+            script.dataset.vendorOrderCalendar = 'true';
+            document.body.appendChild(script);
+        }
+    }
+
     if (!window.matchMedia('(min-width: 641px)').matches) return;
 
     function install() {

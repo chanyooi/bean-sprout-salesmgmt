@@ -1,0 +1,360 @@
+.vendor-order-calendar-wrap {
+    margin-top: 4px;
+}
+
+.vendor-order-calendar-weekdays,
+.vendor-order-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.vendor-order-calendar-weekdays {
+    margin-bottom: 8px;
+}
+
+.vendor-order-calendar-weekdays span {
+    padding: 4px 0;
+    color: #8b95a1;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.vendor-order-calendar-weekdays span:first-child {
+    color: #e05252;
+}
+
+.vendor-order-calendar-weekdays span:last-child {
+    color: #3182f6;
+}
+
+.vendor-order-day {
+    min-height: 112px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    border: 1px solid #e5e8eb;
+    border-radius: 15px;
+    background: #fff;
+    color: #191f28;
+    font: inherit;
+    text-align: left;
+}
+
+button.vendor-order-day {
+    cursor: pointer;
+    transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, background .14s ease;
+}
+
+button.vendor-order-day:hover {
+    transform: translateY(-1px);
+    border-color: #9ec5ff;
+    box-shadow: 0 8px 18px rgba(49, 130, 246, .10);
+}
+
+.vendor-order-day.is-empty-slot {
+    border-color: transparent;
+    background: transparent;
+}
+
+.vendor-order-day.has-order {
+    border-color: #d7e7ff;
+    background: #f9fbff;
+}
+
+.vendor-order-day-number {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.vendor-order-day.sunday .vendor-order-day-number {
+    color: #d94c4c;
+}
+
+.vendor-order-day.saturday .vendor-order-day-number {
+    color: #2878e5;
+}
+
+.vendor-order-day.has-order .vendor-order-day-number {
+    background: #3182f6;
+    color: #fff;
+}
+
+.vendor-order-day-summary {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.vendor-order-day-summary strong {
+    overflow: hidden;
+    color: #333d4b;
+    font-size: 11.5px;
+    line-height: 1.35;
+    font-weight: 780;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vendor-order-day-summary small {
+    color: #8b95a1;
+    font-size: 10.5px;
+    line-height: 1.35;
+}
+
+.vendor-order-day-total {
+    margin-top: auto;
+    color: #3182f6;
+    font-size: 11px;
+    font-weight: 850;
+}
+
+.vendor-order-calendar-help {
+    margin: 12px 0 0;
+    color: #8b95a1;
+    font-size: 12px;
+}
+
+.vendor-order-source-table {
+    display: none !important;
+}
+
+.vendor-order-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(17, 24, 39, .42);
+    backdrop-filter: blur(2px);
+}
+
+.vendor-order-modal-backdrop.open {
+    display: flex;
+}
+
+.vendor-order-modal {
+    width: min(640px, 100%);
+    max-height: min(82vh, 760px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e8eb;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .22);
+}
+
+.vendor-order-modal-head {
+    padding: 22px 22px 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.vendor-order-modal-head h3 {
+    margin: 0;
+    color: #191f28;
+    font-size: 21px;
+    letter-spacing: -.03em;
+}
+
+.vendor-order-modal-head p {
+    margin: 6px 0 0;
+    color: #8b95a1;
+    font-size: 12px;
+}
+
+.vendor-order-modal-close {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border: 0;
+    border-radius: 11px;
+    background: #f2f4f6;
+    color: #6b7684;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.vendor-order-modal-body {
+    padding: 16px 22px 22px;
+    overflow-y: auto;
+}
+
+.vendor-order-modal-empty {
+    padding: 28px 12px;
+    color: #8b95a1;
+    text-align: center;
+}
+
+.vendor-order-edit-card {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+    border: 1px solid #e9edf2;
+    border-radius: 15px;
+    background: #fbfcfe;
+}
+
+.vendor-order-edit-card + .vendor-order-edit-card {
+    margin-top: 10px;
+}
+
+.vendor-order-edit-info {
+    min-width: 0;
+}
+
+.vendor-order-edit-info strong {
+    display: block;
+    color: #191f28;
+    font-size: 15px;
+}
+
+.vendor-order-edit-meta {
+    margin-top: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    color: #8b95a1;
+    font-size: 11px;
+}
+
+.vendor-order-edit-amount {
+    margin-top: 7px;
+    color: #4e5968;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.vendor-order-edit-form {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.vendor-order-edit-form input[type="number"] {
+    width: 112px;
+    min-height: 40px;
+    padding: 0 10px;
+    border: 1px solid #dfe3e8;
+    border-radius: 10px;
+    background: #fff;
+    font: inherit;
+    text-align: right;
+}
+
+.vendor-order-edit-form button {
+    min-height: 40px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 10px;
+    background: #3182f6;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .vendor-order-calendar-weekdays,
+    .vendor-order-calendar-grid {
+        gap: 5px;
+    }
+
+    .vendor-order-day {
+        min-height: 88px;
+        padding: 7px;
+        border-radius: 12px;
+    }
+
+    .vendor-order-day-summary strong {
+        font-size: 10px;
+    }
+
+    .vendor-order-day-summary small,
+    .vendor-order-day-total {
+        font-size: 9.5px;
+    }
+}
+
+@media (max-width: 640px) {
+    .vendor-order-calendar-weekdays,
+    .vendor-order-calendar-grid {
+        gap: 3px;
+    }
+
+    .vendor-order-calendar-weekdays span {
+        font-size: 10px;
+    }
+
+    .vendor-order-day {
+        min-height: 72px;
+        padding: 5px;
+        gap: 4px;
+        border-radius: 10px;
+    }
+
+    .vendor-order-day-number {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
+    }
+
+    .vendor-order-day-summary strong {
+        font-size: 9px;
+    }
+
+    .vendor-order-day-summary small {
+        display: none;
+    }
+
+    .vendor-order-day-total {
+        overflow: hidden;
+        font-size: 8.5px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .vendor-order-modal-backdrop {
+        padding: 10px;
+        align-items: flex-end;
+    }
+
+    .vendor-order-modal {
+        max-height: 86vh;
+        border-radius: 20px 20px 14px 14px;
+    }
+
+    .vendor-order-modal-head {
+        padding: 18px 16px 14px;
+    }
+
+    .vendor-order-modal-body {
+        padding: 12px 14px 18px;
+    }
+
+    .vendor-order-edit-card {
+        grid-template-columns: 1fr;
+    }
+
+    .vendor-order-edit-form input[type="number"] {
+        flex: 1;
+        width: auto;
+    }
+}
