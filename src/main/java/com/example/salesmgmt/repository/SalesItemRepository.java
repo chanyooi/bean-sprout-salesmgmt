@@ -65,20 +65,6 @@ public interface SalesItemRepository extends JpaRepository<SalesItemEntity, Long
             from SalesItemEntity item
             join fetch item.salesOrder salesOrder
             join fetch salesOrder.vendor vendor
-            where vendor.id = :vendorId
-              and item.itemName = :itemName
-              and item.manualPriceOverride = false
-            """)
-    List<SalesItemEntity> findBasePriceManagedItems(
-            @Param("vendorId") Long vendorId,
-            @Param("itemName") String itemName
-    );
-
-    @Query("""
-            select item
-            from SalesItemEntity item
-            join fetch item.salesOrder salesOrder
-            join fetch salesOrder.vendor vendor
             order by salesOrder.deliveryDate desc, salesOrder.id desc, item.id desc
             """)
     List<SalesItemEntity> findRecent(Pageable pageable);
