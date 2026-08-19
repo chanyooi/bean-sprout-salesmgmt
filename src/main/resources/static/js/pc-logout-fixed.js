@@ -17,7 +17,9 @@
         wrap.className = 'songcheon-pc-logout-wrap';
         wrap.innerHTML =
             '<button type="button" class="songcheon-pc-logout-btn">' +
-            '<span class="songcheon-pc-logout-icon">↪</span>' +
+            '<span class="songcheon-pc-logout-icon" aria-hidden="true">' +
+            '<svg viewBox="0 0 24 24"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"></path><path d="M14 8l4 4-4 4"></path><path d="M8 12h10"></path></svg>' +
+            '</span>' +
             '<strong>로그아웃</strong>' +
             '</button>';
 
