@@ -75,26 +75,38 @@
     }
 
     .dgs-nav a,
-    .dgs-bottom > a {
+    .dgs-bottom > a,
+    .dgs-menu-toggle {
         min-height: 54px;
         padding: 0 14px;
         display: flex;
         align-items: center;
         gap: 13px;
+        border: 0;
         border-radius: 13px;
+        background: transparent;
         color: #556070;
         text-decoration: none;
         transition: background .12s ease,
                     color .12s ease;
     }
 
-    .dgs-nav a:hover,
-    .dgs-bottom > a:hover {
+    .dgs-menu-toggle {
+        width: 100%;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .dgs-nav > a:hover,
+    .dgs-bottom > a:hover,
+    .dgs-menu-toggle:hover {
         background: #f3f6fa;
         color: #202938;
     }
 
-    .dgs-nav a.active {
+    .dgs-nav > a.active,
+    .dgs-menu-group.active > .dgs-menu-toggle {
         background: #e7f1ff;
         color: #246bfd;
     }
@@ -106,11 +118,55 @@
     }
 
     .dgs-nav strong,
-    .dgs-bottom > a strong {
+    .dgs-bottom > a strong,
+    .dgs-menu-toggle strong {
         font-size: 14.5px;
         line-height: 1.2;
         font-weight: 760;
         letter-spacing: -.02em;
+    }
+
+    .dgs-menu-arrow {
+        margin-left: auto;
+        color: #98a1ad;
+        font-size: 15px;
+        transition: transform .15s ease;
+    }
+
+    .dgs-menu-group.open .dgs-menu-arrow {
+        transform: rotate(180deg);
+    }
+
+    .dgs-submenu {
+        display: none;
+        margin: 4px 0 4px 39px;
+        padding-left: 12px;
+        border-left: 1px solid #e5eaf1;
+    }
+
+    .dgs-menu-group.open .dgs-submenu {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .dgs-nav .dgs-submenu a {
+        min-height: 38px;
+        padding: 0 12px;
+        border-radius: 10px;
+        color: #7b8492;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .dgs-nav .dgs-submenu a:hover {
+        background: #f5f7fa;
+        color: #333d4b;
+    }
+
+    .dgs-nav .dgs-submenu a.active {
+        background: #eef5ff;
+        color: #246bfd;
     }
 
     .dgs-bottom {
