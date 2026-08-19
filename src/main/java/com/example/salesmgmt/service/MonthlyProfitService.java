@@ -35,7 +35,14 @@ public class MonthlyProfitService {
 
     @Transactional(readOnly = true)
     public MonthlyProfitReport createReport(YearMonth month) {
-        MonthlySalesReport salesReport = monthlySalesReportService.createReport(month);
+        return createReport(month, monthlySalesReportService.createReport(month));
+    }
+
+    @Transactional(readOnly = true)
+    public MonthlyProfitReport createReport(
+            YearMonth month,
+            MonthlySalesReport salesReport
+    ) {
         BeanUsageCostResult beanCost = beanInventoryService.calculateUsageCost(month);
         Map<ExpenseType, BigDecimal> expenses = monthlyExpenseService.getExpenses(month);
 
