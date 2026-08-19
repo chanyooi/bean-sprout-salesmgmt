@@ -27,26 +27,27 @@ import java.util.Map;
 public class PaymentService {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO;
-    private static final String INDIVIDUAL_COMPLETE_NOTE =
-            "입금 완료 자동 처리";
-    private static final String BULK_COMPLETE_NOTE =
-            "전체 입금 완료 자동 처리";
+    private static final String INDIVIDUAL_COMPLETE_NOTE = "입금 완료 자동 처리";
+    private static final String BULK_COMPLETE_NOTE = "전체 입금 완료 자동 처리";
 
     private final PaymentRepository paymentRepository;
     private final VendorRepository vendorRepository;
     private final VendorProfileRepository vendorProfileRepository;
     private final MonthlySalesReportService monthlySalesReportService;
+    private final ReceivableBillingAdjustmentService receivableBillingAdjustmentService;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             VendorRepository vendorRepository,
             VendorProfileRepository vendorProfileRepository,
-            MonthlySalesReportService monthlySalesReportService
+            MonthlySalesReportService monthlySalesReportService,
+            ReceivableBillingAdjustmentService receivableBillingAdjustmentService
     ) {
         this.paymentRepository = paymentRepository;
         this.vendorRepository = vendorRepository;
         this.vendorProfileRepository = vendorProfileRepository;
         this.monthlySalesReportService = monthlySalesReportService;
+        this.receivableBillingAdjustmentService = receivableBillingAdjustmentService;
     }
 
     @Transactional(readOnly = true)
@@ -55,9 +56,7 @@ public class PaymentService {
             try {
                 return YearMonth.parse(requestedMonth);
             } catch (DateTimeParseException exception) {
-                throw new IllegalArgumentException(
-                        "정산월 형식이 올바르지 않습니다."
-                );
+                throw new IllegalArgumentException("정산월 형식이 올바르지 않습니다.");
             }
         }
 
@@ -74,9 +73,7 @@ public class PaymentService {
             String note
     ) {
         VendorEntity vendor = vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "거래처를 찾을 수 없습니다."
-                ));
+                .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
 
         paymentRepository.save(new PaymentEntity(
                 vendor,
@@ -94,29 +91,21 @@ public class PaymentService {
             LocalDate paymentDate
     ) {
         VendorEntity vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
+
+        MonthlyReceivableReport report = createMonthlyReport(settlementMonth);
+
+        MonthlyReceivableReport.VendorRow targetRow = report.vendorRows()
+                .stream()
+                .filter(row -> vendorId.equals(row.vendorId()))
+                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "거래처를 찾을 수 없습니다."
+                        "해당 월의 청구 또는 입금 내역이 없습니다."
                 ));
 
-        MonthlyReceivableReport report =
-                createMonthlyReport(settlementMonth);
-
-        MonthlyReceivableReport.VendorRow targetRow =
-                report.vendorRows()
-                        .stream()
-                        .filter(row -> vendorId.equals(row.vendorId()))
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "해당 월의 청구 또는 입금 내역이 없습니다."
-                        ));
-
-        BigDecimal outstanding =
-                safe(targetRow.outstandingAmount());
-
+        BigDecimal outstanding = safe(targetRow.outstandingAmount());
         if (outstanding.signum() <= 0) {
-            throw new IllegalArgumentException(
-                    "이미 입금 완료된 거래처입니다."
-            );
+            throw new IllegalArgumentException("이미 입금 완료된 거래처입니다.");
         }
 
         paymentRepository.save(new PaymentEntity(
@@ -135,129 +124,101 @@ public class PaymentService {
             YearMonth settlementMonth,
             LocalDate paymentDate
     ) {
-        MonthlyReceivableReport report =
-                createMonthlyReport(settlementMonth);
+        MonthlyReceivableReport report = createMonthlyReport(settlementMonth);
+        LocalDate actualPaymentDate = paymentDate == null ? LocalDate.now() : paymentDate;
 
-        LocalDate actualPaymentDate =
-                paymentDate == null ? LocalDate.now() : paymentDate;
+        List<Long> targetVendorIds = report.vendorRows().stream()
+                .filter(row -> safe(row.outstandingAmount()).signum() > 0)
+                .map(MonthlyReceivableReport.VendorRow::vendorId)
+                .toList();
+
+        Map<Long, VendorEntity> vendorsById = new HashMap<>();
+        vendorRepository.findAllById(targetVendorIds)
+                .forEach(vendor -> vendorsById.put(vendor.getId(), vendor));
 
         long completedCount = 0;
         BigDecimal completedTotal = ZERO;
+        List<PaymentEntity> newPayments = new ArrayList<>();
 
-        for (MonthlyReceivableReport.VendorRow row
-                : report.vendorRows()) {
-
-            BigDecimal outstanding =
-                    safe(row.outstandingAmount());
-
+        for (MonthlyReceivableReport.VendorRow row : report.vendorRows()) {
+            BigDecimal outstanding = safe(row.outstandingAmount());
             if (outstanding.signum() <= 0) {
                 continue;
             }
 
-            VendorEntity vendor =
-                    vendorRepository.findById(row.vendorId())
-                            .orElse(null);
-
+            VendorEntity vendor = vendorsById.get(row.vendorId());
             if (vendor == null) {
                 continue;
             }
 
-            paymentRepository.save(new PaymentEntity(
+            newPayments.add(new PaymentEntity(
                     vendor,
                     settlementMonth.toString(),
                     actualPaymentDate,
                     outstanding,
                     BULK_COMPLETE_NOTE
             ));
-
             completedCount++;
-            completedTotal =
-                    completedTotal.add(outstanding);
+            completedTotal = completedTotal.add(outstanding);
         }
 
         if (completedCount == 0) {
-            throw new IllegalArgumentException(
-                    "입금 완료 처리할 미수 거래처가 없습니다."
-            );
+            throw new IllegalArgumentException("입금 완료 처리할 미수 거래처가 없습니다.");
         }
 
-        return new BulkCompleteResult(
-                completedCount,
-                money(completedTotal)
-        );
+        paymentRepository.saveAll(newPayments);
+
+        return new BulkCompleteResult(completedCount, money(completedTotal));
     }
 
     @Transactional(readOnly = true)
-    public AutoCompleteSummary getAutoCompleteSummary(
-            YearMonth settlementMonth
-    ) {
-        List<PaymentEntity> payments =
-                paymentRepository.findForSettlementMonth(
-                        settlementMonth.toString()
-                );
+    public AutoCompleteSummary getAutoCompleteSummary(YearMonth settlementMonth) {
+        List<PaymentEntity> payments = paymentRepository.findForSettlementMonth(
+                settlementMonth.toString()
+        );
 
         long count = 0;
         BigDecimal total = ZERO;
-
         for (PaymentEntity payment : payments) {
             if (!isAutoCompletionPayment(payment)) {
                 continue;
             }
-
             count++;
             total = total.add(safe(payment.getAmount()));
         }
 
-        return new AutoCompleteSummary(
-                count,
-                money(total)
-        );
+        return new AutoCompleteSummary(count, money(total));
     }
 
     @Transactional
-    public BulkDeleteResult deleteAllAutoCompletionPayments(
-            YearMonth settlementMonth
-    ) {
-        List<PaymentEntity> payments =
-                paymentRepository.findForSettlementMonth(
-                        settlementMonth.toString()
-                );
+    public BulkDeleteResult deleteAllAutoCompletionPayments(YearMonth settlementMonth) {
+        List<PaymentEntity> payments = paymentRepository.findForSettlementMonth(
+                settlementMonth.toString()
+        );
 
         List<PaymentEntity> targets = new ArrayList<>();
         BigDecimal total = ZERO;
-
         for (PaymentEntity payment : payments) {
             if (!isAutoCompletionPayment(payment)) {
                 continue;
             }
-
             targets.add(payment);
             total = total.add(safe(payment.getAmount()));
         }
 
         if (targets.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "삭제할 자동 입금 완료 기록이 없습니다."
-            );
+            throw new IllegalArgumentException("삭제할 자동 입금 완료 기록이 없습니다.");
         }
 
-        paymentRepository.deleteAll(targets);
-
-        return new BulkDeleteResult(
-                targets.size(),
-                money(total)
-        );
+        paymentRepository.deleteAllInBatch(targets);
+        return new BulkDeleteResult(targets.size(), money(total));
     }
 
-    private boolean isAutoCompletionPayment(
-            PaymentEntity payment
-    ) {
+    private boolean isAutoCompletionPayment(PaymentEntity payment) {
         if (payment == null || payment.getNote() == null) {
             return false;
         }
-
         String note = payment.getNote().trim();
-
         return INDIVIDUAL_COMPLETE_NOTE.equals(note)
                 || BULK_COMPLETE_NOTE.equals(note);
     }
@@ -265,161 +226,122 @@ public class PaymentService {
     @Transactional
     public void deletePayment(Long paymentId) {
         if (!paymentRepository.existsById(paymentId)) {
-            throw new IllegalArgumentException(
-                    "삭제할 입금 기록을 찾을 수 없습니다."
-            );
+            throw new IllegalArgumentException("삭제할 입금 기록을 찾을 수 없습니다.");
         }
-
         paymentRepository.deleteById(paymentId);
     }
 
     @Transactional(readOnly = true)
+    public MonthlyReceivableReport createMonthlyReport(YearMonth month) {
+        return createMonthlyReport(
+                month,
+                monthlySalesReportService.createReport(month)
+        );
+    }
+
+    /**
+     * 대시보드처럼 이미 같은 월 매출 보고서를 조회한 화면에서는 그 결과를 재사용한다.
+     * 행사 단가 수정으로 lineAmount가 바뀌면 이 보고서의 청구액도 즉시 같은 금액을 사용한다.
+     */
+    @Transactional(readOnly = true)
     public MonthlyReceivableReport createMonthlyReport(
-            YearMonth month
+            YearMonth month,
+            MonthlySalesReport salesReport
     ) {
-        MonthlySalesReport salesReport =
-                monthlySalesReportService.createReport(month);
-
-        List<PaymentEntity> payments =
-                paymentRepository.findForSettlementMonth(
-                        month.toString()
-                );
-
+        List<PaymentEntity> payments = paymentRepository.findForSettlementMonth(
+                month.toString()
+        );
         List<VendorEntity> vendors = vendorRepository.findAll();
 
         Map<String, VendorEntity> vendorByName = new HashMap<>();
         Map<Long, VendorEntity> vendorById = new HashMap<>();
-
         for (VendorEntity vendor : vendors) {
             vendorByName.put(vendor.getInputName(), vendor);
             vendorById.put(vendor.getId(), vendor);
         }
 
         Map<Long, PaymentCycle> paymentCycles = new HashMap<>();
-
-        for (VendorProfileEntity profile
-                : vendorProfileRepository.findAll()) {
-
-            paymentCycles.put(
-                    profile.getVendor().getId(),
-                    profile.getPaymentCycle()
-            );
+        for (VendorProfileEntity profile : vendorProfileRepository.findAll()) {
+            paymentCycles.put(profile.getVendor().getId(), profile.getPaymentCycle());
         }
 
-        Map<Long, BigDecimal> billedByVendor =
-                new LinkedHashMap<>();
-
-        for (MonthlySalesReport.VendorRow salesRow
-                : salesReport.vendorRows()) {
-
-            VendorEntity vendor =
-                    vendorByName.get(
-                            salesRow.vendorName()
-                    );
-
+        Map<Long, BigDecimal> billedByVendor = new LinkedHashMap<>();
+        for (MonthlySalesReport.VendorRow salesRow : salesReport.vendorRows()) {
+            VendorEntity vendor = vendorByName.get(salesRow.vendorName());
             if (vendor != null) {
-                billedByVendor.put(
-                        vendor.getId(),
-                        safe(salesRow.confirmedSales())
-                );
+                billedByVendor.put(vendor.getId(), safe(salesRow.confirmedSales()));
             }
         }
 
-        Map<Long, BigDecimal> paidByVendor =
-                new LinkedHashMap<>();
+        // 대시보드 월매출에서 이미 사용 중인 손두부/두부판 회계 기준을
+        // 미수금에도 동일하게 적용한다. 일반 행사 단가 변경은 위 lineAmount에 이미 반영된다.
+        receivableBillingAdjustmentService.correctionsByVendor(month)
+                .forEach((vendorId, correction) ->
+                        billedByVendor.merge(vendorId, correction, BigDecimal::add)
+                );
 
+        Map<Long, BigDecimal> paidByVendor = new LinkedHashMap<>();
         for (PaymentEntity payment : payments) {
             paidByVendor.merge(
                     payment.getVendor().getId(),
-                    payment.getAmount(),
+                    safe(payment.getAmount()),
                     BigDecimal::add
             );
         }
 
-        Map<Long, Boolean> relevantVendorIds =
-                new LinkedHashMap<>();
+        Map<Long, Boolean> relevantVendorIds = new LinkedHashMap<>();
+        billedByVendor.keySet().forEach(id -> relevantVendorIds.put(id, true));
+        paidByVendor.keySet().forEach(id -> relevantVendorIds.put(id, true));
 
-        billedByVendor.keySet()
-                .forEach(id -> relevantVendorIds.put(id, true));
-
-        paidByVendor.keySet()
-                .forEach(id -> relevantVendorIds.put(id, true));
-
-        List<MonthlyReceivableReport.VendorRow> vendorRows =
-                new ArrayList<>();
-
+        List<MonthlyReceivableReport.VendorRow> vendorRows = new ArrayList<>();
         BigDecimal billedTotal = ZERO;
         BigDecimal paidTotal = ZERO;
         BigDecimal outstandingTotal = ZERO;
         long outstandingVendorCount = 0;
 
         for (Long vendorId : relevantVendorIds.keySet()) {
-            VendorEntity vendor =
-                    vendorById.get(vendorId);
-
+            VendorEntity vendor = vendorById.get(vendorId);
             if (vendor == null) {
                 continue;
             }
 
-            BigDecimal billed =
-                    safe(billedByVendor.get(vendorId));
-
-            BigDecimal paid =
-                    safe(paidByVendor.get(vendorId));
-
-            BigDecimal outstanding =
-                    billed.subtract(paid);
+            BigDecimal billed = safe(billedByVendor.get(vendorId));
+            BigDecimal paid = safe(paidByVendor.get(vendorId));
+            BigDecimal outstanding = billed.subtract(paid);
 
             billedTotal = billedTotal.add(billed);
             paidTotal = paidTotal.add(paid);
-            outstandingTotal =
-                    outstandingTotal.add(outstanding);
-
+            outstandingTotal = outstandingTotal.add(outstanding);
             if (outstanding.signum() > 0) {
                 outstandingVendorCount++;
             }
 
-            vendorRows.add(
-                    new MonthlyReceivableReport.VendorRow(
-                            vendorId,
-                            vendor.getInputName(),
-                            paymentCycles.getOrDefault(
-                                    vendorId,
-                                    PaymentCycle.MONTHLY
-                            ),
-                            money(billed),
-                            money(paid),
-                            money(outstanding)
-                    )
-            );
+            vendorRows.add(new MonthlyReceivableReport.VendorRow(
+                    vendorId,
+                    vendor.getInputName(),
+                    paymentCycles.getOrDefault(vendorId, PaymentCycle.MONTHLY),
+                    money(billed),
+                    money(paid),
+                    money(outstanding)
+            ));
         }
 
         vendorRows.sort(
-                Comparator
-                        .comparing(
-                                MonthlyReceivableReport.VendorRow
-                                        ::outstandingAmount
-                        )
+                Comparator.comparing(MonthlyReceivableReport.VendorRow::outstandingAmount)
                         .reversed()
-                        .thenComparing(
-                                MonthlyReceivableReport.VendorRow
-                                        ::vendorName
-                        )
+                        .thenComparing(MonthlyReceivableReport.VendorRow::vendorName)
         );
 
-        List<MonthlyReceivableReport.PaymentRow> paymentRows =
-                payments.stream()
-                        .map(payment ->
-                                new MonthlyReceivableReport.PaymentRow(
-                                        payment.getId(),
-                                        payment.getPaymentDate(),
-                                        payment.getVendor().getId(),
-                                        payment.getVendor().getInputName(),
-                                        money(payment.getAmount()),
-                                        payment.getNote()
-                                )
-                        )
-                        .toList();
+        List<MonthlyReceivableReport.PaymentRow> paymentRows = payments.stream()
+                .map(payment -> new MonthlyReceivableReport.PaymentRow(
+                        payment.getId(),
+                        payment.getPaymentDate(),
+                        payment.getVendor().getId(),
+                        payment.getVendor().getInputName(),
+                        money(payment.getAmount()),
+                        payment.getNote()
+                ))
+                .toList();
 
         return new MonthlyReceivableReport(
                 month,
@@ -441,25 +363,15 @@ public class PaymentService {
         if (value == null || value.signum() == 0) {
             return ZERO;
         }
-
         return value.stripTrailingZeros();
     }
 
-    public record BulkCompleteResult(
-            long vendorCount,
-            BigDecimal totalAmount
-    ) {
+    public record BulkCompleteResult(long vendorCount, BigDecimal totalAmount) {
     }
 
-    public record AutoCompleteSummary(
-            long count,
-            BigDecimal totalAmount
-    ) {
+    public record AutoCompleteSummary(long count, BigDecimal totalAmount) {
     }
 
-    public record BulkDeleteResult(
-            long deletedCount,
-            BigDecimal totalAmount
-    ) {
+    public record BulkDeleteResult(long deletedCount, BigDecimal totalAmount) {
     }
 }
