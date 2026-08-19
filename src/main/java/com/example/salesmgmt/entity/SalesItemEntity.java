@@ -44,9 +44,6 @@ public class SalesItemEntity {
     @Column(name = "line_amount", precision = 18, scale = 2)
     private BigDecimal lineAmount;
 
-    @Column(name = "manual_price_override", nullable = false)
-    private boolean manualPriceOverride = false;
-
     protected SalesItemEntity() {
     }
 
@@ -58,11 +55,7 @@ public class SalesItemEntity {
     ) {
         this.salesOrder = salesOrder;
         this.itemName = itemName;
-        validateQuantity(quantity);
-        validateUnitPrice(unitPrice);
-        this.quantity = normalizeQuantity(quantity);
-        applyUnitPrice(unitPrice);
-        this.manualPriceOverride = false;
+        updateManually(quantity, unitPrice);
     }
 
     public Long getId() { return id; }
@@ -71,9 +64,7 @@ public class SalesItemEntity {
     public BigDecimal getQuantity() { return quantity; }
     public BigDecimal getUnitPrice() { return unitPrice; }
     public BigDecimal getLineAmount() { return lineAmount; }
-    public boolean isManualPriceOverride() { return manualPriceOverride; }
 
-    /** 재업로드 시 수량은 갱신하되 사용자가 직접 바꾼 판매단가는 보존합니다. */
     public boolean updateFromUpload(
             BigDecimal newQuantity,
             BigDecimal resolvedUnitPrice,
@@ -82,12 +73,10 @@ public class SalesItemEntity {
         validateQuantity(newQuantity);
 
         BigDecimal targetUnitPrice = this.unitPrice;
-        if (!manualPriceOverride) {
-            if (replaceUnitPrice && resolvedUnitPrice != null) {
-                targetUnitPrice = resolvedUnitPrice;
-            } else if (targetUnitPrice == null && resolvedUnitPrice != null) {
-                targetUnitPrice = resolvedUnitPrice;
-            }
+        if (replaceUnitPrice && resolvedUnitPrice != null) {
+            targetUnitPrice = resolvedUnitPrice;
+        } else if (targetUnitPrice == null && resolvedUnitPrice != null) {
+            targetUnitPrice = resolvedUnitPrice;
         }
 
         boolean quantityChanged = this.quantity.compareTo(newQuantity) != 0;
@@ -101,34 +90,14 @@ public class SalesItemEntity {
         return true;
     }
 
-    /** 거래처 상세에서 특정 주문의 단가를 수정하면 해당 주문만 수동단가로 고정합니다. */
-    public void updateManually(BigDecimal newQuantity, BigDecimal newUnitPrice) {
+    public void updateManually(
+            BigDecimal newQuantity,
+            BigDecimal newUnitPrice
+    ) {
         validateQuantity(newQuantity);
         validateUnitPrice(newUnitPrice);
         this.quantity = normalizeQuantity(newQuantity);
         applyUnitPrice(newUnitPrice);
-        this.manualPriceOverride = true;
-    }
-
-    /**
-     * 새 수동단가 플래그가 도입되기 전에 이미 기본단가와 다르게 저장돼 있던 주문은
-     * 행사/개별수정으로 간주하여 다음 기본단가 변경에서 덮어쓰지 않게 보호합니다.
-     */
-    public void protectExistingOverride(BigDecimal expectedBasePrice) {
-        if (manualPriceOverride || unitPrice == null || expectedBasePrice == null) {
-            return;
-        }
-        if (!sameNumber(unitPrice, expectedBasePrice)) {
-            this.manualPriceOverride = true;
-        }
-    }
-
-    /** 기본단가 변경 시 수동수정되지 않은 주문에만 새 기본단가를 반영합니다. */
-    public void applyBaseUnitPrice(BigDecimal unitPrice) {
-        if (manualPriceOverride) {
-            return;
-        }
-        applyUnitPrice(unitPrice);
     }
 
     private void validateQuantity(BigDecimal value) {
