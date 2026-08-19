@@ -4,7 +4,7 @@ import com.example.salesmgmt.domain.StatementDeliveryMethod;
 import com.example.salesmgmt.domain.StatementWorkbookResult;
 import com.example.salesmgmt.service.FilteredStatementWorkbookService;
 import com.example.salesmgmt.service.SalesManagementService;
-import com.example.salesmgmt.service.StatementWorkbookService;
+import com.example.salesmgmt.service.StatementWorkbookV2Service;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,12 +30,12 @@ public class StatementController {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             );
 
-    private final StatementWorkbookService statementWorkbookService;
+    private final StatementWorkbookV2Service statementWorkbookService;
     private final FilteredStatementWorkbookService filteredStatementWorkbookService;
     private final SalesManagementService salesManagementService;
 
     public StatementController(
-            StatementWorkbookService statementWorkbookService,
+            StatementWorkbookV2Service statementWorkbookService,
             FilteredStatementWorkbookService filteredStatementWorkbookService,
             SalesManagementService salesManagementService
     ) {
@@ -49,9 +49,7 @@ public class StatementController {
             @RequestParam(required = false) String month,
             Model model
     ) {
-        YearMonth selectedMonth =
-                salesManagementService.resolveMonth(month);
-
+        YearMonth selectedMonth = salesManagementService.resolveMonth(month);
         model.addAttribute("selectedMonth", selectedMonth.toString());
         return "statements";
     }
@@ -87,21 +85,11 @@ public class StatementController {
             return ResponseEntity.ok()
                     .header(
                             HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename*=UTF-8''"
-                                    + encodedFilename
+                            "attachment; filename*=UTF-8''" + encodedFilename
                     )
-                    .header(
-                            "X-Generated-Sheets",
-                            Integer.toString(result.generatedSheetCount())
-                    )
-                    .header(
-                            "X-Sheets-With-Sales",
-                            Integer.toString(result.sheetWithSalesCount())
-                    )
-                    .header(
-                            "X-Generation-Warnings",
-                            Integer.toString(result.warningCount())
-                    )
+                    .header("X-Generated-Sheets", Integer.toString(result.generatedSheetCount()))
+                    .header("X-Sheets-With-Sales", Integer.toString(result.sheetWithSalesCount()))
+                    .header("X-Generation-Warnings", Integer.toString(result.warningCount()))
                     .contentType(XLSX_MEDIA_TYPE)
                     .body(result.fileBytes());
         } catch (DateTimeParseException exception) {

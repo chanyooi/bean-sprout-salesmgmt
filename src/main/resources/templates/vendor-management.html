@@ -18,7 +18,10 @@
             <h1>거래처 관리</h1>
             <p>거래처를 선택하면 기본단가, 월별 사용금액, 일별 주문과 행사 단가를 한 화면에서 관리할 수 있습니다.</p>
         </div>
-        <a class="secondary-link" th:href="@{/vendors}">배송코스 관리</a>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="secondary-link" th:href="@{/vendor-management/new}" style="background:#3182f6;color:#fff;border-color:#3182f6">+ 거래처 추가</a>
+            <a class="secondary-link" th:href="@{/vendors}">배송코스 관리</a>
+        </div>
     </section>
 
     <section class="v2-panel">

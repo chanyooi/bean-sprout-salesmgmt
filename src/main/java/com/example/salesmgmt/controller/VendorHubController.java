@@ -1,11 +1,14 @@
 package com.example.salesmgmt.controller;
 
+import com.example.salesmgmt.domain.ItemCatalog;
+import com.example.salesmgmt.domain.PaymentCycle;
 import com.example.salesmgmt.domain.StatementDeliveryMethod;
 import com.example.salesmgmt.repository.VendorRepository;
 import com.example.salesmgmt.service.PriceManagementService;
 import com.example.salesmgmt.service.SalesManagementService;
 import com.example.salesmgmt.service.VendorDetailService;
 import com.example.salesmgmt.service.VendorManagementService;
+import com.example.salesmgmt.service.VendorRegistrationService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +20,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class VendorHubController {
@@ -26,28 +32,83 @@ public class VendorHubController {
     private final VendorManagementService vendorManagementService;
     private final VendorDetailService vendorDetailService;
     private final VendorRepository vendorRepository;
+    private final VendorRegistrationService vendorRegistrationService;
 
     public VendorHubController(
             PriceManagementService priceManagementService,
             SalesManagementService salesManagementService,
             VendorManagementService vendorManagementService,
             VendorDetailService vendorDetailService,
-            VendorRepository vendorRepository
+            VendorRepository vendorRepository,
+            VendorRegistrationService vendorRegistrationService
     ) {
         this.priceManagementService = priceManagementService;
         this.salesManagementService = salesManagementService;
         this.vendorManagementService = vendorManagementService;
         this.vendorDetailService = vendorDetailService;
         this.vendorRepository = vendorRepository;
+        this.vendorRegistrationService = vendorRegistrationService;
     }
 
     @GetMapping("/vendor-management")
     public String vendorManagement(Model model) {
-        model.addAttribute(
-                "vendors",
-                priceManagementService.findVendors()
-        );
+        model.addAttribute("vendors", priceManagementService.findVendors());
         return "vendor-management";
+    }
+
+    @GetMapping("/vendor-management/new")
+    public String newVendor(Model model) {
+        model.addAttribute("items", ItemCatalog.ALL_ITEMS);
+        model.addAttribute("paymentCycles", PaymentCycle.values());
+        model.addAttribute("statementDeliveryMethods", StatementDeliveryMethod.values());
+        return "vendor-create";
+    }
+
+    @PostMapping("/vendor-management/new")
+    public String createVendor(
+            @RequestParam String inputName,
+            @RequestParam(required = false) String statementName,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) PaymentCycle paymentCycle,
+            @RequestParam(required = false) StatementDeliveryMethod statementDeliveryMethod,
+            @RequestParam(required = false) List<String> itemName,
+            @RequestParam(required = false) List<String> unitPrice,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            Map<String, BigDecimal> prices = new LinkedHashMap<>();
+            if (itemName != null) {
+                for (int i = 0; i < itemName.size(); i++) {
+                    String raw = unitPrice != null && i < unitPrice.size()
+                            ? unitPrice.get(i)
+                            : null;
+                    if (raw == null || raw.isBlank()) continue;
+                    prices.put(itemName.get(i), new BigDecimal(raw.trim()));
+                }
+            }
+
+            Long vendorId = vendorRegistrationService.register(
+                    inputName,
+                    statementName,
+                    phone,
+                    address,
+                    paymentCycle,
+                    statementDeliveryMethod,
+                    prices
+            );
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "거래처를 추가했습니다. 장부에 같은 거래처명이 들어오면 자동 연결되고 명세서도 생성됩니다."
+            );
+            return "redirect:/vendor-management/" + vendorId;
+        } catch (NumberFormatException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", "단가는 숫자로 입력해주세요.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return "redirect:/vendor-management/new";
     }
 
     @GetMapping("/vendor-management/{vendorId}")
@@ -72,26 +133,14 @@ public class VendorHubController {
         model.addAttribute("profile", profile);
         model.addAttribute("statementDeliveryMethods", StatementDeliveryMethod.values());
         model.addAttribute("statementDeliveryMethod", vendor.getStatementDeliveryMethod());
-        model.addAttribute(
-                "prices",
-                priceManagementService.findPrices(vendorId)
-        );
-        model.addAttribute(
-                "missingItems",
-                priceManagementService.findMissingItems(vendorId)
-        );
+        model.addAttribute("prices", priceManagementService.findPrices(vendorId));
+        model.addAttribute("missingItems", priceManagementService.findMissingItems(vendorId));
         model.addAttribute("selectedMonth", selectedMonth.toString());
         model.addAttribute("selectedYear", selectedMonth.getYear());
         model.addAttribute("previousYear", selectedMonth.getYear() - 1);
         model.addAttribute("nextYear", selectedMonth.getYear() + 1);
-        model.addAttribute(
-                "previousMonth",
-                selectedMonth.minusMonths(1).toString()
-        );
-        model.addAttribute(
-                "nextMonth",
-                selectedMonth.plusMonths(1).toString()
-        );
+        model.addAttribute("previousMonth", selectedMonth.minusMonths(1).toString());
+        model.addAttribute("nextMonth", selectedMonth.plusMonths(1).toString());
         model.addAttribute(
                 "historicalDefaultMonth",
                 selectedMonth.isBefore(VendorDetailService.SYSTEM_START_MONTH)
@@ -112,19 +161,12 @@ public class VendorHubController {
     ) {
         try {
             YearMonth targetMonth = YearMonth.parse(historicalMonth);
-            vendorDetailService.saveHistoricalMonthlySpend(
-                    vendorId,
-                    targetMonth,
-                    amount
-            );
+            vendorDetailService.saveHistoricalMonthlySpend(vendorId, targetMonth, amount);
             redirectAttributes.addFlashAttribute(
                     "successMessage",
                     targetMonth + " 과거 사용금액을 저장했습니다."
             );
-            return "redirect:/vendor-management/"
-                    + vendorId
-                    + "?month="
-                    + targetMonth;
+            return "redirect:/vendor-management/" + vendorId + "?month=" + targetMonth;
         } catch (DateTimeParseException | IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
@@ -167,16 +209,18 @@ public class VendorHubController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            priceManagementService.updatePrice(priceId, unitPrice);
+            YearMonth selectedMonth = resolveMonth(month);
+            priceManagementService.updatePriceForMonth(
+                    priceId,
+                    unitPrice,
+                    selectedMonth
+            );
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "거래처 기본단가를 수정했습니다."
+                    "기본단가를 수정했습니다. 이 달의 일반단가 주문만 새 단가로 바뀌고, 특정 날짜에 직접 수정한 행사단가는 그대로 유지됩니다."
             );
         } catch (IllegalArgumentException exception) {
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    exception.getMessage()
-            );
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
         }
         return redirectDetail(vendorId, month);
     }
@@ -190,20 +234,18 @@ public class VendorHubController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            priceManagementService.createOrUpdatePrice(
+            priceManagementService.createOrUpdatePriceForMonth(
                     vendorId,
                     itemName,
-                    unitPrice
+                    unitPrice,
+                    resolveMonth(month)
             );
             redirectAttributes.addFlashAttribute(
                     "successMessage",
                     "거래처 기본단가를 추가했습니다."
             );
         } catch (IllegalArgumentException exception) {
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    exception.getMessage()
-            );
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
         }
         return redirectDetail(vendorId, month);
     }
@@ -218,37 +260,26 @@ public class VendorHubController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            salesManagementService.updateItem(
-                    itemId,
-                    quantity,
-                    unitPrice
-            );
+            salesManagementService.updateItem(itemId, quantity, unitPrice);
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "해당 주문의 적용단가만 수정했습니다. 기본단가는 변경되지 않습니다."
+                    "해당 날짜 주문의 적용단가만 수정했습니다. 엑셀 명세서도 이 금액으로 계산됩니다."
             );
         } catch (IllegalArgumentException exception) {
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    exception.getMessage()
-            );
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
         }
         return redirectDetail(vendorId, month);
     }
 
     private YearMonth resolveMonthAndYear(String month, Integer year) {
         YearMonth resolved = resolveMonth(month);
-        if (year == null) {
-            return resolved;
-        }
+        if (year == null) return resolved;
         int safeYear = Math.max(2000, Math.min(2100, year));
         return YearMonth.of(safeYear, resolved.getMonthValue());
     }
 
     private YearMonth resolveMonth(String month) {
-        if (month == null || month.isBlank()) {
-            return YearMonth.now();
-        }
+        if (month == null || month.isBlank()) return YearMonth.now();
         try {
             return YearMonth.parse(month);
         } catch (DateTimeParseException exception) {
@@ -257,9 +288,6 @@ public class VendorHubController {
     }
 
     private String redirectDetail(Long vendorId, String month) {
-        return "redirect:/vendor-management/"
-                + vendorId
-                + "?month="
-                + resolveMonth(month);
+        return "redirect:/vendor-management/" + vendorId + "?month=" + resolveMonth(month);
     }
 }

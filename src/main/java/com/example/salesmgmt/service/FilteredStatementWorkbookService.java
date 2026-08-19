@@ -18,11 +18,11 @@ import java.util.Set;
 @Service
 public class FilteredStatementWorkbookService {
 
-    private final StatementWorkbookService statementWorkbookService;
+    private final StatementWorkbookV2Service statementWorkbookService;
     private final VendorRepository vendorRepository;
 
     public FilteredStatementWorkbookService(
-            StatementWorkbookService statementWorkbookService,
+            StatementWorkbookV2Service statementWorkbookService,
             VendorRepository vendorRepository
     ) {
         this.statementWorkbookService = statementWorkbookService;

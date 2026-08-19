@@ -58,39 +58,13 @@ public class SalesItemEntity {
         updateManually(quantity, unitPrice);
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public SalesOrderEntity getSalesOrder() { return salesOrder; }
+    public String getItemName() { return itemName; }
+    public BigDecimal getQuantity() { return quantity; }
+    public BigDecimal getUnitPrice() { return unitPrice; }
+    public BigDecimal getLineAmount() { return lineAmount; }
 
-    public SalesOrderEntity getSalesOrder() {
-        return salesOrder;
-    }
-
-    public String getItemName() {
-        return itemName;
-    }
-
-    public BigDecimal getQuantity() {
-        return quantity;
-    }
-
-    public BigDecimal getUnitPrice() {
-        return unitPrice;
-    }
-
-    public BigDecimal getLineAmount() {
-        return lineAmount;
-    }
-
-    /**
-     * 재업로드된 장부 내용을 기존 판매품목에 반영합니다.
-     *
-     * 일반 품목은 판매 당시 단가를 보존합니다. 기존 단가가 없을 때만
-     * 현재 거래처 단가를 채우며, 회수통처럼 업로드 파일에 명시된 단가는
-     * replaceUnitPrice가 true인 경우 갱신할 수 있습니다.
-     *
-     * @return 수량 또는 단가가 실제로 변경되었으면 true
-     */
     public boolean updateFromUpload(
             BigDecimal newQuantity,
             BigDecimal resolvedUnitPrice,
@@ -99,7 +73,6 @@ public class SalesItemEntity {
         validateQuantity(newQuantity);
 
         BigDecimal targetUnitPrice = this.unitPrice;
-
         if (replaceUnitPrice && resolvedUnitPrice != null) {
             targetUnitPrice = resolvedUnitPrice;
         } else if (targetUnitPrice == null && resolvedUnitPrice != null) {
@@ -108,7 +81,6 @@ public class SalesItemEntity {
 
         boolean quantityChanged = this.quantity.compareTo(newQuantity) != 0;
         boolean priceChanged = !sameNumber(this.unitPrice, targetUnitPrice);
-
         if (!quantityChanged && !priceChanged) {
             return false;
         }
@@ -118,17 +90,12 @@ public class SalesItemEntity {
         return true;
     }
 
-    /**
-     * 웹 수정 화면에서 입력한 수량과 판매단가를 그대로 적용합니다.
-     * 단가를 비워 저장하면 미등록 상태가 되고 금액도 비워집니다.
-     */
     public void updateManually(
             BigDecimal newQuantity,
             BigDecimal newUnitPrice
     ) {
         validateQuantity(newQuantity);
         validateUnitPrice(newUnitPrice);
-
         this.quantity = normalizeQuantity(newQuantity);
         applyUnitPrice(newUnitPrice);
     }
@@ -143,7 +110,6 @@ public class SalesItemEntity {
         if (value == null || value.signum() >= 0) {
             return;
         }
-
         if (!"회수통".equals(itemName)) {
             throw new IllegalArgumentException(
                     "회수통을 제외한 판매단가는 0원 이상이어야 합니다."
@@ -164,13 +130,11 @@ public class SalesItemEntity {
 
     public void applyUnitPrice(BigDecimal unitPrice) {
         validateUnitPrice(unitPrice);
-
         if (unitPrice == null) {
             this.unitPrice = null;
             this.lineAmount = null;
             return;
         }
-
         this.unitPrice = unitPrice.setScale(2, RoundingMode.HALF_UP);
         this.lineAmount = quantity
                 .multiply(this.unitPrice)
