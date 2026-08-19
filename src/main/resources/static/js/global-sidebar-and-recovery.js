@@ -16,11 +16,67 @@
         return '';
     }
 
+    function icon(name) {
+        const icons = {
+            dashboard: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+                    <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+                    <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+                    <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+                </svg>`,
+            upload: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 16V4"></path>
+                    <path d="m7.5 8.5 4.5-4.5 4.5 4.5"></path>
+                    <path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path>
+                </svg>`,
+            statement: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2-3-2V5a2 2 0 0 1 2-2Z"></path>
+                    <path d="M8 8h8M8 12h8M8 16h5"></path>
+                </svg>`,
+            vendor: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3"></circle>
+                    <path d="M3.5 19c.5-4 2.5-6 5.5-6s5 2 5.5 6"></path>
+                    <circle cx="17" cy="9" r="2.2"></circle>
+                    <path d="M15 14c3.1-.3 5.1 1.3 5.5 4.5"></path>
+                </svg>`,
+            route: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 20c-3 0-4-1.8-4-4s1.4-4 4-4h10c2.6 0 4-1.8 4-4s-1.2-4-4-4"></path>
+                    <circle cx="7" cy="12" r="2"></circle>
+                    <path d="M17 8c-1.8-1.7-3-3.2-3-4.7A3 3 0 0 1 20 3.3C20 4.8 18.8 6.3 17 8Z"></path>
+                </svg>`,
+            payment: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="6" width="18" height="13" rx="3"></rect>
+                    <path d="M3 10h18"></path>
+                    <path d="M15 15h3"></path>
+                </svg>`,
+            profit: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 19V10M10 19V5M16 19v-7M22 19H2"></path>
+                    <path d="m4 8 5-4 5 4 6-5"></path>
+                </svg>`,
+            users: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.2"></circle>
+                    <path d="M5 20c.6-4.4 3-6.5 7-6.5s6.4 2.1 7 6.5"></path>
+                </svg>`
+        };
+
+        return icons[name] || icons.dashboard;
+    }
+
     function link(
             href,
-            icon,
+            iconName,
             label,
-            key
+            description,
+            key,
+            tone
     ) {
         const active =
             group() === key
@@ -29,9 +85,14 @@
 
         return `
             <a href="${href}"
-               class="${active.trim()}">
-                <span class="dgs-icon">${icon}</span>
-                <strong>${label}</strong>
+               class="dgs-card${active}"
+               data-tone="${tone}">
+                <span class="dgs-icon">${icon(iconName)}</span>
+                <span class="dgs-copy">
+                    <strong>${label}</strong>
+                    <small>${description}</small>
+                </span>
+                <span class="dgs-card-arrow" aria-hidden="true">›</span>
             </a>
         `;
     }
@@ -50,13 +111,17 @@
 
         return `
             <div class="dgs-menu-group ${isStatementGroup ? 'open active' : ''}"
-                 data-dgs-statement-group>
+                 data-dgs-statement-group
+                 data-tone="violet">
                 <button type="button"
                         class="dgs-menu-toggle"
                         data-dgs-statement-toggle
                         aria-expanded="${isStatementGroup ? 'true' : 'false'}">
-                    <span class="dgs-icon">▤</span>
-                    <strong>거래명세서</strong>
+                    <span class="dgs-icon">${icon('statement')}</span>
+                    <span class="dgs-copy">
+                        <strong>거래명세서</strong>
+                        <small>엑셀 생성 · 문자 발송</small>
+                    </span>
                     <span class="dgs-menu-arrow">⌄</span>
                 </button>
                 <div class="dgs-submenu">
@@ -97,18 +162,20 @@
                 </div>
             </a>
 
+            <div class="dgs-section-label">업무 메뉴</div>
+
             <nav class="dgs-nav">
-                ${link('/', '⌂', '대시보드', 'dashboard')}
-                ${link('/upload', '↑', '주문 업로드', 'upload')}
+                ${link('/', 'dashboard', '대시보드', '오늘의 운영 현황', 'dashboard', 'blue')}
+                ${link('/upload', 'upload', '주문 업로드', '판매자료 등록', 'upload', 'mint')}
                 ${statementMenu()}
-                ${link('/vendor-management', '◎', '거래처 관리', 'vendor')}
-                ${link('/vendors', '⌖', '배송 코스', 'route')}
-                ${link('/payments', '₩', '입금 관리', 'payment')}
-                ${link('/profit', '↗', '원가·이익', 'profit')}
+                ${link('/vendor-management', 'vendor', '거래처 관리', '단가 · 판매내역', 'vendor', 'indigo')}
+                ${link('/vendors', 'route', '배송 코스', '거래처 배송 순서', 'route', 'sky')}
+                ${link('/payments', 'payment', '입금 관리', '입금 · 미수금 확인', 'payment', 'amber')}
+                ${link('/profit', 'profit', '원가 · 이익', '원가와 수익 분석', 'profit', 'purple')}
             </nav>
 
             <div class="dgs-bottom">
-                ${link('/admin/users', '♙', '사용자 관리', 'users')}
+                ${link('/admin/users', 'users', '사용자 관리', '계정 · 권한 설정', 'users', 'slate')}
             </div>
         `;
 
