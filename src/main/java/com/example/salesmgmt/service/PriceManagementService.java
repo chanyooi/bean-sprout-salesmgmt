@@ -43,34 +43,27 @@ public class PriceManagementService {
         int createdPrices = 0;
         int updatedPrices = 0;
         int unchangedPrices = 0;
-
         Map<String, VendorEntity> vendorCache = new HashMap<>();
 
         for (PriceImportRow row : rows) {
             VendorEntity vendor = vendorCache.get(row.inputVendor());
-
             if (vendor == null) {
                 var existingVendor = vendorRepository.findByInputName(row.inputVendor());
-
                 if (existingVendor.isPresent()) {
                     vendor = existingVendor.get();
                     vendor.updateStatementSettings(row.statementVendor(), true);
                 } else {
                     vendor = vendorRepository.save(new VendorEntity(
-                            row.inputVendor(),
-                            row.statementVendor(),
-                            true
+                            row.inputVendor(), row.statementVendor(), true
                     ));
                     createdVendors++;
                 }
-
                 vendorCache.put(row.inputVendor(), vendor);
             }
 
             var existingPrice = vendorPriceRepository.findByVendor_IdAndItemName(
                     vendor.getId(), row.itemName()
             );
-
             BigDecimal normalizedPrice = normalizePrice(row.unitPrice());
 
             if (existingPrice.isEmpty()) {
@@ -80,24 +73,29 @@ public class PriceManagementService {
                         normalizedPrice,
                         row.sourceSheet()
                 ));
-                applyBasePriceToSales(vendor.getId(), row.itemName(), normalizedPrice);
+                applyNewBasePriceToUnpricedSales(vendor.getId(), row.itemName(), normalizedPrice);
                 createdPrices++;
                 continue;
             }
 
             VendorPriceEntity priceEntity = existingPrice.get();
+            BigDecimal oldBasePrice = priceEntity.getUnitPrice();
 
-            if (priceEntity.getUnitPrice().compareTo(normalizedPrice) == 0) {
+            if (oldBasePrice.compareTo(normalizedPrice) == 0) {
                 unchangedPrices++;
             } else {
                 priceEntity.update(normalizedPrice, row.sourceSheet());
-                applyBasePriceToSales(vendor.getId(), row.itemName(), normalizedPrice);
+                updateSalesStillUsingOldBase(
+                        vendor.getId(),
+                        row.itemName(),
+                        oldBasePrice,
+                        normalizedPrice
+                );
                 updatedPrices++;
             }
         }
 
         int appliedSalesItems = applyPricesToUnpricedSales();
-
         return new PriceSaveResult(
                 createdVendors,
                 createdPrices,
@@ -124,7 +122,6 @@ public class PriceManagementService {
         if (vendorId == null) {
             return List.of();
         }
-
         return vendorPriceRepository.findByVendor_IdOrderByItemNameAsc(vendorId)
                 .stream()
                 .map(price -> new PriceViewRow(
@@ -141,13 +138,11 @@ public class PriceManagementService {
         if (vendorId == null) {
             return List.of();
         }
-
         var registeredItems = vendorPriceRepository
                 .findByVendor_IdOrderByItemNameAsc(vendorId)
                 .stream()
                 .map(VendorPriceEntity::getItemName)
                 .toList();
-
         return ItemCatalog.ALL_ITEMS.stream()
                 .filter(item -> !registeredItems.contains(item))
                 .toList();
@@ -162,11 +157,14 @@ public class PriceManagementService {
                         "수정할 단가 정보를 찾을 수 없습니다."
                 ));
 
+        BigDecimal oldBasePrice = entity.getUnitPrice();
         BigDecimal normalized = normalizePrice(unitPrice);
         entity.update(normalized, entity.getSourceSheet());
-        int updated = applyBasePriceToSales(
+
+        int updated = updateSalesStillUsingOldBase(
                 entity.getVendor().getId(),
                 entity.getItemName(),
+                oldBasePrice,
                 normalized
         );
         return updated + applyPricesToUnpricedSales();
@@ -191,9 +189,17 @@ public class PriceManagementService {
 
         BigDecimal normalized = normalizePrice(unitPrice);
         var existing = vendorPriceRepository.findByVendor_IdAndItemName(vendorId, itemName);
+        int updated;
 
         if (existing.isPresent()) {
+            BigDecimal oldBasePrice = existing.get().getUnitPrice();
             existing.get().update(normalized, "웹 직접 입력");
+            updated = updateSalesStillUsingOldBase(
+                    vendorId,
+                    itemName,
+                    oldBasePrice,
+                    normalized
+            );
         } else {
             vendorPriceRepository.save(new VendorPriceEntity(
                     vendor,
@@ -201,31 +207,62 @@ public class PriceManagementService {
                     normalized,
                     "웹 직접 입력"
             ));
+            updated = applyNewBasePriceToUnpricedSales(vendorId, itemName, normalized);
         }
 
-        int updated = applyBasePriceToSales(vendorId, itemName, normalized);
         return updated + applyPricesToUnpricedSales();
     }
 
-    private int applyBasePriceToSales(
+    /**
+     * 기본단가를 바꿀 때 과거 주문 중 '기존 기본단가와 동일한 주문'만 새 단가로 갱신합니다.
+     * 따라서 HS식자재도매유통 8/13처럼 특정 날짜만 따로 수정한 금액은 그대로 보존됩니다.
+     */
+    private int updateSalesStillUsingOldBase(
             Long vendorId,
             String itemName,
-            BigDecimal configuredPrice
+            BigDecimal oldConfiguredPrice,
+            BigDecimal newConfiguredPrice
     ) {
+        BigDecimal oldSalesPrice = toSalesPrice(itemName, oldConfiguredPrice);
+        BigDecimal newSalesPrice = toSalesPrice(itemName, newConfiguredPrice);
         int updated = 0;
-        for (SalesItemEntity item : salesItemRepository.findBasePriceManagedItems(vendorId, itemName)) {
-            BigDecimal salesPrice = "회수통".equals(itemName)
-                    ? ReturnContainerPricePolicy.toSalesUnitPrice(configuredPrice)
-                    : configuredPrice;
-            item.applyBaseUnitPrice(salesPrice);
-            updated++;
+
+        for (SalesItemEntity item : salesItemRepository.findAllForVendorItem(vendorId, itemName)) {
+            BigDecimal current = item.getUnitPrice();
+            if (current != null
+                    && oldSalesPrice != null
+                    && current.compareTo(oldSalesPrice) == 0) {
+                item.applyUnitPrice(newSalesPrice);
+                updated++;
+            }
         }
         return updated;
     }
 
+    private int applyNewBasePriceToUnpricedSales(
+            Long vendorId,
+            String itemName,
+            BigDecimal configuredPrice
+    ) {
+        BigDecimal salesPrice = toSalesPrice(itemName, configuredPrice);
+        int updated = 0;
+        for (SalesItemEntity item : salesItemRepository.findAllForVendorItem(vendorId, itemName)) {
+            if (item.getUnitPrice() == null) {
+                item.applyUnitPrice(salesPrice);
+                updated++;
+            }
+        }
+        return updated;
+    }
+
+    private BigDecimal toSalesPrice(String itemName, BigDecimal configuredPrice) {
+        return "회수통".equals(itemName)
+                ? ReturnContainerPricePolicy.toSalesUnitPrice(configuredPrice)
+                : configuredPrice;
+    }
+
     private int applyPricesToUnpricedSales() {
         Map<String, BigDecimal> priceMap = new HashMap<>();
-
         for (VendorPriceEntity price : vendorPriceRepository.findAllWithVendor()) {
             priceMap.put(
                     priceKey(price.getVendor().getId(), price.getItemName()),
@@ -234,16 +271,13 @@ public class PriceManagementService {
         }
 
         int applied = 0;
-
         for (SalesItemEntity salesItem : salesItemRepository.findAllWithoutUnitPrice()) {
             BigDecimal unitPrice = resolveUnitPrice(salesItem, priceMap);
-
             if (unitPrice != null) {
-                salesItem.applyBaseUnitPrice(unitPrice);
+                salesItem.applyUnitPrice(unitPrice);
                 applied++;
             }
         }
-
         return applied;
     }
 
@@ -252,19 +286,15 @@ public class PriceManagementService {
             Map<String, BigDecimal> priceMap
     ) {
         if ("회수통".equals(salesItem.getItemName())) {
-            BigDecimal configuredPrice =
-                    salesItem.getSalesOrder().getReturnContainerUnitPrice();
-
+            BigDecimal configuredPrice = salesItem.getSalesOrder().getReturnContainerUnitPrice();
             if (configuredPrice == null) {
                 configuredPrice = priceMap.get(priceKey(
                         salesItem.getSalesOrder().getVendor().getId(),
                         salesItem.getItemName()
                 ));
             }
-
             return ReturnContainerPricePolicy.toSalesUnitPrice(configuredPrice);
         }
-
         return priceMap.get(priceKey(
                 salesItem.getSalesOrder().getVendor().getId(),
                 salesItem.getItemName()
@@ -283,7 +313,6 @@ public class PriceManagementService {
         if (unitPrice == null) {
             throw new IllegalArgumentException("단가를 입력해주세요.");
         }
-
         if (unitPrice.signum() < 0) {
             throw new IllegalArgumentException("단가는 0원 이상이어야 합니다.");
         }
