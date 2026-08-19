@@ -32,7 +32,7 @@ public class ReceivableBillingAdjustmentService {
      */
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> correctionsByVendor(YearMonth month) {
-        List<SalesItemEntity> items = salesItemRepository.findForMonthlyReport(
+        List<SalesItemEntity> items = salesItemRepository.findSpecialItemsForMonthlyBilling(
                 month.atDay(1),
                 month.atEndOfMonth()
         );
@@ -41,10 +41,6 @@ public class ReceivableBillingAdjustmentService {
 
         for (SalesItemEntity item : items) {
             String itemName = normalize(item.getItemName());
-            if (!"손두부".equals(itemName) && !"두부판".equals(itemName)) {
-                continue;
-            }
-
             Long vendorId = item.getSalesOrder().getVendor().getId();
             BigDecimal recordedAmount = nz(item.getLineAmount());
             BigDecimal correction;
@@ -54,16 +50,16 @@ public class ReceivableBillingAdjustmentService {
                         item.getSalesOrder().getVendor().getStatementName()
                 );
 
-                // 아포농협 판매분은 기존 lineAmount가 그대로 매출이다.
-                // 그 외 손두부 행(팔공 매입 등)은 월매출에서 제외한다.
                 correction = statementName.contains("아포농협")
                         ? BigDecimal.ZERO
                         : recordedAmount.negate();
-            } else {
+            } else if ("두부판".equals(itemName)) {
                 BigDecimal replacementRevenue = nz(item.getQuantity())
                         .abs()
                         .multiply(TOFU_TRAY_RETURN_REVENUE_PER_UNIT);
                 correction = replacementRevenue.subtract(recordedAmount);
+            } else {
+                continue;
             }
 
             if (correction.signum() != 0) {
