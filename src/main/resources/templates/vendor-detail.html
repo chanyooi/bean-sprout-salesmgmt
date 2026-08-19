@@ -22,7 +22,11 @@
                 <span th:text="|정산 ${profile.paymentCycle.label}|">정산</span>
             </div>
         </div>
-        <a class="secondary-link" th:href="@{/vendors}">배송코스·기본정보</a>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+            <a class="secondary-link"
+               th:href="@{/statements/vendor-download(vendorId=${detail.vendorId},month=${selectedMonth})}">명세서 다운로드</a>
+            <a class="secondary-link" th:href="@{/vendors}">배송코스·기본정보</a>
+        </div>
     </section>
 
     <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
