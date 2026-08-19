@@ -239,7 +239,12 @@ public class StatementWorkbookV2Service {
         int amountColumn = detectAmountColumn(sheet, dataStart, dataEnd, itemColumns);
 
         int periodRow = headerIndex <= 30 ? 2 : 6;
-        getCell(getRow(sheet, periodRow), 0).setCellValue(period.text());
+        Cell periodCell = getCell(getRow(sheet, periodRow), 0);
+        // 템플릿의 월 표시 셀이 다른 시트를 참조하는 수식이면
+        // 거래처별 한 장만 남길 때 Excel이 #REF!로 바꾼다.
+        // 월 표시는 계산식이 필요 없으므로 수식을 완전히 지우고 실제 텍스트로 저장한다.
+        periodCell.setBlank();
+        periodCell.setCellValue(period.text());
 
         for (int r = dataStart; r <= dataEnd; r++) {
             Row row = getRow(sheet, r);
