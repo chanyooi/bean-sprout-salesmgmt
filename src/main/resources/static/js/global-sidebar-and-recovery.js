@@ -158,7 +158,7 @@
         if (document.querySelector('link[data-mobile-sidebar-pc-v3]')) return;
         const css = document.createElement('link');
         css.rel = 'stylesheet';
-        css.href = '/css/mobile-sidebar-pc-v3.css?v=20260820_1';
+        css.href = '/css/mobile-sidebar-pc-v3.css?v=20260820_2';
         css.dataset.mobileSidebarPcV3 = 'true';
         document.head.appendChild(css);
     }
