@@ -1,0 +1,173 @@
+@media (max-width: 640px) {
+    /* Mobile drawer card UI aligned with the desktop sidebar. */
+    .sc-mobile-drawer,
+    .sp-mobile-drawer {
+        width: min(92vw, 390px) !important;
+        padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom)) !important;
+        background: #f7f9fc !important;
+    }
+
+    .sc-drawer-header,
+    .sp-drawer-head {
+        padding: 4px 4px 18px !important;
+        border-bottom: 1px solid #e7eaf0 !important;
+        background: transparent !important;
+    }
+
+    .mobile-pc-menu-label {
+        margin: 18px 6px 10px;
+        color: #8b95a1;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: -.01em;
+    }
+
+    .sc-drawer-nav,
+    .sp-drawer-nav {
+        gap: 10px !important;
+        padding: 0 !important;
+    }
+
+    .mobile-pc-card,
+    .mobile-pc-statement-toggle {
+        width: 100%;
+        min-height: 72px !important;
+        padding: 10px 13px !important;
+        display: grid !important;
+        grid-template-columns: 48px minmax(0,1fr) 22px;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid #e4e8ef !important;
+        border-radius: 18px !important;
+        background: #fff !important;
+        color: #172033 !important;
+        text-decoration: none !important;
+        box-shadow: 0 4px 14px rgba(15,23,42,.045) !important;
+    }
+
+    .mobile-pc-card:active,
+    .mobile-pc-statement-toggle:active {
+        transform: scale(.985);
+        background: #fbfcfe !important;
+    }
+
+    .mobile-pc-card.is-active,
+    .mobile-pc-statement-group.is-active > .mobile-pc-statement-toggle {
+        border-color: #9bc9ff !important;
+        box-shadow: inset 5px 0 0 #2f80ed, 0 4px 14px rgba(15,23,42,.045) !important;
+    }
+
+    .mobile-pc-icon {
+        width: 48px;
+        height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        background: #eef5ff;
+        color: #3182f6;
+    }
+
+    .mobile-pc-card[data-tone="mint"] .mobile-pc-icon { background:#eafaf6; color:#13aa88; }
+    .mobile-pc-card[data-tone="indigo"] .mobile-pc-icon { background:#eef0ff; color:#526be8; }
+    .mobile-pc-card[data-tone="sky"] .mobile-pc-icon { background:#eaf7ff; color:#2d9bd3; }
+    .mobile-pc-card[data-tone="amber"] .mobile-pc-icon { background:#fff6df; color:#dd9800; }
+    .mobile-pc-card[data-tone="purple"] .mobile-pc-icon { background:#f4ecff; color:#8954db; }
+    .mobile-pc-card[data-tone="slate"] .mobile-pc-icon { background:#f1f4f7; color:#687789; }
+    .mobile-pc-statement-toggle .mobile-pc-icon { background:#eef5ff; color:#3182f6; }
+
+    .mobile-pc-icon svg {
+        width: 25px;
+        height: 25px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .mobile-pc-copy {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .mobile-pc-copy strong {
+        color: #172033 !important;
+        font-size: 16px !important;
+        line-height: 1.2;
+        font-weight: 850 !important;
+        letter-spacing: -.035em;
+    }
+
+    .mobile-pc-copy small {
+        margin-top: 5px;
+        color: #8b95a1 !important;
+        font-size: 11.5px !important;
+        line-height: 1.2;
+        font-weight: 650;
+    }
+
+    .mobile-pc-card.is-active .mobile-pc-copy strong,
+    .mobile-pc-statement-group.is-active .mobile-pc-copy strong {
+        color: #3182f6 !important;
+    }
+
+    .mobile-pc-arrow {
+        color: #b5bec8;
+        font-size: 25px;
+        line-height: 1;
+        text-align: center;
+    }
+
+    .mobile-pc-statement-toggle {
+        border: 1px solid #e4e8ef !important;
+        cursor: pointer;
+    }
+
+    .mobile-pc-statement-submenu {
+        display: none;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 7px;
+        padding: 7px 8px 0 68px;
+    }
+
+    .mobile-pc-statement-group.open .mobile-pc-statement-submenu { display: grid; }
+
+    .mobile-pc-statement-submenu a {
+        min-height: 38px !important;
+        padding: 8px 10px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e4e8ef !important;
+        border-radius: 12px !important;
+        background: #fff !important;
+        color: #596579 !important;
+        font-size: 11.5px !important;
+        font-weight: 750 !important;
+        text-decoration: none !important;
+    }
+
+    .mobile-pc-statement-submenu a.is-active {
+        border-color: #b8d8ff !important;
+        background: #eef5ff !important;
+        color: #3182f6 !important;
+    }
+
+    .sc-drawer-logout,
+    .sp-drawer-logout { margin-top: 14px !important; }
+
+    .sc-drawer-logout button,
+    .sp-drawer-logout button {
+        min-height: 48px !important;
+        border: 1px solid #e4e8ef !important;
+        border-radius: 15px !important;
+        background: #fff !important;
+        color: #697586 !important;
+        font-size: 13px !important;
+        font-weight: 750 !important;
+    }
+}
