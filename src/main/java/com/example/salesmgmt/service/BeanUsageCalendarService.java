@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -47,12 +46,9 @@ public class BeanUsageCalendarService {
             accumulator.add(usage.getBeanType(), usage.getBagCount());
         }
 
-        int mondayBasedOffset = first.getDayOfWeek().getValue() - DayOfWeek.MONDAY.getValue();
-        if (mondayBasedOffset < 0) {
-            mondayBasedOffset += 7;
-        }
-
-        LocalDate gridStart = first.minusDays(mondayBasedOffset);
+        // Java DayOfWeek는 월=1 ... 일=7이므로 % 7을 사용하면 일요일 시작 offset이 된다.
+        int sundayBasedOffset = first.getDayOfWeek().getValue() % 7;
+        LocalDate gridStart = first.minusDays(sundayBasedOffset);
         List<CalendarCell> cells = new ArrayList<>(42);
 
         for (int i = 0; i < 42; i++) {
@@ -85,6 +81,22 @@ public class BeanUsageCalendarService {
                 normalized(monthMedium),
                 normalized(monthSmall)
         );
+    }
+
+    @Transactional
+    public int deleteDailyUsage(LocalDate usageDate) {
+        List<BeanUsageEntity> usages = beanUsageRepository
+                .findAllByUsageDateBetweenOrderByUsageDateAscIdAsc(usageDate, usageDate)
+                .stream()
+                .filter(usage -> usage.getBeanType() != BeanType.MUNG)
+                .toList();
+
+        if (usages.isEmpty()) {
+            return 0;
+        }
+
+        beanUsageRepository.deleteAll(usages);
+        return usages.size();
     }
 
     private BigDecimal normalized(BigDecimal value) {
