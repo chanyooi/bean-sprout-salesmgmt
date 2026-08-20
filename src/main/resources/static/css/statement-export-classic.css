@@ -5,10 +5,11 @@
 }
 
 #statementCapture.classic-statement {
-    width: 820px !important;
-    min-height: 1160px;
+    /* 96dpi 기준 A4(210x297mm) 비율에 맞춘 캡처 캔버스 */
+    width: 794px !important;
+    min-height: 1123px;
     margin: 0 auto;
-    padding: 70px 66px 58px !important;
+    padding: 66px 62px 54px !important;
     box-sizing: border-box;
     border: 1px solid #111 !important;
     border-radius: 0 !important;
@@ -75,9 +76,15 @@
     align-items: stretch;
 }
 
+/*
+ * 왼쪽 품목표 아래에 최종 합계 행이 들어갈 76px을 실제 레이아웃 공간으로 확보한다.
+ * 예전처럼 단순 음수 margin으로만 끌어올리면 모바일 Safari에서 품목표 높이가 달라질 때
+ * '회수통금액을 차감한 이달 합계금'이 숙주/3.5kg 행 위로 겹칠 수 있었다.
+ */
 #statementCapture .classic-summary-table {
     font-size: 14px;
     align-self: start;
+    margin-bottom: 76px;
 }
 
 #statementCapture .classic-summary-table th,
@@ -95,17 +102,19 @@
 #statementCapture .classic-side-summary {
     display: flex;
     min-width: 0;
+    height: 100%;
     flex-direction: column;
 }
 
+/* 왼쪽 품목표의 실제 높이와 맞춰 우측 요약표가 남는 공간을 정확히 사용 */
 #statementCapture .classic-side-summary > table {
     flex: 1 1 auto;
+    min-height: 0;
     font-size: 14px;
 }
 
 #statementCapture .classic-side-summary > table th,
 #statementCapture .classic-side-summary > table td {
-    height: 31px;
     padding: 2px 8px;
 }
 
@@ -116,6 +125,7 @@
 }
 
 #statementCapture .classic-final-box {
+    flex: 0 0 76px;
     min-height: 76px;
     margin-top: -1px;
     border: 2px solid #111;
@@ -145,6 +155,7 @@
 
 #statementCapture .classic-net-row {
     width: 50.8%;
+    height: 76px;
     min-height: 76px;
     margin-top: -76px;
     display: grid;
@@ -152,6 +163,8 @@
     border: 1px solid #111;
     box-sizing: border-box;
     font-size: 14px;
+    position: relative;
+    z-index: 1;
 }
 
 #statementCapture .classic-net-row span,
@@ -232,6 +245,13 @@
         margin-right: -12px;
         padding-left: 12px;
         padding-right: 12px;
+    }
+
+    /* 모바일도 문서 자체는 A4 고정 폭을 유지하고, 화면에서만 가로 스크롤/축소 표시한다. */
+    #statementCapture.classic-statement {
+        width: 794px !important;
+        min-width: 794px !important;
+        min-height: 1123px !important;
     }
 }
 
