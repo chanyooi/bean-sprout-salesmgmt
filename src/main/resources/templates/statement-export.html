@@ -68,7 +68,7 @@
         <div class="statement-share-guide"
              th:if="${previousReceivable != null and previousReceivable.signum() > 0}">
             <strong th:text="${includeReceivable ? '이전 미수금을 포함해 청구 중입니다.' : '이전 미수금이 있습니다.'}"></strong>
-            <span th:text="|'미수금 ' + ${#numbers.formatDecimal(previousReceivable,0,'COMMA',0,'POINT')} + '원'|"></span>
+            <span th:text="|미수금 ${#numbers.formatDecimal(previousReceivable,0,'COMMA',0,'POINT')}원|"></span>
             <span>위 버튼으로 이번 명세서 최종청구금액에 포함하거나 제외할 수 있습니다.</span>
         </div>
 
