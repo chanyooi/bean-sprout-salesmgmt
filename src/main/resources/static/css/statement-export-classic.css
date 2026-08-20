@@ -5,12 +5,13 @@
 }
 
 #statementCapture.classic-statement {
-    /* 96dpi 기준 A4(210x297mm) 비율에 맞춘 캡처 캔버스 */
     width: 794px !important;
+    height: 1123px;
     min-height: 1123px;
     margin: 0 auto;
-    padding: 66px 62px 54px !important;
+    padding: 46px 56px 38px !important;
     box-sizing: border-box;
+    overflow: hidden;
     border: 1px solid #111 !important;
     border-radius: 0 !important;
     background: #fff !important;
@@ -37,27 +38,27 @@
 
 #statementCapture .classic-vendor-name {
     display: inline-block;
-    margin: 0 0 6px 4px;
-    font-size: 25px;
+    margin: 0 0 5px 4px;
+    font-size: 27px;
     font-weight: 500;
-    line-height: 1.2;
+    line-height: 1.1;
     text-decoration: none;
 }
 
 #statementCapture .classic-head-table {
     margin-bottom: 0;
-    font-size: 15px;
+    font-size: 16px;
 }
 
 #statementCapture .classic-head-table td {
-    height: 46px;
+    height: 40px;
     padding: 0 8px;
 }
 
 #statementCapture .classic-head-table .classic-month {
     width: 34%;
     text-align: center;
-    font-size: 17px;
+    font-size: 18px;
 }
 
 #statementCapture .classic-head-table .classic-doc-name {
@@ -76,21 +77,16 @@
     align-items: stretch;
 }
 
-/*
- * 왼쪽 품목표 아래에 최종 합계 행이 들어갈 76px을 실제 레이아웃 공간으로 확보한다.
- * 예전처럼 단순 음수 margin으로만 끌어올리면 모바일 Safari에서 품목표 높이가 달라질 때
- * '회수통금액을 차감한 이달 합계금'이 숙주/3.5kg 행 위로 겹칠 수 있었다.
- */
 #statementCapture .classic-summary-table {
-    font-size: 14px;
+    font-size: 15px;
     align-self: start;
-    margin-bottom: 76px;
+    margin-bottom: 64px;
 }
 
 #statementCapture .classic-summary-table th,
 #statementCapture .classic-summary-table td {
-    height: 20px;
-    padding: 1px 7px;
+    height: 18px;
+    padding: 1px 6px;
     text-align: center;
 }
 
@@ -106,16 +102,15 @@
     flex-direction: column;
 }
 
-/* 왼쪽 품목표의 실제 높이와 맞춰 우측 요약표가 남는 공간을 정확히 사용 */
 #statementCapture .classic-side-summary > table {
     flex: 1 1 auto;
     min-height: 0;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 #statementCapture .classic-side-summary > table th,
 #statementCapture .classic-side-summary > table td {
-    padding: 2px 8px;
+    padding: 1px 7px;
 }
 
 #statementCapture .classic-side-summary > table th {
@@ -125,8 +120,8 @@
 }
 
 #statementCapture .classic-final-box {
-    flex: 0 0 76px;
-    min-height: 76px;
+    flex: 0 0 64px;
+    min-height: 64px;
     margin-top: -1px;
     border: 2px solid #111;
     box-sizing: border-box;
@@ -139,15 +134,15 @@
 
 #statementCapture .classic-final-box span {
     width: 100%;
-    padding-bottom: 3px;
+    padding-bottom: 2px;
     border-bottom: 1px dotted #555;
-    font-size: 20px;
-    line-height: 1.05;
+    font-size: 21px;
+    line-height: 1;
 }
 
 #statementCapture .classic-final-box strong {
-    padding-top: 7px;
-    font-size: 28px;
+    padding-top: 5px;
+    font-size: 30px;
     line-height: 1;
     font-weight: 400;
     font-variant-numeric: tabular-nums;
@@ -155,14 +150,14 @@
 
 #statementCapture .classic-net-row {
     width: 50.8%;
-    height: 76px;
-    min-height: 76px;
-    margin-top: -76px;
+    height: 64px;
+    min-height: 64px;
+    margin-top: -64px;
     display: grid;
     grid-template-columns: 50% 50%;
     border: 1px solid #111;
     box-sizing: border-box;
-    font-size: 14px;
+    font-size: 15px;
     position: relative;
     z-index: 1;
 }
@@ -172,39 +167,42 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 5px 8px;
+    padding: 4px 7px;
     text-align: center;
 }
 
 #statementCapture .classic-net-row span {
     border-right: 1px solid #111;
-    line-height: 1.35;
+    line-height: 1.25;
     font-weight: 400;
 }
 
 #statementCapture .classic-net-row strong {
-    font-size: 17px;
+    font-size: 19px;
     font-weight: 400;
     font-variant-numeric: tabular-nums;
 }
 
 #statementCapture .classic-daily-table {
-    margin-top: 18px;
-    font-size: 10.5px;
+    margin-top: 12px;
+    font-size: 11.5px;
 }
 
 #statementCapture .classic-daily-table th,
 #statementCapture .classic-daily-table td {
-    height: 17px;
+    height: 14px;
     padding: 0 3px;
+    box-sizing: border-box;
     text-align: center;
-    line-height: 1.05;
+    line-height: 1;
     white-space: nowrap;
     overflow: hidden;
 }
 
 #statementCapture .classic-daily-table thead th,
 #statementCapture .classic-daily-table tfoot th {
+    height: 16px;
+    font-size: 11.5px;
     font-weight: 400;
 }
 
@@ -225,7 +223,7 @@
 }
 
 #statementCapture .classic-bank {
-    min-height: 30px;
+    min-height: 24px;
     border: 1px solid #111;
     border-top: 0;
     display: flex;
@@ -247,15 +245,16 @@
         padding-right: 12px;
     }
 
-    /* 모바일도 문서 자체는 A4 고정 폭을 유지하고, 화면에서만 가로 스크롤/축소 표시한다. */
     #statementCapture.classic-statement {
         width: 794px !important;
         min-width: 794px !important;
+        height: 1123px !important;
         min-height: 1123px !important;
     }
 }
 
 @media print {
+    @page { size: A4 portrait; margin: 0; }
     body * { visibility: hidden; }
     #statementCapture,
     #statementCapture * { visibility: visible; }
@@ -263,6 +262,9 @@
         position: absolute;
         left: 0;
         top: 0;
+        width: 210mm !important;
+        height: 297mm !important;
+        min-height: 297mm !important;
         margin: 0;
         border: 0 !important;
     }
