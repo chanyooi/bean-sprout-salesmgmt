@@ -170,4 +170,54 @@
         font-size: 13px !important;
         font-weight: 750 !important;
     }
+
+    /* Existing mobile drawer CSS targets every span at 26px wide.
+       Reset only the new PC-style card internals so Korean labels stay horizontal. */
+    .sc-drawer-nav .mobile-pc-icon,
+    .sp-drawer-nav .mobile-pc-icon {
+        width: 48px !important;
+        min-width: 48px !important;
+        height: 48px !important;
+        font-size: inherit !important;
+        text-align: center !important;
+    }
+
+    .sc-drawer-nav .mobile-pc-copy,
+    .sp-drawer-nav .mobile-pc-copy {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        text-align: left !important;
+        white-space: normal !important;
+        word-break: keep-all !important;
+    }
+
+    .sc-drawer-nav .mobile-pc-copy strong,
+    .sp-drawer-nav .mobile-pc-copy strong,
+    .sc-drawer-nav .mobile-pc-copy small,
+    .sp-drawer-nav .mobile-pc-copy small {
+        width: auto !important;
+        max-width: 100% !important;
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+        text-align: left !important;
+    }
+
+    .sc-drawer-nav .mobile-pc-arrow,
+    .sp-drawer-nav .mobile-pc-arrow {
+        width: 22px !important;
+        min-width: 22px !important;
+        font-size: 25px !important;
+        text-align: center !important;
+    }
+
+    .sc-drawer-nav .mobile-pc-card,
+    .sp-drawer-nav .mobile-pc-card,
+    .sc-drawer-nav .mobile-pc-statement-toggle,
+    .sp-drawer-nav .mobile-pc-statement-toggle {
+        height: auto !important;
+        writing-mode: horizontal-tb !important;
+    }
 }
