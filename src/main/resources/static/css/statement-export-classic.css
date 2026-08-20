@@ -9,7 +9,7 @@
     height: 1123px;
     min-height: 1123px;
     margin: 0 auto;
-    padding: 46px 56px 38px !important;
+    padding: 40px 56px 38px !important;
     box-sizing: border-box;
     overflow: hidden;
     border: 1px solid #111 !important;
@@ -51,7 +51,7 @@
 }
 
 #statementCapture .classic-head-table td {
-    height: 40px;
+    height: 38px;
     padding: 0 8px;
 }
 
@@ -80,13 +80,13 @@
 #statementCapture .classic-summary-table {
     font-size: 15px;
     align-self: start;
-    margin-bottom: 64px;
+    margin-bottom: 76px;
 }
 
 #statementCapture .classic-summary-table th,
 #statementCapture .classic-summary-table td {
-    height: 18px;
-    padding: 1px 6px;
+    height: 16px;
+    padding: 0 6px;
     text-align: center;
 }
 
@@ -110,7 +110,7 @@
 
 #statementCapture .classic-side-summary > table th,
 #statementCapture .classic-side-summary > table td {
-    padding: 1px 7px;
+    padding: 0 7px;
 }
 
 #statementCapture .classic-side-summary > table th {
@@ -120,8 +120,8 @@
 }
 
 #statementCapture .classic-final-box {
-    flex: 0 0 64px;
-    min-height: 64px;
+    flex: 0 0 76px;
+    min-height: 76px;
     margin-top: -1px;
     border: 2px solid #111;
     box-sizing: border-box;
@@ -150,9 +150,9 @@
 
 #statementCapture .classic-net-row {
     width: 50.8%;
-    height: 64px;
-    min-height: 64px;
-    margin-top: -64px;
+    height: 76px;
+    min-height: 76px;
+    margin-top: -76px;
     display: grid;
     grid-template-columns: 50% 50%;
     border: 1px solid #111;
@@ -185,22 +185,21 @@
 
 #statementCapture .classic-daily-table {
     margin-top: 10px;
-    font-size: 10.8px;
+    font-size: 11px;
 }
 
-/* 31일 전체가 A4 한 장 안에 들어가도록 날짜 행 자체의 높이를 강제로 압축한다. */
 #statementCapture .classic-daily-table tbody tr {
-    height: 12px !important;
-    min-height: 12px !important;
+    height: 14px !important;
+    min-height: 14px !important;
 }
 
 #statementCapture .classic-daily-table tbody td {
-    height: 12px !important;
+    height: 14px !important;
     min-height: 0 !important;
     padding: 0 2px !important;
     box-sizing: border-box !important;
-    font-size: 10.8px !important;
-    line-height: 10px !important;
+    font-size: 11px !important;
+    line-height: 12px !important;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
@@ -208,17 +207,17 @@
 
 #statementCapture .classic-daily-table thead tr,
 #statementCapture .classic-daily-table tfoot tr {
-    height: 15px !important;
+    height: 16px !important;
 }
 
 #statementCapture .classic-daily-table thead th,
 #statementCapture .classic-daily-table tfoot th {
-    height: 15px !important;
+    height: 16px !important;
     min-height: 0 !important;
     padding: 0 2px !important;
     box-sizing: border-box !important;
-    font-size: 10.8px !important;
-    line-height: 11px !important;
+    font-size: 11px !important;
+    line-height: 12px !important;
     font-weight: 400;
     white-space: nowrap;
     overflow: hidden;
