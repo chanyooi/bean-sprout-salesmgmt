@@ -1,16 +1,20 @@
 @media (max-width: 640px) {
-    /* Mobile drawer card UI aligned with the desktop sidebar. */
     .sc-mobile-drawer,
     .sp-mobile-drawer {
         width: min(92vw, 390px) !important;
         padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom)) !important;
-        background: #f7f9fc !important;
+        background: rgba(247,249,252,.84) !important;
+        background-image: none !important;
+        border-right: 1px solid rgba(255,255,255,.78) !important;
+        box-shadow: 18px 0 48px rgba(26,43,67,.14) !important;
+        backdrop-filter: blur(24px) saturate(130%) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(130%) !important;
     }
 
     .sc-drawer-header,
     .sp-drawer-head {
         padding: 4px 4px 18px !important;
-        border-bottom: 1px solid #e7eaf0 !important;
+        border-bottom: 1px solid rgba(120,137,160,.12) !important;
         background: transparent !important;
     }
 
@@ -37,46 +41,52 @@
         grid-template-columns: 48px minmax(0,1fr) 22px;
         align-items: center;
         gap: 12px;
-        border: 1px solid #e4e8ef !important;
+        border: 1px solid rgba(255,255,255,.76) !important;
         border-radius: 18px !important;
-        background: #fff !important;
+        background: rgba(255,255,255,.58) !important;
+        background-image: none !important;
         color: #172033 !important;
         text-decoration: none !important;
-        box-shadow: 0 4px 14px rgba(15,23,42,.045) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 6px 16px rgba(35,53,78,.05) !important;
+        backdrop-filter: blur(10px) saturate(120%) !important;
+        -webkit-backdrop-filter: blur(10px) saturate(120%) !important;
+        transition: transform .17s ease, background .17s ease, box-shadow .17s ease, border-color .17s ease;
     }
 
     .mobile-pc-card:active,
     .mobile-pc-statement-toggle:active {
         transform: scale(.985);
-        background: #fbfcfe !important;
+        background: rgba(255,255,255,.76) !important;
     }
 
     .mobile-pc-card.is-active,
     .mobile-pc-statement-group.is-active > .mobile-pc-statement-toggle {
-        border-color: #9bc9ff !important;
-        box-shadow: inset 5px 0 0 #2f80ed, 0 4px 14px rgba(15,23,42,.045) !important;
+        border-color: rgba(49,130,246,.30) !important;
+        background: rgba(49,130,246,.10) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 8px 20px rgba(49,130,246,.09) !important;
     }
 
     .mobile-pc-icon {
         width: 48px !important;
         min-width: 48px !important;
         max-width: 48px !important;
-        height: 48px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 16px;
-        background: #eef5ff;
-        color: #3182f6;
+        height: 48px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 16px !important;
+        background: rgba(238,245,255,.88) !important;
+        color: #3182f6 !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 4px 10px rgba(35,53,78,.04) !important;
     }
 
-    .mobile-pc-card[data-tone="mint"] .mobile-pc-icon { background:#eafaf6; color:#13aa88; }
-    .mobile-pc-card[data-tone="indigo"] .mobile-pc-icon { background:#eef0ff; color:#526be8; }
-    .mobile-pc-card[data-tone="sky"] .mobile-pc-icon { background:#eaf7ff; color:#2d9bd3; }
-    .mobile-pc-card[data-tone="amber"] .mobile-pc-icon { background:#fff6df; color:#dd9800; }
-    .mobile-pc-card[data-tone="purple"] .mobile-pc-icon { background:#f4ecff; color:#8954db; }
-    .mobile-pc-card[data-tone="slate"] .mobile-pc-icon { background:#f1f4f7; color:#687789; }
-    .mobile-pc-statement-toggle .mobile-pc-icon { background:#eef5ff; color:#3182f6; }
+    .mobile-pc-card[data-tone="mint"] .mobile-pc-icon { background:rgba(234,250,246,.88) !important; color:#13aa88 !important; }
+    .mobile-pc-card[data-tone="indigo"] .mobile-pc-icon { background:rgba(238,240,255,.88) !important; color:#526be8 !important; }
+    .mobile-pc-card[data-tone="sky"] .mobile-pc-icon { background:rgba(234,247,255,.88) !important; color:#2d9bd3 !important; }
+    .mobile-pc-card[data-tone="amber"] .mobile-pc-icon { background:rgba(255,246,223,.88) !important; color:#dd9800 !important; }
+    .mobile-pc-card[data-tone="purple"] .mobile-pc-icon { background:rgba(244,236,255,.88) !important; color:#8954db !important; }
+    .mobile-pc-card[data-tone="slate"] .mobile-pc-icon { background:rgba(241,244,247,.88) !important; color:#687789 !important; }
+    .mobile-pc-statement-toggle .mobile-pc-icon { background:rgba(238,245,255,.88) !important; color:#3182f6 !important; }
 
     .mobile-pc-icon svg {
         width: 25px;
@@ -92,10 +102,10 @@
         width: auto !important;
         min-width: 0 !important;
         max-width: none !important;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        text-align: left !important;
     }
 
     .sc-drawer-nav .mobile-pc-copy,
@@ -109,12 +119,13 @@
         text-align: left !important;
         white-space: nowrap !important;
         word-break: keep-all !important;
+        writing-mode: horizontal-tb !important;
     }
 
     .mobile-pc-copy strong {
         color: #172033 !important;
         font-size: 16px !important;
-        line-height: 1.2;
+        line-height: 1.2 !important;
         font-weight: 850 !important;
         letter-spacing: -.035em;
     }
@@ -123,8 +134,8 @@
         margin-top: 5px;
         color: #8b95a1 !important;
         font-size: 11.5px !important;
-        line-height: 1.2;
-        font-weight: 650;
+        line-height: 1.2 !important;
+        font-weight: 650 !important;
     }
 
     .mobile-pc-card.is-active .mobile-pc-copy strong,
@@ -143,7 +154,6 @@
     }
 
     .mobile-pc-statement-toggle {
-        border: 1px solid #e4e8ef !important;
         cursor: pointer;
     }
 
@@ -160,20 +170,21 @@
         min-height: 38px !important;
         padding: 8px 10px !important;
         display: flex !important;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #e4e8ef !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: 1px solid rgba(255,255,255,.72) !important;
         border-radius: 12px !important;
-        background: #fff !important;
+        background: rgba(255,255,255,.58) !important;
         color: #596579 !important;
         font-size: 11.5px !important;
         font-weight: 750 !important;
         text-decoration: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.76) !important;
     }
 
     .mobile-pc-statement-submenu a.is-active {
-        border-color: #b8d8ff !important;
-        background: #eef5ff !important;
+        border-color: rgba(49,130,246,.26) !important;
+        background: rgba(49,130,246,.10) !important;
         color: #3182f6 !important;
     }
 
@@ -183,38 +194,30 @@
     .sc-drawer-logout button,
     .sp-drawer-logout button {
         min-height: 48px !important;
-        border: 1px solid #e4e8ef !important;
+        border: 1px solid rgba(255,255,255,.72) !important;
         border-radius: 15px !important;
-        background: #fff !important;
+        background: rgba(255,255,255,.58) !important;
         color: #697586 !important;
         font-size: 13px !important;
         font-weight: 750 !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.78) !important;
     }
 
-    /* Dashboard: remove gray/white gradients and keep a single flat background tone. */
+    /* Dashboard: one flat background + glass layers only. */
     html,
     body,
     .sc-mobile-dashboard {
-        background: #F4F6F8 !important;
+        background: #f4f6f8 !important;
         background-image: none !important;
     }
 
     .sc-mobile-appbar {
-        background: #F4F6F8 !important;
+        background: rgba(248,250,253,.74) !important;
         background-image: none !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-    }
-
-    .sc-kpi-card,
-    .sc-kpi-primary,
-    .sc-kpi-danger,
-    .sc-summary-card,
-    .sc-menu-card,
-    .sc-mobile-month-nav a,
-    .sc-menu-button {
-        background: #FFFFFF !important;
-        background-image: none !important;
+        border-bottom-color: rgba(255,255,255,.72) !important;
+        box-shadow: 0 5px 18px rgba(35,53,78,.045) !important;
+        backdrop-filter: blur(18px) saturate(130%) !important;
+        -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
     }
 
     .sc-kpi-card,
@@ -222,12 +225,31 @@
     .sc-menu-card,
     .sc-mobile-month-nav a,
     .sc-menu-button {
-        box-shadow: none !important;
+        border-color: rgba(255,255,255,.76) !important;
+        background: rgba(255,255,255,.62) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 8px 22px rgba(35,53,78,.06) !important;
+    }
+
+    .sc-kpi-card,
+    .sc-summary-card,
+    .sc-menu-card {
+        backdrop-filter: blur(14px) saturate(125%) !important;
+        -webkit-backdrop-filter: blur(14px) saturate(125%) !important;
+    }
+
+    .sc-kpi-primary {
+        background: rgba(241,247,255,.68) !important;
+    }
+
+    .sc-kpi-warning {
+        background: rgba(255,249,235,.70) !important;
     }
 
     .sc-payment-cta {
-        background: #246BFD !important;
+        border: 1px solid rgba(255,255,255,.28) !important;
+        background: rgba(36,107,253,.94) !important;
         background-image: none !important;
-        box-shadow: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 10px 24px rgba(36,107,253,.16) !important;
     }
 }

@@ -1,0 +1,589 @@
+/* ============================================================
+   송천 Liquid Glass UI
+   - 기능/레이아웃은 유지하고 시각 표현만 통일
+   - A4 거래명세서 캡처 영역은 의도적으로 제외
+   ============================================================ */
+
+:root {
+    --lg-blue: #3182f6;
+    --lg-blue-deep: #246bfd;
+    --lg-bg: #f4f6f8;
+    --lg-text: #191f28;
+    --lg-text-2: #6b7684;
+    --lg-text-3: #8b95a1;
+    --lg-glass: rgba(255, 255, 255, .62);
+    --lg-glass-strong: rgba(255, 255, 255, .78);
+    --lg-glass-soft: rgba(255, 255, 255, .48);
+    --lg-line: rgba(255, 255, 255, .72);
+    --lg-line-dark: rgba(107, 124, 148, .15);
+    --lg-blue-glass: rgba(49, 130, 246, .11);
+    --lg-amber-glass: rgba(245, 158, 11, .11);
+    --lg-green-glass: rgba(0, 167, 111, .10);
+    --lg-red-glass: rgba(240, 68, 82, .09);
+    --lg-shadow: 0 10px 30px rgba(35, 53, 78, .075);
+    --lg-shadow-soft: 0 6px 18px rgba(35, 53, 78, .055);
+    --lg-highlight: inset 0 1px 0 rgba(255,255,255,.82);
+    --lg-radius-xl: 20px;
+    --lg-radius-lg: 16px;
+    --lg-radius-md: 13px;
+}
+
+html,
+body {
+    background: var(--lg-bg) !important;
+    background-image: none !important;
+    color: var(--lg-text) !important;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+/* ---------- 공통 유리 패널 ---------- */
+.panel,
+.v2-panel,
+.content-card,
+.entry-card,
+.card,
+.input-recovery-card,
+.vendor-hub-card,
+.final-menu-card,
+.summary-card,
+.metric-card,
+.calendar-heading-summary,
+.report-notice,
+.save-success,
+.statement-share-guide {
+    border-color: var(--lg-line) !important;
+    background: var(--lg-glass) !important;
+    background-image: none !important;
+    box-shadow: var(--lg-highlight), var(--lg-shadow-soft) !important;
+    backdrop-filter: blur(18px) saturate(135%);
+    -webkit-backdrop-filter: blur(18px) saturate(135%);
+}
+
+.panel,
+.v2-panel,
+.content-card,
+.entry-card,
+.card,
+.input-recovery-card {
+    border: 1px solid var(--lg-line) !important;
+}
+
+.panel:hover,
+.v2-panel:hover,
+.vendor-hub-card:hover,
+.final-menu-card:hover {
+    border-color: rgba(255,255,255,.9) !important;
+    box-shadow: var(--lg-highlight), 0 12px 32px rgba(35,53,78,.09) !important;
+}
+
+/* ---------- Hero / header ---------- */
+.hero,
+.vendor-v2-hero,
+.vendor-hub-hero,
+.page-header,
+.inventory-hero {
+    background-image: none !important;
+}
+
+.hero:not(.dashboard-hero),
+.vendor-v2-shell > .vendor-v2-hero:first-child,
+.vendor-hub-hero,
+.page-header,
+.inventory-hero {
+    border: 1px solid rgba(255,255,255,.60) !important;
+    border-radius: var(--lg-radius-xl) !important;
+    background: rgba(255,255,255,.38) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.66) !important;
+    backdrop-filter: blur(14px) saturate(125%);
+    -webkit-backdrop-filter: blur(14px) saturate(125%);
+}
+
+.eyebrow,
+.section-kicker {
+    color: var(--lg-blue) !important;
+}
+
+h1, h2, h3,
+.strong-number {
+    color: var(--lg-text) !important;
+}
+
+p,
+.helper,
+.profile-line,
+.summary-line {
+    color: var(--lg-text-2) !important;
+}
+
+/* ---------- 폼 ---------- */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+    border-color: rgba(124, 140, 162, .20) !important;
+    border-radius: var(--lg-radius-md) !important;
+    background: rgba(255,255,255,.82) !important;
+    background-image: none !important;
+    color: var(--lg-text) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72) !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+    border-color: rgba(49,130,246,.55) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(49,130,246,.10), inset 0 1px 0 rgba(255,255,255,.78) !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--lg-blue);
+}
+
+/* ---------- 버튼/링크 ---------- */
+button,
+.primary-button,
+.primary-link,
+.payment-complete-button,
+.payment-complete-all-button,
+.input-recovery-button,
+.share-statement-button {
+    border: 1px solid rgba(255,255,255,.28) !important;
+    border-radius: 13px !important;
+    background: rgba(49,130,246,.92) !important;
+    background-image: none !important;
+    color: #fff !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 6px 16px rgba(49,130,246,.16) !important;
+    transition: transform .17s ease, box-shadow .17s ease, background .17s ease, border-color .17s ease;
+}
+
+button:hover,
+.primary-button:hover,
+.primary-link:hover,
+.payment-complete-button:hover,
+.payment-complete-all-button:hover,
+.input-recovery-button:hover,
+.share-statement-button:hover {
+    background: rgba(49,130,246,.98) !important;
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 9px 20px rgba(49,130,246,.19) !important;
+}
+
+button:active,
+.primary-button:active,
+.primary-link:active {
+    transform: translateY(0) scale(.985);
+}
+
+.secondary-link,
+.secondary-button,
+.month-arrow,
+.compact-button,
+.danger-outline-button {
+    border: 1px solid rgba(255,255,255,.72) !important;
+    border-radius: 13px !important;
+    background: rgba(255,255,255,.60) !important;
+    background-image: none !important;
+    color: #44536a !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 4px 12px rgba(35,53,78,.045) !important;
+    backdrop-filter: blur(12px) saturate(125%);
+    -webkit-backdrop-filter: blur(12px) saturate(125%);
+}
+
+.secondary-link:hover,
+.secondary-button:hover,
+.month-arrow:hover {
+    background: rgba(255,255,255,.80) !important;
+    border-color: rgba(255,255,255,.92) !important;
+}
+
+.danger-button,
+.payment-delete-all-button {
+    background: rgba(240,68,82,.90) !important;
+    color: #fff !important;
+}
+
+/* ---------- 요약/KPI ---------- */
+.summary-card,
+.metric-card {
+    border: 1px solid var(--lg-line) !important;
+    border-radius: var(--lg-radius-lg) !important;
+}
+
+.primary-metric,
+.sc-kpi-primary {
+    border-color: rgba(124,178,255,.38) !important;
+    background: rgba(240,247,255,.68) !important;
+    background-image: none !important;
+}
+
+.warning-card,
+.sc-kpi-warning,
+.report-notice.warning {
+    border-color: rgba(245,158,11,.20) !important;
+    background: rgba(255,249,235,.72) !important;
+    background-image: none !important;
+}
+
+.success-card,
+.alert.success,
+.report-notice.success {
+    border-color: rgba(0,167,111,.18) !important;
+    background: rgba(239,251,246,.72) !important;
+    background-image: none !important;
+}
+
+.error-card,
+.alert.error {
+    border-color: rgba(240,68,82,.16) !important;
+    background: rgba(255,243,244,.74) !important;
+    background-image: none !important;
+}
+
+.alert,
+.report-notice {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.78) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* ---------- 테이블 ---------- */
+.table-wrap,
+.report-table-wrap {
+    border-color: rgba(255,255,255,.64) !important;
+    background: rgba(255,255,255,.48) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72) !important;
+    backdrop-filter: blur(10px) saturate(120%);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+}
+
+.table-wrap > table th,
+.report-table-wrap > table th,
+.order-table th,
+.payment-history-table th {
+    background: rgba(245,248,252,.82) !important;
+    color: #596579 !important;
+}
+
+.table-wrap > table tbody tr:hover,
+.order-table tbody tr:hover,
+.payment-history-table tbody tr:hover {
+    background: rgba(49,130,246,.045) !important;
+}
+
+.table-wrap > table td,
+.table-wrap > table th,
+.order-table td,
+.order-table th,
+.payment-history-table td,
+.payment-history-table th {
+    border-color: rgba(122,139,162,.12) !important;
+}
+
+/* ---------- 거래처 ---------- */
+.vendor-v2-shell {
+    color: var(--lg-text);
+}
+
+.vendor-search,
+.vendor-list a,
+.month-strip a,
+.month-nav a {
+    border-color: rgba(255,255,255,.72) !important;
+    background: rgba(255,255,255,.60) !important;
+    background-image: none !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 5px 14px rgba(35,53,78,.045) !important;
+}
+
+.vendor-list a,
+.month-strip a,
+.month-nav a {
+    transition: transform .17s ease, background .17s ease, box-shadow .17s ease;
+}
+
+.vendor-list a:hover,
+.month-strip a:hover,
+.month-nav a:hover {
+    background: rgba(255,255,255,.82) !important;
+    transform: translateY(-1px);
+}
+
+.month-strip a.active {
+    border-color: rgba(49,130,246,.36) !important;
+    background: rgba(49,130,246,.10) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 7px 18px rgba(49,130,246,.10) !important;
+}
+
+.price-row {
+    border-color: rgba(122,139,162,.10) !important;
+}
+
+/* 캘린더 계열 */
+.sales-calendar,
+.vendor-order-calendar,
+.order-calendar,
+.calendar-grid {
+    border-color: rgba(255,255,255,.64) !important;
+    background: rgba(255,255,255,.42) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72) !important;
+}
+
+.sales-calendar-day,
+.vendor-order-calendar .calendar-day,
+.order-calendar .calendar-day {
+    background: rgba(255,255,255,.58) !important;
+    border-color: rgba(122,139,162,.10) !important;
+}
+
+.sales-calendar-day.has-sales,
+.calendar-day.has-order,
+.calendar-day.has-sales {
+    background: rgba(49,130,246,.08) !important;
+}
+
+.sales-calendar-day.selected,
+.calendar-day.selected,
+.calendar-day.active {
+    border-color: rgba(49,130,246,.52) !important;
+    background: rgba(49,130,246,.13) !important;
+}
+
+.modal,
+.modal-content,
+.dialog,
+.dialog-content,
+.bottom-sheet,
+.order-modal,
+.order-detail-modal,
+.calendar-modal {
+    border-color: rgba(255,255,255,.78) !important;
+    background: rgba(255,255,255,.78) !important;
+    background-image: none !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 24px 60px rgba(25,42,66,.16) !important;
+    backdrop-filter: blur(24px) saturate(135%);
+    -webkit-backdrop-filter: blur(24px) saturate(135%);
+}
+
+/* ---------- PC dashboard / hub ---------- */
+.final-menu-card,
+.vendor-hub-card {
+    border: 1px solid var(--lg-line) !important;
+    background: var(--lg-glass) !important;
+}
+
+.final-menu-card .menu-icon {
+    background: rgba(49,130,246,.10) !important;
+    color: var(--lg-blue) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.76) !important;
+}
+
+.calendar-heading-summary {
+    background: rgba(255,255,255,.54) !important;
+}
+
+/* ---------- PC sidebar ---------- */
+@media (min-width: 641px) {
+    .desktop-global-sidebar {
+        background: rgba(248,250,253,.74) !important;
+        background-image: none !important;
+        border-right: 1px solid rgba(255,255,255,.78) !important;
+        box-shadow: 14px 0 34px rgba(38,55,80,.055), inset -1px 0 0 rgba(108,125,148,.08) !important;
+        backdrop-filter: blur(24px) saturate(135%);
+        -webkit-backdrop-filter: blur(24px) saturate(135%);
+    }
+
+    .dgs-brand-mark {
+        background: rgba(49,130,246,.92) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 8px 18px rgba(49,130,246,.16) !important;
+    }
+
+    .dgs-card,
+    .dgs-menu-toggle {
+        border-color: rgba(255,255,255,.72) !important;
+        background: rgba(255,255,255,.54) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 5px 15px rgba(35,53,78,.045) !important;
+        backdrop-filter: blur(12px) saturate(125%);
+        -webkit-backdrop-filter: blur(12px) saturate(125%);
+    }
+
+    .dgs-card:hover,
+    .dgs-menu-toggle:hover {
+        background: rgba(255,255,255,.78) !important;
+        border-color: rgba(255,255,255,.92) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.90), 0 9px 20px rgba(35,53,78,.075) !important;
+    }
+
+    .dgs-card.active,
+    .dgs-menu-group.active > .dgs-menu-toggle {
+        border-color: rgba(49,130,246,.28) !important;
+        background: rgba(49,130,246,.10) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.76), 0 9px 24px rgba(49,130,246,.10) !important;
+    }
+
+    .dgs-icon {
+        background: color-mix(in srgb, var(--tone-bg) 82%, rgba(255,255,255,.65)) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 4px 10px rgba(35,53,78,.045) !important;
+    }
+
+    .dgs-submenu {
+        border-left-color: rgba(49,130,246,.18) !important;
+    }
+
+    .dgs-nav .dgs-submenu a:hover,
+    .dgs-nav .dgs-submenu a.active {
+        background: rgba(255,255,255,.62) !important;
+    }
+
+    .dgs-bottom {
+        border-top-color: rgba(122,139,162,.12) !important;
+    }
+}
+
+/* ---------- 모바일 app / dashboard / drawer ---------- */
+@media (max-width: 640px) {
+    html,
+    body,
+    .sc-mobile-dashboard {
+        background: var(--lg-bg) !important;
+        background-image: none !important;
+    }
+
+    .sc-mobile-appbar,
+    .sp-mobile-appbar {
+        background: rgba(248,250,253,.74) !important;
+        background-image: none !important;
+        border-bottom-color: rgba(255,255,255,.72) !important;
+        box-shadow: 0 5px 18px rgba(35,53,78,.045) !important;
+        backdrop-filter: blur(18px) saturate(130%) !important;
+        -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+    }
+
+    .sc-menu-button,
+    .sp-appbar-button,
+    .sc-mobile-month-nav a,
+    .sc-month-picker label {
+        border-color: rgba(255,255,255,.78) !important;
+        background: rgba(255,255,255,.62) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 4px 12px rgba(35,53,78,.045) !important;
+    }
+
+    .sc-kpi-card,
+    .sc-summary-card,
+    .sc-menu-card {
+        border-color: rgba(255,255,255,.76) !important;
+        background: rgba(255,255,255,.62) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 8px 22px rgba(35,53,78,.06) !important;
+        backdrop-filter: blur(14px) saturate(125%);
+        -webkit-backdrop-filter: blur(14px) saturate(125%);
+    }
+
+    .sc-kpi-primary {
+        background: rgba(241,247,255,.68) !important;
+    }
+
+    .sc-kpi-warning {
+        background: rgba(255,249,235,.70) !important;
+    }
+
+    .sc-payment-cta {
+        border: 1px solid rgba(255,255,255,.28) !important;
+        background: rgba(36,107,253,.94) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 10px 24px rgba(36,107,253,.16) !important;
+    }
+
+    .sc-mobile-drawer,
+    .sp-mobile-drawer {
+        background: rgba(247,249,252,.84) !important;
+        background-image: none !important;
+        border-right: 1px solid rgba(255,255,255,.78) !important;
+        box-shadow: 18px 0 48px rgba(26,43,67,.14) !important;
+        backdrop-filter: blur(24px) saturate(130%);
+        -webkit-backdrop-filter: blur(24px) saturate(130%);
+    }
+
+    .mobile-pc-card,
+    .mobile-pc-statement-toggle {
+        border-color: rgba(255,255,255,.76) !important;
+        background: rgba(255,255,255,.58) !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 6px 16px rgba(35,53,78,.05) !important;
+        backdrop-filter: blur(10px) saturate(120%);
+        -webkit-backdrop-filter: blur(10px) saturate(120%);
+    }
+
+    .mobile-pc-card.is-active,
+    .mobile-pc-statement-group.is-active > .mobile-pc-statement-toggle {
+        border-color: rgba(49,130,246,.30) !important;
+        background: rgba(49,130,246,.10) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 8px 20px rgba(49,130,246,.09) !important;
+    }
+
+    .mobile-pc-icon {
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.80), 0 4px 10px rgba(35,53,78,.04) !important;
+    }
+
+    .mobile-pc-statement-submenu a {
+        background: rgba(255,255,255,.58) !important;
+        border-color: rgba(255,255,255,.72) !important;
+    }
+
+    .mobile-pc-statement-submenu a.is-active {
+        background: rgba(49,130,246,.10) !important;
+        border-color: rgba(49,130,246,.26) !important;
+    }
+
+    .bottom-sheet,
+    .modal-content,
+    .dialog-content,
+    .order-modal,
+    .order-detail-modal,
+    .calendar-modal {
+        background: rgba(255,255,255,.86) !important;
+        backdrop-filter: blur(20px) saturate(125%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(125%) !important;
+    }
+}
+
+/* ---------- A4 거래명세서: UI 테마 완전 제외 ---------- */
+#statementCapture,
+#statementCapture.classic-statement,
+.statement-paper.classic-statement {
+    background: #fff !important;
+    background-image: none !important;
+    border-color: #000 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+#statementCapture table,
+#statementCapture th,
+#statementCapture td,
+#statementCapture .classic-final-box,
+#statementCapture .classic-net-row,
+#statementCapture .classic-bank {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+}
+
+/* Reduce-motion 접근성 */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
