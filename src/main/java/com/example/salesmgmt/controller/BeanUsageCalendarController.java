@@ -52,9 +52,9 @@ public class BeanUsageCalendarController {
             @RequestParam(defaultValue = "0") BigDecimal largeBags,
             @RequestParam(defaultValue = "0") BigDecimal mediumBags,
             @RequestParam(defaultValue = "0") BigDecimal smallBags,
-            @RequestParam(defaultValue = "CANADA") BeanOrigin largeOrigin,
-            @RequestParam(defaultValue = "CANADA") BeanOrigin mediumOrigin,
-            @RequestParam(defaultValue = "CANADA") BeanOrigin smallOrigin,
+            @RequestParam(defaultValue = "CHINA") BeanOrigin largeOrigin,
+            @RequestParam(defaultValue = "CHINA") BeanOrigin mediumOrigin,
+            @RequestParam(defaultValue = "CHINA") BeanOrigin smallOrigin,
             RedirectAttributes redirectAttributes
     ) {
         try {
@@ -75,6 +75,30 @@ public class BeanUsageCalendarController {
             redirectAttributes.addFlashAttribute(
                     "inventoryError",
                     exception.getMessage()
+            );
+        }
+
+        return "redirect:/bean-usage?month=" + YearMonth.from(usageDate);
+    }
+
+    @PostMapping("/bean-usage/delete-day")
+    public String deleteDailyUsage(
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate usageDate,
+            RedirectAttributes redirectAttributes
+    ) {
+        int deleted = calendarService.deleteDailyUsage(usageDate);
+
+        if (deleted > 0) {
+            redirectAttributes.addFlashAttribute(
+                    "inventoryMessage",
+                    usageDate + " 콩 사용 기록을 삭제했습니다."
+            );
+        } else {
+            redirectAttributes.addFlashAttribute(
+                    "inventoryError",
+                    "삭제할 콩 사용 기록이 없습니다."
             );
         }
 
