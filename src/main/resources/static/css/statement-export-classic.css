@@ -184,26 +184,44 @@
 }
 
 #statementCapture .classic-daily-table {
-    margin-top: 12px;
-    font-size: 11.5px;
+    margin-top: 10px;
+    font-size: 10.8px;
 }
 
-#statementCapture .classic-daily-table th,
-#statementCapture .classic-daily-table td {
-    height: 14px;
-    padding: 0 3px;
-    box-sizing: border-box;
+/* 31일 전체가 A4 한 장 안에 들어가도록 날짜 행 자체의 높이를 강제로 압축한다. */
+#statementCapture .classic-daily-table tbody tr {
+    height: 12px !important;
+    min-height: 12px !important;
+}
+
+#statementCapture .classic-daily-table tbody td {
+    height: 12px !important;
+    min-height: 0 !important;
+    padding: 0 2px !important;
+    box-sizing: border-box !important;
+    font-size: 10.8px !important;
+    line-height: 10px !important;
     text-align: center;
-    line-height: 1;
     white-space: nowrap;
     overflow: hidden;
 }
 
+#statementCapture .classic-daily-table thead tr,
+#statementCapture .classic-daily-table tfoot tr {
+    height: 15px !important;
+}
+
 #statementCapture .classic-daily-table thead th,
 #statementCapture .classic-daily-table tfoot th {
-    height: 16px;
-    font-size: 11.5px;
+    height: 15px !important;
+    min-height: 0 !important;
+    padding: 0 2px !important;
+    box-sizing: border-box !important;
+    font-size: 10.8px !important;
+    line-height: 11px !important;
     font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 #statementCapture .classic-daily-table th:first-child,
@@ -218,18 +236,18 @@
 
 #statementCapture.classic-statement .number {
     text-align: right !important;
-    padding-right: 5px !important;
+    padding-right: 4px !important;
     font-variant-numeric: tabular-nums;
 }
 
 #statementCapture .classic-bank {
-    min-height: 24px;
+    min-height: 22px;
     border: 1px solid #111;
     border-top: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 15px;
     letter-spacing: .01em;
 }
 
