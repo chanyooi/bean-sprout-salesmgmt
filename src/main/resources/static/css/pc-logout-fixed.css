@@ -37,4 +37,33 @@
     .songcheon-pc-logout-wrap {
         display: none !important;
     }
+
+    /* iOS Safari: body scroll is locked while the drawer is open, so the drawer itself must own vertical scrolling. */
+    .sc-mobile-drawer,
+    .sp-mobile-drawer {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
+    }
+
+    .sc-drawer-header,
+    .sp-drawer-head {
+        flex: 0 0 auto;
+    }
+
+    .sc-drawer-nav,
+    .sp-drawer-nav {
+        flex: 0 0 auto;
+    }
+
+    .sc-drawer-logout,
+    .sp-drawer-logout {
+        flex: 0 0 auto;
+        margin-top: 16px !important;
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
 }
