@@ -4,11 +4,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,20 +21,20 @@ class SecurityConfigTest {
     private MockMvc mockMvc;
 
     @Test
-    @WithMockUser(roles = "USER")
     void workUserCannotImportExcel() throws Exception {
         mockMvc.perform(
                         post("/excel/import")
+                                .with(user("work").roles("USER"))
                                 .with(csrf())
                 )
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void adminCanReachImportEndpoint() throws Exception {
         mockMvc.perform(
                         post("/excel/import")
+                                .with(user("admin").roles("ADMIN"))
                                 .with(csrf())
                 )
                 .andExpect(result -> assertThat(
@@ -43,30 +43,30 @@ class SecurityConfigTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void workUserCannotCreateVendorBasePrice() throws Exception {
         mockMvc.perform(
                         post("/vendor-management/1/prices")
+                                .with(user("work").roles("USER"))
                                 .with(csrf())
                 )
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void workUserCannotUpdateVendorBasePrice() throws Exception {
         mockMvc.perform(
                         post("/vendor-management/1/prices/2")
+                                .with(user("work").roles("USER"))
                                 .with(csrf())
                 )
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void adminCanReachVendorBasePriceEndpoint() throws Exception {
         mockMvc.perform(
                         post("/vendor-management/1/prices/2")
+                                .with(user("admin").roles("ADMIN"))
                                 .with(csrf())
                 )
                 .andExpect(result -> assertThat(
@@ -75,9 +75,11 @@ class SecurityConfigTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void workUserCanStillOpenRegularVendorManagementPage() throws Exception {
-        mockMvc.perform(get("/vendor-management"))
+        mockMvc.perform(
+                        get("/vendor-management")
+                                .with(user("work").roles("USER"))
+                )
                 .andExpect(status().isOk());
     }
 }
