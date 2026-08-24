@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -43,10 +44,13 @@ public class BeanUsageCalendarService {
                     usage.getUsageDate(),
                     ignored -> new DailyAccumulator()
             );
-            accumulator.add(usage.getBeanType(), usage.getBagCount());
+            accumulator.add(
+                    usage.getBeanType(),
+                    usage.getBagCount(),
+                    usage.getUnitPricePerKg()
+            );
         }
 
-        // Java DayOfWeek는 월=1 ... 일=7이므로 % 7을 사용하면 일요일 시작 offset이 된다.
         int sundayBasedOffset = first.getDayOfWeek().getValue() % 7;
         LocalDate gridStart = first.minusDays(sundayBasedOffset);
         List<CalendarCell> cells = new ArrayList<>(42);
@@ -59,9 +63,12 @@ public class BeanUsageCalendarService {
                     date,
                     date.getDayOfMonth(),
                     YearMonth.from(date).equals(month),
-                    normalized(values.large),
-                    normalized(values.medium),
-                    normalized(values.small)
+                    normalized(values.large.bags),
+                    normalized(values.medium.bags),
+                    normalized(values.small.bags),
+                    normalizedMoney(values.large.averagePricePerKg()),
+                    normalizedMoney(values.medium.averagePricePerKg()),
+                    normalizedMoney(values.small.averagePricePerKg())
             ));
         }
 
@@ -69,9 +76,9 @@ public class BeanUsageCalendarService {
         BigDecimal monthMedium = ZERO;
         BigDecimal monthSmall = ZERO;
         for (DailyAccumulator accumulator : daily.values()) {
-            monthLarge = monthLarge.add(accumulator.large);
-            monthMedium = monthMedium.add(accumulator.medium);
-            monthSmall = monthSmall.add(accumulator.small);
+            monthLarge = monthLarge.add(accumulator.large.bags);
+            monthMedium = monthMedium.add(accumulator.medium.bags);
+            monthSmall = monthSmall.add(accumulator.small.bags);
         }
 
         return new BeanUsageCalendarData(
@@ -106,21 +113,49 @@ public class BeanUsageCalendarService {
         return value.stripTrailingZeros();
     }
 
-    private static final class DailyAccumulator {
-        private BigDecimal large = ZERO;
-        private BigDecimal medium = ZERO;
-        private BigDecimal small = ZERO;
+    private BigDecimal normalizedMoney(BigDecimal value) {
+        if (value == null || value.signum() == 0) {
+            return ZERO;
+        }
+        return value.setScale(2, RoundingMode.HALF_UP).stripTrailingZeros();
+    }
 
-        private void add(BeanType type, BigDecimal bags) {
+    private static final class DailyAccumulator {
+        private final TypeAccumulator large = new TypeAccumulator();
+        private final TypeAccumulator medium = new TypeAccumulator();
+        private final TypeAccumulator small = new TypeAccumulator();
+
+        private void add(BeanType type, BigDecimal bags, BigDecimal unitPricePerKg) {
             if (bags == null) {
                 return;
             }
             switch (type) {
-                case LARGE -> large = large.add(bags);
-                case MEDIUM -> medium = medium.add(bags);
-                case SMALL -> small = small.add(bags);
+                case LARGE -> large.add(bags, unitPricePerKg);
+                case MEDIUM -> medium.add(bags, unitPricePerKg);
+                case SMALL -> small.add(bags, unitPricePerKg);
                 case MUNG -> { }
             }
+        }
+    }
+
+    private static final class TypeAccumulator {
+        private BigDecimal bags = ZERO;
+        private BigDecimal pricedBags = ZERO;
+        private BigDecimal priceWeight = ZERO;
+
+        private void add(BigDecimal bagCount, BigDecimal unitPricePerKg) {
+            bags = bags.add(bagCount);
+            if (unitPricePerKg != null && unitPricePerKg.signum() > 0) {
+                pricedBags = pricedBags.add(bagCount);
+                priceWeight = priceWeight.add(bagCount.multiply(unitPricePerKg));
+            }
+        }
+
+        private BigDecimal averagePricePerKg() {
+            if (pricedBags.signum() == 0) {
+                return ZERO;
+            }
+            return priceWeight.divide(pricedBags, 2, RoundingMode.HALF_UP);
         }
     }
 
@@ -138,7 +173,10 @@ public class BeanUsageCalendarService {
             boolean inMonth,
             BigDecimal largeBags,
             BigDecimal mediumBags,
-            BigDecimal smallBags
+            BigDecimal smallBags,
+            BigDecimal largePricePerKg,
+            BigDecimal mediumPricePerKg,
+            BigDecimal smallPricePerKg
     ) {
         public boolean hasUsage() {
             return largeBags.signum() != 0
