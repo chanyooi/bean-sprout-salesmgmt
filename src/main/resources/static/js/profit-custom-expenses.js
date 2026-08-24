@@ -10,6 +10,7 @@
     if (!monthInput || !submitButton) return;
 
     injectStyles();
+    updateBeanCostDescriptions();
 
     var panel = form.closest('.panel');
     var description = panel ? panel.querySelector('.panel-heading p') : null;
@@ -36,6 +37,28 @@
     });
 
     loadExisting();
+
+    function updateBeanCostDescriptions() {
+        document.querySelectorAll('.report-panel .helper').forEach(function (helper) {
+            if ((helper.textContent || '').indexOf('매입') >= 0) {
+                helper.textContent = '날짜별 kg당 실제 단가를 입력한 기록은 그 단가를 우선 적용하고, 비워둔 기존 기록은 해당 월 매입기록의 가중평균 단가를 사용합니다.';
+            }
+        });
+
+        document.querySelectorAll('.report-notice.warning').forEach(function (notice) {
+            if ((notice.textContent || '').indexOf('콩 사용 기록') >= 0) {
+                var strong = notice.querySelector('strong');
+                var count = strong ? strong.textContent : '';
+                notice.textContent = 'kg당 실제 단가도 없고 해당 월 매입단가도 없는 콩 사용 기록이 ';
+                if (count) {
+                    var countStrong = document.createElement('strong');
+                    countStrong.textContent = count;
+                    notice.appendChild(countStrong);
+                }
+                notice.appendChild(document.createTextNode(' 있습니다. 이 사용량은 콩 원가에서 제외되므로 사용 기록에 kg당 단가를 입력하거나 매입 기록을 등록해주세요.'));
+            }
+        });
+    }
 
     function loadExisting() {
         var month = encodeURIComponent(monthInput.value || '');
