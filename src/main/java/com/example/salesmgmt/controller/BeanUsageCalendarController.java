@@ -55,13 +55,34 @@ public class BeanUsageCalendarController {
             @RequestParam(defaultValue = "CHINA") BeanOrigin largeOrigin,
             @RequestParam(defaultValue = "CHINA") BeanOrigin mediumOrigin,
             @RequestParam(defaultValue = "CHINA") BeanOrigin smallOrigin,
+            @RequestParam(required = false) BigDecimal largePricePerKg,
+            @RequestParam(required = false) BigDecimal mediumPricePerKg,
+            @RequestParam(required = false) BigDecimal smallPricePerKg,
             RedirectAttributes redirectAttributes
     ) {
         try {
             int saved = 0;
-            saved += addIfPositive(usageDate, BeanType.LARGE, largeOrigin, largeBags);
-            saved += addIfPositive(usageDate, BeanType.MEDIUM, mediumOrigin, mediumBags);
-            saved += addIfPositive(usageDate, BeanType.SMALL, smallOrigin, smallBags);
+            saved += addIfPositive(
+                    usageDate,
+                    BeanType.LARGE,
+                    largeOrigin,
+                    largeBags,
+                    normalizeOptionalPrice(largePricePerKg)
+            );
+            saved += addIfPositive(
+                    usageDate,
+                    BeanType.MEDIUM,
+                    mediumOrigin,
+                    mediumBags,
+                    normalizeOptionalPrice(mediumPricePerKg)
+            );
+            saved += addIfPositive(
+                    usageDate,
+                    BeanType.SMALL,
+                    smallOrigin,
+                    smallBags,
+                    normalizeOptionalPrice(smallPricePerKg)
+            );
 
             if (saved == 0) {
                 throw new IllegalArgumentException("대립·중립·소립 중 하나 이상 수량을 입력해주세요.");
@@ -69,7 +90,7 @@ public class BeanUsageCalendarController {
 
             redirectAttributes.addFlashAttribute(
                     "inventoryMessage",
-                    usageDate + " 콩 사용량을 추가했습니다."
+                    usageDate + " 콩 사용량과 단가를 추가했습니다."
             );
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute(
@@ -109,7 +130,8 @@ public class BeanUsageCalendarController {
             LocalDate date,
             BeanType type,
             BeanOrigin origin,
-            BigDecimal bags
+            BigDecimal bags,
+            BigDecimal unitPricePerKg
     ) {
         if (bags == null || bags.signum() == 0) {
             return 0;
@@ -117,8 +139,25 @@ public class BeanUsageCalendarController {
         if (bags.signum() < 0) {
             throw new IllegalArgumentException("사용 수량은 0 이상이어야 합니다.");
         }
-        beanInventoryService.addUsage(date, type, origin, bags, null);
+        beanInventoryService.addUsage(
+                date,
+                type,
+                origin,
+                bags,
+                unitPricePerKg,
+                null
+        );
         return 1;
+    }
+
+    private BigDecimal normalizeOptionalPrice(BigDecimal price) {
+        if (price == null || price.signum() == 0) {
+            return null;
+        }
+        if (price.signum() < 0) {
+            throw new IllegalArgumentException("kg당 단가는 0원 이상이어야 합니다.");
+        }
+        return price;
     }
 
     private YearMonth parseMonth(String month) {
