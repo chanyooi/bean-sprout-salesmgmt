@@ -11,6 +11,7 @@
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/bean-usage-calendar.css(v=20260820_2)}">
+    <link rel="stylesheet" th:href="@{/css/bean-usage-unit-price.css(v=20260824_1)}">
 </head>
 <body>
 <main class="bean-calendar-shell">
@@ -18,7 +19,7 @@
         <div>
             <p class="eyebrow">원가·이익</p>
             <h1>콩 사용 관리</h1>
-            <p>날짜를 눌러 하루 사용 포대 수를 빠르게 추가하거나 삭제합니다.</p>
+            <p>날짜별 사용 포대 수와 그날 실제 kg당 콩 단가를 함께 기록합니다.</p>
         </div>
         <a class="secondary-link" th:href="@{/profit(month=${selectedMonth})}">원가·이익으로</a>
     </section>
@@ -53,7 +54,10 @@
                     th:data-date="${cell.date}"
                     th:data-large="${cell.largeBags.stripTrailingZeros().toPlainString()}"
                     th:data-medium="${cell.mediumBags.stripTrailingZeros().toPlainString()}"
-                    th:data-small="${cell.smallBags.stripTrailingZeros().toPlainString()}">
+                    th:data-small="${cell.smallBags.stripTrailingZeros().toPlainString()}"
+                    th:data-large-price="${cell.largePricePerKg.stripTrailingZeros().toPlainString()}"
+                    th:data-medium-price="${cell.mediumPricePerKg.stripTrailingZeros().toPlainString()}"
+                    th:data-small-price="${cell.smallPricePerKg.stripTrailingZeros().toPlainString()}">
                 <span class="bean-day-number" th:text="${cell.dayOfMonth}">1</span>
                 <div class="bean-day-usage" th:if="${cell.inMonth}">
                     <span th:text="|대 ${cell.largeBags.stripTrailingZeros().toPlainString()}|">대 0</span>
@@ -64,7 +68,7 @@
         </div>
     </section>
 
-    <p class="bean-calendar-help">표시 순서: 대립 · 중립 · 소립. 날짜를 누르면 사용량을 추가하거나 해당 날짜 기록을 삭제할 수 있습니다.</p>
+    <p class="bean-calendar-help">표시 순서: 대립 · 중립 · 소립. 날짜를 누르면 사용량과 실제 kg당 단가를 추가하거나 해당 날짜 기록을 삭제할 수 있습니다.</p>
 </main>
 
 <div id="beanUsageModal" class="bean-modal" hidden>
@@ -94,6 +98,13 @@
                     <option th:each="origin : ${origins}" th:if="${origin.name() != 'CHILE'}" th:value="${origin.name()}" th:text="${origin.label}" th:selected="${origin.name() == 'CHINA'}"></option>
                 </select>
             </div>
+            <div class="bean-price-row">
+                <span class="bean-price-spacer">kg 단가</span>
+                <label class="bean-price-field">
+                    <input id="largePricePerKg" name="largePricePerKg" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 4200">
+                    <span class="bean-price-unit">원/kg</span>
+                </label>
+            </div>
 
             <div class="bean-input-row">
                 <div class="bean-input-label"><strong>중립</strong><small>포</small></div>
@@ -105,6 +116,13 @@
                 <select name="mediumOrigin" aria-label="중립 원산지">
                     <option th:each="origin : ${origins}" th:if="${origin.name() != 'CHILE'}" th:value="${origin.name()}" th:text="${origin.label}" th:selected="${origin.name() == 'CHINA'}"></option>
                 </select>
+            </div>
+            <div class="bean-price-row">
+                <span class="bean-price-spacer">kg 단가</span>
+                <label class="bean-price-field">
+                    <input id="mediumPricePerKg" name="mediumPricePerKg" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 4200">
+                    <span class="bean-price-unit">원/kg</span>
+                </label>
             </div>
 
             <div class="bean-input-row">
@@ -118,8 +136,16 @@
                     <option th:each="origin : ${origins}" th:if="${origin.name() != 'CHILE'}" th:value="${origin.name()}" th:text="${origin.label}" th:selected="${origin.name() == 'CHINA'}"></option>
                 </select>
             </div>
+            <div class="bean-price-row">
+                <span class="bean-price-spacer">kg 단가</span>
+                <label class="bean-price-field">
+                    <input id="smallPricePerKg" name="smallPricePerKg" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 4200">
+                    <span class="bean-price-unit">원/kg</span>
+                </label>
+            </div>
 
             <p class="bean-origin-note">원산지 기본값은 중국산입니다. 실제 사용한 원산지가 다를 때만 바꾸면 됩니다.</p>
+            <p class="bean-price-help">kg당 단가를 입력하면 그날 사용 원가에 실제 단가가 우선 적용됩니다. 단가를 비워두면 기존처럼 해당 월 매입기록의 가중평균 단가를 사용합니다.</p>
             <button type="submit" class="bean-save-button">추가하기</button>
         </form>
 
@@ -133,7 +159,7 @@
 <form id="songcheonPcLogoutForm" th:action="@{/logout}" method="post" style="display:none" aria-hidden="true"></form>
 <script defer th:src="@{/js/premium-mobile-v2.js(v=20260818_2)}"></script>
 <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260818_2)}"></script>
-<script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
-<script defer th:src="@{/js/bean-usage-calendar.js(v=20260820_2)}"></script>
+<script defer th:src="@{/js/pc-logout-fixed.js(v=20260824_1)}"></script>
+<script defer th:src="@{/js/bean-usage-calendar.js(v=20260824_1)}"></script>
 </body>
 </html>
