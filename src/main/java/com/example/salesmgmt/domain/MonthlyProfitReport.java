@@ -19,12 +19,9 @@ public record MonthlyProfitReport(
         List<VendorProfitRow> vendorRows
 ) {
     public record ExpenseRow(
-            ExpenseType expenseType,
+            String label,
             BigDecimal amount
     ) {
-        public String label() {
-            return expenseType.getLabel();
-        }
     }
 
     public record VendorProfitRow(

@@ -1,5 +1,17 @@
 (function () {
     loadVendorDetailEnhancements();
+    loadProfitEnhancements();
+
+    function loadProfitEnhancements() {
+        if (window.location.pathname !== '/profit') return;
+        if (document.querySelector('script[data-profit-custom-expenses]')) return;
+
+        var script = document.createElement('script');
+        script.src = '/js/profit-custom-expenses.js?v=20260824_1';
+        script.defer = true;
+        script.dataset.profitCustomExpenses = 'true';
+        document.body.appendChild(script);
+    }
 
     function loadVendorDetailEnhancements() {
         if (!window.location.pathname.startsWith('/vendor-management/')) return;

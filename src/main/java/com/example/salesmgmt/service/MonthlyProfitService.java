@@ -22,15 +22,18 @@ public class MonthlyProfitService {
     private final MonthlySalesReportService monthlySalesReportService;
     private final BeanInventoryService beanInventoryService;
     private final MonthlyExpenseService monthlyExpenseService;
+    private final MonthlyCustomExpenseService monthlyCustomExpenseService;
 
     public MonthlyProfitService(
             MonthlySalesReportService monthlySalesReportService,
             BeanInventoryService beanInventoryService,
-            MonthlyExpenseService monthlyExpenseService
+            MonthlyExpenseService monthlyExpenseService,
+            MonthlyCustomExpenseService monthlyCustomExpenseService
     ) {
         this.monthlySalesReportService = monthlySalesReportService;
         this.beanInventoryService = beanInventoryService;
         this.monthlyExpenseService = monthlyExpenseService;
+        this.monthlyCustomExpenseService = monthlyCustomExpenseService;
     }
 
     @Transactional(readOnly = true)
@@ -45,13 +48,28 @@ public class MonthlyProfitService {
     ) {
         BeanUsageCostResult beanCost = beanInventoryService.calculateUsageCost(month);
         Map<ExpenseType, BigDecimal> expenses = monthlyExpenseService.getExpenses(month);
+        List<MonthlyCustomExpenseService.CustomExpenseRow> customExpenses =
+                monthlyCustomExpenseService.getExpenses(month);
 
         List<MonthlyProfitReport.ExpenseRow> expenseRows = new ArrayList<>();
         BigDecimal otherExpenseTotal = BigDecimal.ZERO;
+
         for (ExpenseType type : ExpenseType.values()) {
             BigDecimal amount = safe(expenses.get(type));
             otherExpenseTotal = otherExpenseTotal.add(amount);
-            expenseRows.add(new MonthlyProfitReport.ExpenseRow(type, money(amount)));
+            expenseRows.add(new MonthlyProfitReport.ExpenseRow(
+                    type.getLabel(),
+                    money(amount)
+            ));
+        }
+
+        for (MonthlyCustomExpenseService.CustomExpenseRow customExpense : customExpenses) {
+            BigDecimal amount = safe(customExpense.amount());
+            otherExpenseTotal = otherExpenseTotal.add(amount);
+            expenseRows.add(new MonthlyProfitReport.ExpenseRow(
+                    customExpense.name(),
+                    money(amount)
+            ));
         }
 
         BigDecimal sales = safe(salesReport.confirmedSales());
