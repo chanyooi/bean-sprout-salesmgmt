@@ -78,6 +78,18 @@ public class BeanInventoryService {
             BigDecimal bagCount,
             String note
     ) {
+        addUsage(usageDate, beanType, origin, bagCount, null, note);
+    }
+
+    @Transactional
+    public void addUsage(
+            LocalDate usageDate,
+            BeanType beanType,
+            BeanOrigin origin,
+            BigDecimal bagCount,
+            BigDecimal unitPricePerKg,
+            String note
+    ) {
         validateCombination(beanType, origin);
 
         beanUsageRepository.save(new BeanUsageEntity(
@@ -85,6 +97,7 @@ public class BeanInventoryService {
                 beanType,
                 origin,
                 bagCount,
+                unitPricePerKg,
                 note
         ));
     }
@@ -125,9 +138,6 @@ public class BeanInventoryService {
         beanStockSettingRepository.save(setting);
     }
 
-    /**
-     * 기존 재고 계산 기능은 그대로 유지한다.
-     */
     @Transactional(readOnly = true)
     public BeanInventoryView getInventory(LocalDate asOfDate) {
         LocalDate safeDate = asOfDate == null ? LocalDate.now() : asOfDate;
@@ -249,19 +259,9 @@ public class BeanInventoryService {
     }
 
     /**
-     * 선택한 월의 종류+원산지별 가중평균 매입단가 방식.
-     *
-     * 예) 8월 소립/캐나다산
-     * 10포 x 100,000원 + 20포 x 115,000원
-     * ------------------------------------------
-     *                30포
-     *
-     * = 110,000원/포
-     *
-     * 사용일이 매입일보다 앞인지 뒤인지와 관계없이
-     * 8월 사용량 전체에 8월 가중평균 단가를 적용한다.
-     * 따라서 8월 매입을 나중에 추가해도 8월 화면을 다시 조회하면
-     * 원가가 자동 재계산된다.
+     * 콩 사용 기록에 kg당 실제 단가가 있으면 그 날짜의 입력 단가를 가장 먼저 사용한다.
+     * 단가를 비워둔 기존 기록은 같은 월의 종류+원산지별 가중평균 매입단가를 사용한다.
+     * 따라서 과거 데이터는 그대로 유지하면서, 새 기록부터 실제 가져온 날의 단가를 반영할 수 있다.
      */
     @Transactional(readOnly = true)
     public BeanUsageCostResult calculateUsageCost(YearMonth month) {
@@ -293,21 +293,14 @@ public class BeanInventoryService {
                     ignored -> new MonthlyPurchaseAccumulator()
             );
 
-            accumulator.purchasedBags = accumulator.purchasedBags.add(
-                    purchase.getBagCount()
-            );
-            accumulator.purchaseAmount = accumulator.purchaseAmount.add(
-                    purchase.getTotalAmount()
-            );
+            accumulator.purchasedBags = accumulator.purchasedBags.add(purchase.getBagCount());
+            accumulator.purchaseAmount = accumulator.purchaseAmount.add(purchase.getTotalAmount());
         }
 
         Map<StockKey, BigDecimal> monthlyAveragePriceMap = new HashMap<>();
 
-        for (Map.Entry<StockKey, MonthlyPurchaseAccumulator> entry
-                : monthlyPurchaseMap.entrySet()) {
-
+        for (Map.Entry<StockKey, MonthlyPurchaseAccumulator> entry : monthlyPurchaseMap.entrySet()) {
             MonthlyPurchaseAccumulator accumulator = entry.getValue();
-
             if (accumulator.purchasedBags.signum() > 0) {
                 monthlyAveragePriceMap.put(
                         entry.getKey(),
@@ -332,29 +325,29 @@ public class BeanInventoryService {
                     usage.getOrigin()
             );
 
-            BigDecimal monthlyAveragePrice = monthlyAveragePriceMap.get(key);
+            BigDecimal effectivePricePerBag = usage.getUnitPricePerKg() == null
+                    ? monthlyAveragePriceMap.get(key)
+                    : usage.getUnitPricePerKg().multiply(KG_PER_BAG);
 
             UsageCostAccumulator accumulator = rowAccumulators.computeIfAbsent(
                     key,
                     ignored -> new UsageCostAccumulator()
             );
 
-            accumulator.usedBags = accumulator.usedBags.add(
-                    usage.getBagCount()
-            );
-
+            accumulator.usedBags = accumulator.usedBags.add(usage.getBagCount());
             totalBags = totalBags.add(usage.getBagCount());
 
-            if (monthlyAveragePrice == null) {
+            if (effectivePricePerBag == null) {
                 accumulator.missingCount++;
                 missingCount++;
                 continue;
             }
 
             BigDecimal usageCost = usage.getBagCount()
-                    .multiply(monthlyAveragePrice)
+                    .multiply(effectivePricePerBag)
                     .setScale(2, RoundingMode.HALF_UP);
 
+            accumulator.knownBags = accumulator.knownBags.add(usage.getBagCount());
             accumulator.knownCost = accumulator.knownCost.add(usageCost);
             totalCost = totalCost.add(usageCost);
         }
@@ -365,8 +358,13 @@ public class BeanInventoryService {
                     StockKey key = entry.getKey();
                     UsageCostAccumulator accumulator = entry.getValue();
 
-                    BigDecimal monthlyAveragePrice = monthlyAveragePriceMap
-                            .getOrDefault(key, ZERO);
+                    BigDecimal effectiveAveragePricePerBag = accumulator.knownBags.signum() == 0
+                            ? ZERO
+                            : accumulator.knownCost.divide(
+                                    accumulator.knownBags,
+                                    2,
+                                    RoundingMode.HALF_UP
+                            );
 
                     return new BeanUsageCostResult.Row(
                             key.beanType(),
@@ -374,7 +372,7 @@ public class BeanInventoryService {
                             normalized(accumulator.usedBags),
                             kg(accumulator.usedBags),
                             normalizedMoney(accumulator.knownCost),
-                            normalizedMoney(monthlyAveragePrice),
+                            normalizedMoney(effectiveAveragePricePerBag),
                             accumulator.missingCount
                     );
                 })
@@ -488,6 +486,7 @@ public class BeanInventoryService {
 
     private static final class UsageCostAccumulator {
         private BigDecimal usedBags = ZERO;
+        private BigDecimal knownBags = ZERO;
         private BigDecimal knownCost = ZERO;
         private long missingCount;
     }
