@@ -20,7 +20,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import({SalesPersistenceService.class, VendorRuleService.class})
+@Import({
+        SalesPersistenceService.class,
+        VendorRuleService.class,
+        MonthlyCloseService.class,
+        SalesPromotionService.class
+})
 class SalesPersistenceServiceTest {
 
     @Autowired

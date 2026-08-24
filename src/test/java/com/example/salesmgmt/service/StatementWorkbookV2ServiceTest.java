@@ -1,9 +1,11 @@
 package com.example.salesmgmt.service;
 
+import com.example.salesmgmt.domain.StatementWorkbookResult;
 import com.example.salesmgmt.entity.SalesItemEntity;
 import com.example.salesmgmt.entity.SalesOrderEntity;
 import com.example.salesmgmt.entity.VendorEntity;
 import com.example.salesmgmt.repository.SalesItemRepository;
+import com.example.salesmgmt.repository.VendorRepository;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -24,36 +26,43 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class StatementWorkbookServiceTest {
+class StatementWorkbookV2ServiceTest {
+
+    @Mock
+    StatementWorkbookService legacyService;
 
     @Mock
     SalesItemRepository salesItemRepository;
 
+    @Mock
+    VendorRepository vendorRepository;
+
     @InjectMocks
-    StatementWorkbookService service;
+    StatementWorkbookV2Service service;
 
     @Test
-    void DB의_날짜별_수량을_템플릿에_입력한다() throws Exception {
-        SalesItemEntity item = salesItem(
-                "HS식자재도매유통",
-                LocalDate.of(2026, 7, 31),
-                "3.5kg일반",
-                "50",
-                "3000"
-        );
+    void 회수통은_DB의_실제_음수금액으로_명세서_금액을_쓴다() throws Exception {
+        SalesItemEntity returnItem = salesItem("2", "-3000");
+        MockMultipartFile template = templateFile();
+        byte[] templateBytes = createTemplate();
 
+        when(legacyService.generate(any(), eq(YearMonth.of(2026, 7)), eq(true)))
+                .thenReturn(new StatementWorkbookResult(
+                        templateBytes,
+                        "2026년_07월_월간명세서.xlsx",
+                        1,
+                        1,
+                        0,
+                        0
+                ));
         when(salesItemRepository.findForMonthlyReport(any(), any()))
-                .thenReturn(List.of(item));
-
-        MockMultipartFile template = new MockMultipartFile(
-                "templateFile",
-                "template.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                createTemplate()
-        );
+                .thenReturn(List.of(returnItem));
+        when(vendorRepository.findAllByOrderByInputNameAsc())
+                .thenReturn(List.of());
 
         var result = service.generate(
                 template,
@@ -66,43 +75,64 @@ class StatementWorkbookServiceTest {
         )) {
             XSSFSheet sheet = workbook.getSheet("HS식자재도매유통");
 
-            assertThat(sheet).isNotNull();
-            assertThat(sheet.getRow(6).getCell(0).getStringCellValue())
-                    .isEqualTo("2026년 7월");
-            assertThat(sheet.getRow(62).getCell(6).getNumericCellValue())
-                    .isEqualTo(50d);
+            assertThat(sheet.getRow(32).getCell(5).getNumericCellValue())
+                    .isEqualTo(2d);
+            assertThat(sheet.getRow(32).getCell(11).getNumericCellValue())
+                    .isEqualTo(-6000d);
         }
     }
 
     @Test
-    void 판매가_없는_시트는_선택에_따라_유지한다() throws Exception {
+    void 회수통_보증금이_없는_거래처는_명세서_금액을_차감하지_않는다() throws Exception {
+        SalesItemEntity returnItem = salesItem("2", "0");
+        MockMultipartFile template = templateFile();
+        byte[] templateBytes = createTemplate();
+
+        when(legacyService.generate(any(), eq(YearMonth.of(2026, 7)), eq(true)))
+                .thenReturn(new StatementWorkbookResult(
+                        templateBytes,
+                        "2026년_07월_월간명세서.xlsx",
+                        1,
+                        1,
+                        0,
+                        0
+                ));
         when(salesItemRepository.findForMonthlyReport(any(), any()))
+                .thenReturn(List.of(returnItem));
+        when(vendorRepository.findAllByOrderByInputNameAsc())
                 .thenReturn(List.of());
 
-        MockMultipartFile template = new MockMultipartFile(
+        var result = service.generate(
+                template,
+                YearMonth.of(2026, 7),
+                false
+        );
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(
+                new ByteArrayInputStream(result.fileBytes())
+        )) {
+            XSSFSheet sheet = workbook.getSheet("HS식자재도매유통");
+
+            assertThat(sheet.getRow(32).getCell(5).getNumericCellValue())
+                    .isEqualTo(2d);
+            assertThat(sheet.getRow(32).getCell(11).getCellType())
+                    .isEqualTo(CellType.BLANK);
+        }
+    }
+
+    private MockMultipartFile templateFile() throws Exception {
+        return new MockMultipartFile(
                 "templateFile",
                 "template.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 createTemplate()
         );
-
-        var result = service.generate(
-                template,
-                YearMonth.of(2026, 7),
-                true
-        );
-
-        assertThat(result.generatedSheetCount()).isEqualTo(1);
-        assertThat(result.sheetWithSalesCount()).isZero();
     }
 
     private byte[] createTemplate() throws Exception {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             XSSFSheet sheet = workbook.createSheet("HS식자재도매유통");
-            sheet.addMergedRegion(
-                    new org.apache.poi.ss.util.CellRangeAddress(6, 7, 0, 3)
-            );
 
             Row periodRow = sheet.createRow(6);
             periodRow.createCell(0).setCellValue("기존 기간");
@@ -130,32 +160,29 @@ class StatementWorkbookServiceTest {
     }
 
     private SalesItemEntity salesItem(
-            String vendorName,
-            LocalDate date,
-            String itemName,
             String quantity,
             String unitPrice
     ) {
         VendorEntity vendor = new VendorEntity(
-                vendorName,
-                vendorName,
+                "HS식자재도매유통",
+                "HS식자재도매유통",
                 true
         );
 
         SalesOrderEntity order = new SalesOrderEntity(
-                "20260731-001",
-                date,
+                "20260701-001",
+                LocalDate.of(2026, 7, 1),
                 vendor,
                 null,
                 "",
                 "",
-                "20260731",
+                "20260701",
                 5
         );
 
         return new SalesItemEntity(
                 order,
-                itemName,
+                "회수통",
                 new BigDecimal(quantity),
                 new BigDecimal(unitPrice)
         );

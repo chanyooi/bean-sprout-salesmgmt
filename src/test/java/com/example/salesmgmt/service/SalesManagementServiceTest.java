@@ -17,7 +17,7 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(SalesManagementService.class)
+@Import({SalesManagementService.class, MonthlyCloseService.class})
 class SalesManagementServiceTest {
 
     @Autowired
