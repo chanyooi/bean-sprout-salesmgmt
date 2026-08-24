@@ -2,6 +2,7 @@ package com.example.salesmgmt.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,6 +42,15 @@ public class SecurityConfig {
                                         "/input-template/**",
                                         "/prices/**",
                                         "/promotions/**"
+                                )
+                                .hasRole("ADMIN")
+
+                                // 화면 URL과 실제 저장 URL이 다른 관리자 작업도 명시적으로 보호합니다.
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/excel/import",
+                                        "/vendor-management/*/prices",
+                                        "/vendor-management/*/prices/*"
                                 )
                                 .hasRole("ADMIN")
 
