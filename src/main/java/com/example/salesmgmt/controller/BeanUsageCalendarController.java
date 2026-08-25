@@ -15,6 +15,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Map;
 
 @Controller
 public class BeanUsageCalendarController {
@@ -36,11 +37,21 @@ public class BeanUsageCalendarController {
             Model model
     ) {
         YearMonth selectedMonth = parseMonth(month);
+        Map<String, BigDecimal> prices = beanInventoryService.getLatestUsagePricesPerKg();
+
         model.addAttribute("calendar", calendarService.load(selectedMonth));
         model.addAttribute("selectedMonth", selectedMonth);
         model.addAttribute("previousMonth", selectedMonth.minusMonths(1));
         model.addAttribute("nextMonth", selectedMonth.plusMonths(1));
         model.addAttribute("origins", BeanOrigin.values());
+
+        model.addAttribute("largeChinaUnitPrice", prices.get("LARGE_CHINA"));
+        model.addAttribute("largeCanadaUnitPrice", prices.get("LARGE_CANADA"));
+        model.addAttribute("mediumChinaUnitPrice", prices.get("MEDIUM_CHINA"));
+        model.addAttribute("mediumCanadaUnitPrice", prices.get("MEDIUM_CANADA"));
+        model.addAttribute("smallChinaUnitPrice", prices.get("SMALL_CHINA"));
+        model.addAttribute("smallCanadaUnitPrice", prices.get("SMALL_CANADA"));
+
         return "bean-usage-calendar";
     }
 
@@ -55,13 +66,38 @@ public class BeanUsageCalendarController {
             @RequestParam(defaultValue = "CHINA") BeanOrigin largeOrigin,
             @RequestParam(defaultValue = "CHINA") BeanOrigin mediumOrigin,
             @RequestParam(defaultValue = "CHINA") BeanOrigin smallOrigin,
+            @RequestParam(required = false) BigDecimal largeUnitPricePerKg,
+            @RequestParam(required = false) BigDecimal mediumUnitPricePerKg,
+            @RequestParam(required = false) BigDecimal smallUnitPricePerKg,
             RedirectAttributes redirectAttributes
     ) {
         try {
+            validateRow("대립", largeBags, largeUnitPricePerKg);
+            validateRow("중립", mediumBags, mediumUnitPricePerKg);
+            validateRow("소립", smallBags, smallUnitPricePerKg);
+
             int saved = 0;
-            saved += addIfPositive(usageDate, BeanType.LARGE, largeOrigin, largeBags);
-            saved += addIfPositive(usageDate, BeanType.MEDIUM, mediumOrigin, mediumBags);
-            saved += addIfPositive(usageDate, BeanType.SMALL, smallOrigin, smallBags);
+            saved += addIfPositive(
+                    usageDate,
+                    BeanType.LARGE,
+                    largeOrigin,
+                    largeBags,
+                    largeUnitPricePerKg
+            );
+            saved += addIfPositive(
+                    usageDate,
+                    BeanType.MEDIUM,
+                    mediumOrigin,
+                    mediumBags,
+                    mediumUnitPricePerKg
+            );
+            saved += addIfPositive(
+                    usageDate,
+                    BeanType.SMALL,
+                    smallOrigin,
+                    smallBags,
+                    smallUnitPricePerKg
+            );
 
             if (saved == 0) {
                 throw new IllegalArgumentException("대립·중립·소립 중 하나 이상 수량을 입력해주세요.");
@@ -69,7 +105,7 @@ public class BeanUsageCalendarController {
 
             redirectAttributes.addFlashAttribute(
                     "inventoryMessage",
-                    usageDate + " 콩 사용량을 추가했습니다."
+                    usageDate + " 콩 사용량과 kg당 단가를 추가했습니다."
             );
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute(
@@ -109,16 +145,38 @@ public class BeanUsageCalendarController {
             LocalDate date,
             BeanType type,
             BeanOrigin origin,
-            BigDecimal bags
+            BigDecimal bags,
+            BigDecimal unitPricePerKg
     ) {
         if (bags == null || bags.signum() == 0) {
             return 0;
         }
+
+        beanInventoryService.addUsage(
+                date,
+                type,
+                origin,
+                bags,
+                unitPricePerKg,
+                null
+        );
+        return 1;
+    }
+
+    private void validateRow(
+            String label,
+            BigDecimal bags,
+            BigDecimal unitPricePerKg
+    ) {
+        if (bags == null || bags.signum() == 0) {
+            return;
+        }
         if (bags.signum() < 0) {
             throw new IllegalArgumentException("사용 수량은 0 이상이어야 합니다.");
         }
-        beanInventoryService.addUsage(date, type, origin, bags, null);
-        return 1;
+        if (unitPricePerKg == null || unitPricePerKg.signum() <= 0) {
+            throw new IllegalArgumentException(label + " kg당 단가를 입력해주세요.");
+        }
     }
 
     private YearMonth parseMonth(String month) {
