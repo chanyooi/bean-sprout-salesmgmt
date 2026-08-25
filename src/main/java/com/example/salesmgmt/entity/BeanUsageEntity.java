@@ -46,6 +46,9 @@ public class BeanUsageEntity {
     @Column(name = "bag_count", nullable = false, precision = 12, scale = 3)
     private BigDecimal bagCount;
 
+    @Column(name = "unit_price_per_kg", precision = 12, scale = 2)
+    private BigDecimal unitPricePerKg;
+
     @Column(name = "note", length = 500)
     private String note;
 
@@ -59,17 +62,34 @@ public class BeanUsageEntity {
             BigDecimal bagCount,
             String note
     ) {
+        this(usageDate, beanType, origin, bagCount, null, note);
+    }
+
+    public BeanUsageEntity(
+            LocalDate usageDate,
+            BeanType beanType,
+            BeanOrigin origin,
+            BigDecimal bagCount,
+            BigDecimal unitPricePerKg,
+            String note
+    ) {
         if (usageDate == null) {
             throw new IllegalArgumentException("사용 날짜를 입력해주세요.");
         }
         if (bagCount == null || bagCount.signum() <= 0) {
             throw new IllegalArgumentException("사용 포대 수는 0보다 커야 합니다.");
         }
+        if (unitPricePerKg != null && unitPricePerKg.signum() <= 0) {
+            throw new IllegalArgumentException("kg당 단가는 0원보다 커야 합니다.");
+        }
 
         this.usageDate = usageDate;
         this.beanType = beanType;
         this.origin = origin;
         this.bagCount = bagCount.setScale(3, RoundingMode.HALF_UP);
+        this.unitPricePerKg = unitPricePerKg == null
+                ? null
+                : unitPricePerKg.setScale(2, RoundingMode.HALF_UP);
         this.note = blankToNull(note);
     }
 
@@ -93,12 +113,25 @@ public class BeanUsageEntity {
         return bagCount;
     }
 
+    public BigDecimal getUnitPricePerKg() {
+        return unitPricePerKg;
+    }
+
     public String getNote() {
         return note;
     }
 
     public BigDecimal getTotalKg() {
         return bagCount.multiply(KG_PER_BAG).setScale(3, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal getUsageCost() {
+        if (unitPricePerKg == null) {
+            return null;
+        }
+        return getTotalKg()
+                .multiply(unitPricePerKg)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     private static String blankToNull(String value) {
