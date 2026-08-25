@@ -1,0 +1,13 @@
+.bean-modal-card{width:min(700px,100%)}
+.bean-input-row{grid-template-columns:70px minmax(220px,1fr) 100px 142px}
+.bean-price-field{height:42px;display:flex;align-items:center;border:1px solid #e5e8eb;border-radius:12px;background:#fff;overflow:hidden}
+.bean-price-field input{min-width:0;width:100%;height:40px;border:0;outline:none;padding:0 8px 0 11px;text-align:right;background:#fff;color:#191f28;font-size:15px;font-weight:700}
+.bean-price-field input::placeholder{color:#b0b8c1;font-size:12px;font-weight:500}
+.bean-price-field span{flex:0 0 auto;padding-right:10px;color:#8b95a1;font-size:11px;white-space:nowrap}
+.bean-price-field:focus-within{border-color:#3182f6;box-shadow:0 0 0 3px rgba(49,130,246,.08)}
+@media(max-width:640px){
+  .bean-modal-card{width:100%}
+  .bean-input-row{grid-template-columns:58px minmax(0,1fr) 88px;align-items:center}
+  .bean-price-field{grid-column:2 / 4;width:100%;margin-top:0}
+  .bean-price-field input{text-align:left}
+}
