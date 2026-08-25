@@ -1,0 +1,211 @@
+.association-credit-page {
+    padding-bottom: 56px;
+}
+
+.association-credit-hero {
+    margin-bottom: 18px;
+}
+
+.association-balance-card {
+    margin: 18px 0;
+    padding: 28px 30px;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.association-balance-card > span,
+.association-balance-card > small {
+    display: block;
+}
+
+.association-balance-card > span {
+    margin-bottom: 8px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.association-balance-card > strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: clamp(32px, 4vw, 46px);
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+}
+
+.association-balance-card > small {
+    color: #64748b;
+    font-size: 14px;
+}
+
+.association-balance-card[data-balance-state="debt"] > strong {
+    color: #dc2626;
+}
+
+.association-balance-card[data-balance-state="prepaid"] > strong {
+    color: #2563eb;
+}
+
+.association-balance-card[data-balance-state="clear"] > strong {
+    color: #0f172a;
+}
+
+.association-entry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.association-entry-card {
+    margin: 0;
+}
+
+.association-entry-head h2 {
+    margin: 2px 0 0;
+}
+
+.association-helper {
+    margin: 8px 0 18px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.association-form {
+    display: grid;
+    gap: 14px;
+}
+
+.association-form label {
+    display: grid;
+    gap: 7px;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.association-form input {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    border: 1px solid #dbe2ea;
+    border-radius: 11px;
+    background: #ffffff;
+    padding: 10px 12px;
+    color: #0f172a;
+    font: inherit;
+}
+
+.association-form input:focus {
+    outline: none;
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.15);
+}
+
+.association-submit {
+    min-height: 44px;
+    border: 0;
+    border-radius: 11px;
+    padding: 0 16px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.credit-submit {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.payment-submit {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.association-history-card {
+    margin-top: 0;
+}
+
+.association-history-table th,
+.association-history-table td {
+    vertical-align: middle;
+}
+
+.association-history-amount {
+    font-weight: 800;
+}
+
+.credit-amount {
+    color: #dc2626;
+}
+
+.payment-amount {
+    color: #2563eb;
+}
+
+.association-type-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.credit-badge {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.payment-badge {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.association-delete-cell {
+    width: 70px;
+    text-align: right;
+}
+
+.association-delete-button {
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #ffffff;
+    padding: 7px 10px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.association-delete-button:hover {
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+.association-empty {
+    padding: 34px 12px !important;
+    text-align: center;
+    color: #94a3b8;
+}
+
+@media (max-width: 760px) {
+    .association-credit-page {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .association-entry-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .association-balance-card {
+        padding: 22px 20px;
+    }
+
+    .association-history-table {
+        min-width: 680px;
+    }
+}
