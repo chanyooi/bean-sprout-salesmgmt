@@ -12,6 +12,25 @@
     return Number.isFinite(parsed)?parsed:0;
   }
 
+  function priceForOrigin(select){
+    if(!select)return '';
+    if(select.value==='CANADA')return select.dataset.priceCanada||'';
+    return select.dataset.priceChina||'';
+  }
+
+  function syncPrice(selectId,priceInputId){
+    var select=document.getElementById(selectId);
+    var priceInput=document.getElementById(priceInputId);
+    if(!select||!priceInput)return;
+    priceInput.value=priceForOrigin(select);
+  }
+
+  function syncAllPrices(){
+    syncPrice('largeOrigin','largeUnitPricePerKg');
+    syncPrice('mediumOrigin','mediumUnitPricePerKg');
+    syncPrice('smallOrigin','smallUnitPricePerKg');
+  }
+
   function openModal(button){
     if(!modal||!button)return;
     var date=button.dataset.date||'';
@@ -24,6 +43,7 @@
     dateInput.value=date;
     existing.textContent='현재 사용량  ·  대 '+large+' / 중 '+medium+' / 소 '+small+'포';
     ['largeBags','mediumBags','smallBags'].forEach(function(id){var input=document.getElementById(id);if(input)input.value='0';});
+    syncAllPrices();
 
     if(deleteForm&&deleteDateInput){
       deleteDateInput.value=date;
@@ -58,12 +78,45 @@
     });
   });
 
+  [
+    ['largeOrigin','largeUnitPricePerKg'],
+    ['mediumOrigin','mediumUnitPricePerKg'],
+    ['smallOrigin','smallUnitPricePerKg']
+  ].forEach(function(pair){
+    var select=document.getElementById(pair[0]);
+    if(select){
+      select.addEventListener('change',function(){syncPrice(pair[0],pair[1]);});
+    }
+  });
+
   document.addEventListener('keydown',function(event){if(event.key==='Escape')closeModal();});
 
   if(form){
     form.addEventListener('submit',function(event){
-      var total=['largeBags','mediumBags','smallBags'].reduce(function(sum,id){var input=document.getElementById(id);return sum+number(input&&input.value);},0);
-      if(total<=0){event.preventDefault();alert('대립·중립·소립 중 하나 이상 수량을 입력해주세요.');}
+      var rows=[
+        {label:'대립',bags:'largeBags',price:'largeUnitPricePerKg'},
+        {label:'중립',bags:'mediumBags',price:'mediumUnitPricePerKg'},
+        {label:'소립',bags:'smallBags',price:'smallUnitPricePerKg'}
+      ];
+      var total=rows.reduce(function(sum,row){var input=document.getElementById(row.bags);return sum+number(input&&input.value);},0);
+
+      if(total<=0){
+        event.preventDefault();
+        alert('대립·중립·소립 중 하나 이상 수량을 입력해주세요.');
+        return;
+      }
+
+      for(var i=0;i<rows.length;i++){
+        var row=rows[i];
+        var bagsInput=document.getElementById(row.bags);
+        var priceInput=document.getElementById(row.price);
+        if(number(bagsInput&&bagsInput.value)>0&&number(priceInput&&priceInput.value)<=0){
+          event.preventDefault();
+          alert(row.label+' kg당 단가를 입력해주세요.');
+          if(priceInput)priceInput.focus();
+          return;
+        }
+      }
     });
   }
 
