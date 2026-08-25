@@ -223,4 +223,11 @@
 
     window.setTimeout(apply, 300);
     window.setTimeout(apply, 800);
+
+    if ((window.location.pathname || '/') === '/') {
+        var associationScript = document.createElement('script');
+        associationScript.src = '/js/association-credit-dashboard.js?v=20260825_1';
+        associationScript.defer = true;
+        document.head.appendChild(associationScript);
+    }
 })();
