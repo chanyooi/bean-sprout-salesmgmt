@@ -78,6 +78,18 @@ public class BeanInventoryService {
             BigDecimal bagCount,
             String note
     ) {
+        addUsage(usageDate, beanType, origin, bagCount, null, note);
+    }
+
+    @Transactional
+    public void addUsage(
+            LocalDate usageDate,
+            BeanType beanType,
+            BeanOrigin origin,
+            BigDecimal bagCount,
+            BigDecimal unitPricePerKg,
+            String note
+    ) {
         validateCombination(beanType, origin);
 
         beanUsageRepository.save(new BeanUsageEntity(
@@ -85,8 +97,31 @@ public class BeanInventoryService {
                 beanType,
                 origin,
                 bagCount,
+                unitPricePerKg,
                 note
         ));
+    }
+
+    /**
+     * 콩 사용 화면에서 마지막으로 입력한 kg당 단가를 종류+원산지별 기본값으로 사용한다.
+     * 중국산과 캐나다산은 서로 다른 키로 보관되므로 독립적으로 변경된다.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, BigDecimal> getLatestUsagePricesPerKg() {
+        Map<String, BigDecimal> result = new LinkedHashMap<>();
+
+        for (BeanUsageEntity usage : beanUsageRepository.findAllByOrderByUsageDateDescIdDesc()) {
+            if (usage.getUnitPricePerKg() == null) {
+                continue;
+            }
+
+            result.putIfAbsent(
+                    priceKey(usage.getBeanType(), usage.getOrigin()),
+                    normalizedMoney(usage.getUnitPricePerKg())
+            );
+        }
+
+        return result;
     }
 
     @Transactional
@@ -249,19 +284,9 @@ public class BeanInventoryService {
     }
 
     /**
-     * 선택한 월의 종류+원산지별 가중평균 매입단가 방식.
-     *
-     * 예) 8월 소립/캐나다산
-     * 10포 x 100,000원 + 20포 x 115,000원
-     * ------------------------------------------
-     *                30포
-     *
-     * = 110,000원/포
-     *
-     * 사용일이 매입일보다 앞인지 뒤인지와 관계없이
-     * 8월 사용량 전체에 8월 가중평균 단가를 적용한다.
-     * 따라서 8월 매입을 나중에 추가해도 8월 화면을 다시 조회하면
-     * 원가가 자동 재계산된다.
+     * 새 콩 사용 기록은 사용 당시 입력한 kg당 단가를 그대로 사용한다.
+     * 기존 기록처럼 kg당 단가가 없는 데이터는 예전 방식인 해당 월 매입 가중평균
+     * 포대 단가를 fallback으로 사용해 과거 화면이 깨지지 않도록 한다.
      */
     @Transactional(readOnly = true)
     public BeanUsageCostResult calculateUsageCost(YearMonth month) {
@@ -301,7 +326,7 @@ public class BeanInventoryService {
             );
         }
 
-        Map<StockKey, BigDecimal> monthlyAveragePriceMap = new HashMap<>();
+        Map<StockKey, BigDecimal> monthlyAveragePricePerBagMap = new HashMap<>();
 
         for (Map.Entry<StockKey, MonthlyPurchaseAccumulator> entry
                 : monthlyPurchaseMap.entrySet()) {
@@ -309,7 +334,7 @@ public class BeanInventoryService {
             MonthlyPurchaseAccumulator accumulator = entry.getValue();
 
             if (accumulator.purchasedBags.signum() > 0) {
-                monthlyAveragePriceMap.put(
+                monthlyAveragePricePerBagMap.put(
                         entry.getKey(),
                         accumulator.purchaseAmount.divide(
                                 accumulator.purchasedBags,
@@ -332,29 +357,32 @@ public class BeanInventoryService {
                     usage.getOrigin()
             );
 
-            BigDecimal monthlyAveragePrice = monthlyAveragePriceMap.get(key);
-
             UsageCostAccumulator accumulator = rowAccumulators.computeIfAbsent(
                     key,
                     ignored -> new UsageCostAccumulator()
             );
 
-            accumulator.usedBags = accumulator.usedBags.add(
-                    usage.getBagCount()
-            );
-
+            accumulator.usedBags = accumulator.usedBags.add(usage.getBagCount());
             totalBags = totalBags.add(usage.getBagCount());
 
-            if (monthlyAveragePrice == null) {
+            BigDecimal usageCost = usage.getUsageCost();
+
+            if (usageCost == null) {
+                BigDecimal fallbackPricePerBag = monthlyAveragePricePerBagMap.get(key);
+                if (fallbackPricePerBag != null) {
+                    usageCost = usage.getBagCount()
+                            .multiply(fallbackPricePerBag)
+                            .setScale(2, RoundingMode.HALF_UP);
+                }
+            }
+
+            if (usageCost == null) {
                 accumulator.missingCount++;
                 missingCount++;
                 continue;
             }
 
-            BigDecimal usageCost = usage.getBagCount()
-                    .multiply(monthlyAveragePrice)
-                    .setScale(2, RoundingMode.HALF_UP);
-
+            accumulator.pricedBags = accumulator.pricedBags.add(usage.getBagCount());
             accumulator.knownCost = accumulator.knownCost.add(usageCost);
             totalCost = totalCost.add(usageCost);
         }
@@ -365,8 +393,13 @@ public class BeanInventoryService {
                     StockKey key = entry.getKey();
                     UsageCostAccumulator accumulator = entry.getValue();
 
-                    BigDecimal monthlyAveragePrice = monthlyAveragePriceMap
-                            .getOrDefault(key, ZERO);
+                    BigDecimal effectiveAveragePricePerBag = accumulator.pricedBags.signum() == 0
+                            ? ZERO
+                            : accumulator.knownCost.divide(
+                                    accumulator.pricedBags,
+                                    2,
+                                    RoundingMode.HALF_UP
+                            );
 
                     return new BeanUsageCostResult.Row(
                             key.beanType(),
@@ -374,7 +407,7 @@ public class BeanInventoryService {
                             normalized(accumulator.usedBags),
                             kg(accumulator.usedBags),
                             normalizedMoney(accumulator.knownCost),
-                            normalizedMoney(monthlyAveragePrice),
+                            normalizedMoney(effectiveAveragePricePerBag),
                             accumulator.missingCount
                     );
                 })
@@ -449,6 +482,10 @@ public class BeanInventoryService {
         );
     }
 
+    private static String priceKey(BeanType beanType, BeanOrigin origin) {
+        return beanType.name() + "_" + origin.name();
+    }
+
     private static BigDecimal kg(BigDecimal bagCount) {
         return normalized(bagCount.multiply(KG_PER_BAG));
     }
@@ -488,6 +525,7 @@ public class BeanInventoryService {
 
     private static final class UsageCostAccumulator {
         private BigDecimal usedBags = ZERO;
+        private BigDecimal pricedBags = ZERO;
         private BigDecimal knownCost = ZERO;
         private long missingCount;
     }
