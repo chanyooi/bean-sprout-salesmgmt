@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>두채협회 외상 관리</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/profit.css}">
+    <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260814_2)}">
+    <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
+    <link rel="stylesheet" th:href="@{/css/association-credit.css(v=20260825_1)}">
+</head>
+<body>
+<main class="container association-credit-page">
+    <section class="hero association-credit-hero">
+        <div class="hero-row">
+            <div>
+                <p class="eyebrow">매입 외상 관리</p>
+                <h1>두채협회 외상</h1>
+                <p>콩을 외상으로 가져온 금액과 두채협회에 입금한 금액을 기록합니다.</p>
+            </div>
+            <div class="button-row">
+                <a class="secondary-link" th:href="@{/}">대시보드</a>
+                <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="alert success"
+         th:if="${associationCreditMessage}"
+         th:text="${associationCreditMessage}"></div>
+    <div class="alert error"
+         th:if="${associationCreditError}"
+         th:text="${associationCreditError}"></div>
+
+    <section class="association-balance-card"
+             th:attr="data-balance-state=${balanceState}">
+        <span>현재 두채협회 외상</span>
+        <strong th:text="${displayBalance}">0원</strong>
+        <small th:text="${balanceNote}">현재 외상 없음</small>
+    </section>
+
+    <section class="association-entry-grid">
+        <article class="panel association-entry-card credit-entry-card">
+            <div class="association-entry-head">
+                <div>
+                    <p class="eyebrow">외상 증가</p>
+                    <h2>외상 추가</h2>
+                </div>
+            </div>
+            <p class="association-helper">콩을 외상으로 가져왔을 때 금액을 추가합니다.</p>
+
+            <form th:action="@{/association-credit/transactions}"
+                  method="post"
+                  class="association-form">
+                <input type="hidden" name="type" value="CREDIT">
+                <label>
+                    날짜
+                    <input type="date" name="date" th:value="${today}" required>
+                </label>
+                <label>
+                    외상 금액
+                    <input type="number" name="amount" min="1" step="1" placeholder="예: 3000000" required>
+                </label>
+                <label>
+                    메모
+                    <input type="text" name="note" maxlength="500" placeholder="예: 중립콩 40포">
+                </label>
+                <button type="submit" class="association-submit credit-submit">외상 추가</button>
+            </form>
+        </article>
+
+        <article class="panel association-entry-card payment-entry-card">
+            <div class="association-entry-head">
+                <div>
+                    <p class="eyebrow">외상 감소</p>
+                    <h2>입금 기록</h2>
+                </div>
+            </div>
+            <p class="association-helper">두채협회에 돈을 입금했을 때 금액을 기록합니다.</p>
+
+            <form th:action="@{/association-credit/transactions}"
+                  method="post"
+                  class="association-form">
+                <input type="hidden" name="type" value="PAYMENT">
+                <label>
+                    날짜
+                    <input type="date" name="date" th:value="${today}" required>
+                </label>
+                <label>
+                    입금 금액
+                    <input type="number" name="amount" min="1" step="1" placeholder="예: 1000000" required>
+                </label>
+                <label>
+                    메모
+                    <input type="text" name="note" maxlength="500" placeholder="예: 계좌이체">
+                </label>
+                <button type="submit" class="association-submit payment-submit">입금 반영</button>
+            </form>
+        </article>
+    </section>
+
+    <section class="panel association-history-card">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">거래 기록</p>
+                <h2>외상·입금 내역</h2>
+                <p>외상은 잔액을 늘리고, 입금은 잔액을 줄입니다.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="association-history-table">
+                <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>구분</th>
+                    <th>금액</th>
+                    <th>메모</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(transactions)}">
+                    <td colspan="5" class="association-empty">아직 외상·입금 기록이 없습니다.</td>
+                </tr>
+                <tr th:each="transaction : ${transactions}">
+                    <td th:text="${transaction.transactionDate}">2026-08-25</td>
+                    <td>
+                        <span class="association-type-badge"
+                              th:classappend="${transaction.signedAmount.signum() > 0} ? ' credit-badge' : ' payment-badge'"
+                              th:text="${transaction.typeLabel}">외상</span>
+                    </td>
+                    <td class="number association-history-amount"
+                        th:classappend="${transaction.signedAmount.signum() > 0} ? ' credit-amount' : ' payment-amount'"
+                        th:text="${#numbers.formatDecimal(transaction.signedAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                        0원
+                    </td>
+                    <td th:text="${transaction.note != null ? transaction.note : '-'}">-</td>
+                    <td class="association-delete-cell">
+                        <form th:action="@{/association-credit/transactions/{id}/delete(id=${transaction.id})}"
+                              method="post"
+                              onsubmit="return confirm('이 기록을 삭제할까요?');">
+                            <button type="submit" class="association-delete-button">삭제</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260825_1)}"></script>
+<form id="songcheonPcLogoutForm"
+      th:action="@{/logout}"
+      method="post"
+      style="display:none"
+      aria-hidden="true"></form>
+<script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
+</body>
+</html>
