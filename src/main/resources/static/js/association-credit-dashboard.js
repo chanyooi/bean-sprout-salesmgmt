@@ -26,7 +26,16 @@
                 const amount = card.querySelector('strong');
                 const note = card.querySelector('small');
                 label.textContent = '두채협회 외상';
-                if (amount) amount.textContent = data.displayAmount;
+
+                if (amount) {
+                    amount.textContent = data.displayAmount;
+                    amount.style.color = data.state === 'debt'
+                        ? '#dc2626'
+                        : data.state === 'prepaid'
+                            ? '#2563eb'
+                            : '#0f172a';
+                }
+
                 if (note) note.textContent = data.note;
             });
         } catch (error) {
