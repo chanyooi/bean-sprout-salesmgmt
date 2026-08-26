@@ -49,6 +49,7 @@
         <h2>엑셀 거래명세서 만들기</h2>
 
         <form class="statement-form"
+              id="statementDownloadForm"
               th:action="@{/statements/download}"
               method="post"
               enctype="multipart/form-data">
@@ -89,6 +90,8 @@
                 <button type="submit" name="deliveryMethod" value="MAIL" style="background:#4e5968">우편 거래처</button>
                 <button type="submit" name="deliveryMethod" value="SMS" style="background:#3182f6">문자 거래처</button>
             </div>
+            <small id="statementDownloadStatus"
+                   style="display:block;margin-top:10px;color:#3182f6;font-weight:700"></small>
             <small style="display:block;margin-top:10px;color:#8b95a1">팩스·우편·문자 버튼은 거래처 관리에서 지정한 명세서 전달 방식에 맞는 거래처 시트만 따로 저장합니다.</small>
         </form>
     </section>
@@ -123,6 +126,91 @@
         </p>
     </section>
 </main>
+<script>
+(function () {
+    const form = document.getElementById('statementDownloadForm');
+    const status = document.getElementById('statementDownloadStatus');
+    if (!form || !window.fetch) {
+        return;
+    }
+
+    let running = false;
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    function setButtonsDisabled(disabled) {
+        form.querySelectorAll('button[type="submit"]').forEach(button => {
+            button.disabled = disabled;
+        });
+    }
+
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (running) {
+            return;
+        }
+
+        running = true;
+        setButtonsDisabled(true);
+        const submitter = event.submitter;
+        const formData = new FormData(form);
+        if (submitter && submitter.name) {
+            formData.set(submitter.name, submitter.value);
+        }
+
+        const startedAt = Date.now();
+        status.textContent = '명세서를 생성하고 있습니다. 이 화면에서 기다려주세요.';
+
+        try {
+            const startResponse = await fetch('/statements/download/start', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+            const startBody = await startResponse.json();
+            if (!startResponse.ok || !startBody.jobId) {
+                throw new Error(startBody.error || '명세서 생성을 시작하지 못했습니다.');
+            }
+
+            const jobId = startBody.jobId;
+            while (true) {
+                await wait(1000);
+                const elapsedSeconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+                status.textContent = '명세서 생성 중... ' + elapsedSeconds + '초';
+
+                const pollResponse = await fetch(
+                    '/statements/download/status?jobId=' + encodeURIComponent(jobId),
+                    {credentials: 'same-origin', cache: 'no-store'}
+                );
+                const pollBody = await pollResponse.json();
+
+                if (pollBody.state === 'READY') {
+                    status.textContent = '완료되었습니다. 다운로드를 시작합니다.';
+                    window.location.href = '/statements/download/result?jobId=' + encodeURIComponent(jobId);
+                    await wait(1500);
+                    break;
+                }
+                if (pollBody.state === 'FAILED') {
+                    throw new Error(pollBody.error || '명세서 생성 중 오류가 발생했습니다.');
+                }
+                if (pollBody.state === 'NOT_FOUND' || !pollResponse.ok) {
+                    throw new Error(pollBody.error || '명세서 생성 작업을 찾을 수 없습니다.');
+                }
+            }
+        } catch (error) {
+            status.style.color = '#e5484d';
+            status.textContent = error && error.message
+                ? error.message
+                : '명세서 생성 중 오류가 발생했습니다.';
+        } finally {
+            running = false;
+            setButtonsDisabled(false);
+            if (!status.style.color) {
+                status.style.color = '#3182f6';
+            }
+        }
+    });
+})();
+</script>
 <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
 <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
 <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
