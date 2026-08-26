@@ -1,0 +1,159 @@
+package com.example.salesmgmt.service;
+
+import com.example.salesmgmt.domain.StatementDeliveryMethod;
+import com.example.salesmgmt.domain.StatementWorkbookResult;
+import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.YearMonth;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+@Service
+public class StatementGenerationJobService {
+
+    private static final Logger log = LoggerFactory.getLogger(StatementGenerationJobService.class);
+    private static final Duration RETENTION = Duration.ofMinutes(30);
+
+    private final StatementWorkbookOnePassService onePassService;
+    private final FilteredStatementWorkbookService filteredService;
+    private final ExecutorService executor = Executors.newFixedThreadPool(2);
+    private final Map<String, Job> jobs = new ConcurrentHashMap<>();
+
+    public StatementGenerationJobService(
+            StatementWorkbookOnePassService onePassService,
+            FilteredStatementWorkbookService filteredService
+    ) {
+        this.onePassService = onePassService;
+        this.filteredService = filteredService;
+    }
+
+    public String start(
+            MultipartFile templateFile,
+            YearMonth month,
+            boolean includeEmpty,
+            StatementDeliveryMethod deliveryMethod
+    ) {
+        cleanupExpired();
+
+        String id = UUID.randomUUID().toString();
+        Job job = new Job();
+        jobs.put(id, job);
+
+        executor.submit(() -> {
+            long started = System.nanoTime();
+            try {
+                StatementWorkbookResult result = deliveryMethod == null
+                        ? onePassService.generate(templateFile, month, includeEmpty)
+                        : filteredService.generate(
+                                templateFile,
+                                month,
+                                includeEmpty,
+                                deliveryMethod
+                        );
+                job.complete(result);
+                long elapsedMs = (System.nanoTime() - started) / 1_000_000L;
+                log.info(
+                        "Statement generation completed. jobId={}, month={}, deliveryMethod={}, elapsedMs={}, bytes={}",
+                        id,
+                        month,
+                        deliveryMethod,
+                        elapsedMs,
+                        result.fileBytes().length
+                );
+            } catch (Exception exception) {
+                job.fail(safeMessage(exception));
+                log.error(
+                        "Statement generation failed. jobId={}, month={}, deliveryMethod={}",
+                        id,
+                        month,
+                        deliveryMethod,
+                        exception
+                );
+            }
+        });
+
+        return id;
+    }
+
+    public JobSnapshot status(String id) {
+        cleanupExpired();
+        Job job = jobs.get(id);
+        if (job == null) {
+            return new JobSnapshot(JobState.NOT_FOUND, null, "작업을 찾을 수 없습니다.");
+        }
+        return new JobSnapshot(
+                job.state,
+                job.result == null ? null : job.result.filename(),
+                job.error
+        );
+    }
+
+    public StatementWorkbookResult result(String id) {
+        Job job = jobs.get(id);
+        if (job == null || job.state != JobState.READY || job.result == null) {
+            return null;
+        }
+        StatementWorkbookResult result = job.result;
+        jobs.remove(id);
+        return result;
+    }
+
+    private void cleanupExpired() {
+        Instant cutoff = Instant.now().minus(RETENTION);
+        jobs.entrySet().removeIf(entry -> entry.getValue().updatedAt.isBefore(cutoff));
+    }
+
+    private String safeMessage(Exception exception) {
+        String message = exception.getMessage();
+        return message == null || message.isBlank()
+                ? "명세서를 생성하지 못했습니다."
+                : message;
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        executor.shutdownNow();
+    }
+
+    public enum JobState {
+        RUNNING,
+        READY,
+        FAILED,
+        NOT_FOUND
+    }
+
+    public record JobSnapshot(
+            JobState state,
+            String filename,
+            String error
+    ) {
+    }
+
+    private static final class Job {
+        private volatile JobState state = JobState.RUNNING;
+        private volatile StatementWorkbookResult result;
+        private volatile String error;
+        private volatile Instant updatedAt = Instant.now();
+
+        private void complete(StatementWorkbookResult result) {
+            this.result = result;
+            this.state = JobState.READY;
+            this.updatedAt = Instant.now();
+        }
+
+        private void fail(String error) {
+            this.error = error;
+            this.state = JobState.FAILED;
+            this.updatedAt = Instant.now();
+        }
+    }
+}
