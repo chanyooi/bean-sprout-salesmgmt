@@ -195,10 +195,6 @@
             table.querySelectorAll('tbody tr');
 
         bodyRows.forEach(function (row) {
-            /*
-             * 합계행은 colspan 때문에 cell count가 다를 수 있으므로
-             * 같은 열 개수인 일반 데이터행만 재정렬.
-             */
             reorderRow(row);
         });
 
@@ -216,13 +212,36 @@
         });
     }
 
+    function injectWeeklyPaymentLink() {
+        if ((window.location.pathname || '/') !== '/payments') {
+            return;
+        }
+        if (document.querySelector('[data-weekly-payment-link]')) {
+            return;
+        }
+        var buttonRow = document.querySelector('.hero .button-row');
+        if (!buttonRow) {
+            return;
+        }
+        var link = document.createElement('a');
+        link.href = '/payments/weekly';
+        link.className = 'secondary-link';
+        link.dataset.weeklyPaymentLink = 'true';
+        link.textContent = '주별 입금확인';
+        buttonRow.insertBefore(link, buttonRow.firstChild);
+    }
+
     document.addEventListener(
         'DOMContentLoaded',
-        apply
+        function () {
+            apply();
+            injectWeeklyPaymentLink();
+        }
     );
 
     window.setTimeout(apply, 300);
     window.setTimeout(apply, 800);
+    window.setTimeout(injectWeeklyPaymentLink, 300);
 
     if ((window.location.pathname || '/') === '/') {
         var associationScript = document.createElement('script');
