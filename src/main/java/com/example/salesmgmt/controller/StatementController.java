@@ -6,7 +6,7 @@ import com.example.salesmgmt.service.FilteredStatementWorkbookService;
 import com.example.salesmgmt.service.SalesManagementService;
 import com.example.salesmgmt.service.SingleVendorStatementWorkbookService;
 import com.example.salesmgmt.service.StatementTemplateStorageService;
-import com.example.salesmgmt.service.StatementWorkbookV2Service;
+import com.example.salesmgmt.service.StatementWorkbookOnePassService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,14 +32,14 @@ public class StatementController {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             );
 
-    private final StatementWorkbookV2Service statementWorkbookService;
+    private final StatementWorkbookOnePassService statementWorkbookService;
     private final FilteredStatementWorkbookService filteredStatementWorkbookService;
     private final SingleVendorStatementWorkbookService singleVendorStatementWorkbookService;
     private final SalesManagementService salesManagementService;
     private final StatementTemplateStorageService statementTemplateStorageService;
 
     public StatementController(
-            StatementWorkbookV2Service statementWorkbookService,
+            StatementWorkbookOnePassService statementWorkbookService,
             FilteredStatementWorkbookService filteredStatementWorkbookService,
             SingleVendorStatementWorkbookService singleVendorStatementWorkbookService,
             SalesManagementService salesManagementService,
