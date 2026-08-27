@@ -8,6 +8,7 @@
     <title>원가·이익</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="stylesheet" th:href="@{/css/profit.css}">
+    <link rel="stylesheet" th:href="@{/css/profit-expense-manager.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
@@ -33,7 +34,8 @@
                 <p class="eyebrow">손익 관리</p>
                 <h1>원가·이익</h1>
                 <p>
-                    확정 월매출에서 실제 콩 사용 원가와 비닐·박스·인건비·식비·월세를 차감해 예상이익을 계산합니다.
+                    확정 월매출에서 실제 콩 사용 원가와 월 운영비를 차감해 예상이익을 계산합니다.
+                    운영비 항목은 필요할 때 자유롭게 추가할 수 있습니다.
                 </p>
             </div>
             <div class="button-row">
@@ -51,7 +53,9 @@
             <a class="primary-link" th:href="@{/profit(month=${selectedMonth})}">수익 분석</a>
             <a class="secondary-link" th:href="@{/inventory}">콩 재고 관리</a>
         </div>
-    </section>    <div class="alert success" th:if="${profitMessage}" th:text="${profitMessage}"></div>
+    </section>
+
+    <div class="alert success" th:if="${profitMessage}" th:text="${profitMessage}"></div>
     <div class="alert error" th:if="${profitError}" th:text="${profitError}"></div>
 
     <section class="panel month-toolbar">
@@ -74,7 +78,7 @@
             <strong th:text="|${#numbers.formatDecimal(report.beanUsageCost, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
         </article>
         <article class="summary-card">
-            <span>기타 원가·고정비</span>
+            <span>운영비·기타원가</span>
             <strong th:text="|${#numbers.formatDecimal(report.otherExpenseTotal, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
         </article>
         <article class="summary-card profit-card" th:classappend="${report.estimatedProfit.signum() < 0} ? ' loss-card'">
@@ -95,38 +99,111 @@
         이 사용량은 콩 원가에서 제외되므로 매입 기록을 먼저 등록해주세요.
     </div>
 
-    <section class="panel">
-        <div class="panel-heading">
+    <section class="panel expense-manager-panel">
+        <div class="expense-manager-head">
             <div>
-                <h2>월 비용 입력</h2>
-                <p>비닐·박스·직원 2명 월급·식비·공장 월세를 해당 월의 실제 금액으로 입력합니다.</p>
+                <h2>월 운영비</h2>
+                <p>항목이 늘어나도 분류별로 접어서 관리합니다. 월급·월세처럼 반복되는 비용은 지난달 값을 그대로 불러올 수 있습니다.</p>
+            </div>
+            <div class="expense-manager-actions">
+                <form th:action="@{/profit/expense-items/copy-previous}" method="post">
+                    <input type="hidden" name="month" th:value="${selectedMonth}">
+                    <button type="submit"
+                            class="expense-copy-button"
+                            onclick="return confirm('현재 월 운영비 항목을 지난달 값으로 바꿀까요?');">
+                        지난달 비용 불러오기
+                    </button>
+                </form>
             </div>
         </div>
-        <form th:action="@{/profit/expenses}" method="post" class="expense-form">
+
+        <div class="expense-overview">
+            <div class="expense-overview-card primary">
+                <span>이번 달 운영비</span>
+                <strong th:text="|${#numbers.formatDecimal(operatingExpenseTotal, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
+                <small>아래 직접 등록한 운영비 합계</small>
+            </div>
+            <div class="expense-overview-card">
+                <span>등록 항목</span>
+                <strong th:text="|${#lists.size(expenseItems)}개|">0개</strong>
+                <small>필요한 항목을 자유롭게 추가</small>
+            </div>
+            <div class="expense-overview-card">
+                <span>자동 반영 원가</span>
+                <strong th:text="|${#numbers.formatDecimal(tofuPurchaseCost, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
+                <small>손두부 매입원가 · 직접 입력 불필요</small>
+            </div>
+        </div>
+
+        <form th:action="@{/profit/expense-items/bulk}" method="post">
             <input type="hidden" name="month" th:value="${selectedMonth}">
-            <label>비닐
-                <input type="number" name="vinyl" min="0" step="1" th:value="${vinylAmount.stripTrailingZeros().toPlainString()}" required>
-            </label>
-            <label>박스
-                <input type="number" name="box" min="0" step="1" th:value="${boxAmount.stripTrailingZeros().toPlainString()}" required>
-            </label>
-            <label>직원 1 월급
-                <input type="number" name="employee1Wage" min="0" step="1" th:value="${employee1WageAmount.stripTrailingZeros().toPlainString()}" required>
-            </label>
-            <label>직원 2 월급
-                <input type="number" name="employee2Wage" min="0" step="1" th:value="${employee2WageAmount.stripTrailingZeros().toPlainString()}" required>
-            </label>
-            <label>식비
-                <input type="number" name="meal" min="0" step="1" th:value="${mealAmount.stripTrailingZeros().toPlainString()}" required>
-            </label>
-            <label>공장 월세
-                <input type="number" name="rent" min="0" step="1" th:value="${rentAmount.stripTrailingZeros().toPlainString()}" required>
-            </label>
-            <label>기타 비용
-                <input type="number" name="other" min="0" step="1" th:value="${otherAmount.stripTrailingZeros().toPlainString()}" required>
-            </label>
-            <button type="submit">월 비용 저장·재계산</button>
+
+            <div class="expense-groups">
+                <details class="expense-group"
+                         th:each="group : ${expenseGroups}"
+                         th:if="${!#lists.isEmpty(group.items)}"
+                         th:open="${group.category.name() == 'PERSONNEL' or group.category.name() == 'FACILITY'}">
+                    <summary class="expense-group-summary">
+                        <span class="expense-group-title">
+                            <span class="expense-group-dot"></span>
+                            <span th:text="${group.label}">인건비</span>
+                        </span>
+                        <strong th:text="|${#numbers.formatDecimal(group.total, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
+                        <span class="expense-chevron">⌄</span>
+                    </summary>
+
+                    <div class="expense-group-body">
+                        <div class="expense-item-row" th:each="item : ${group.items}">
+                            <input type="hidden" name="itemId" th:value="${item.id}">
+                            <input type="hidden" name="category" th:value="${item.category.name()}">
+                            <input type="text"
+                                   name="itemName"
+                                   maxlength="100"
+                                   th:value="${item.itemName}"
+                                   aria-label="비용 항목명"
+                                   required>
+                            <input type="number"
+                                   name="amount"
+                                   min="0"
+                                   step="1"
+                                   th:value="${item.amount.stripTrailingZeros().toPlainString()}"
+                                   aria-label="비용 금액"
+                                   required>
+                            <button type="submit"
+                                    class="expense-delete-button"
+                                    th:formaction="@{/profit/expense-items/{id}/delete(id=${item.id})}"
+                                    onclick="return confirm('이 비용 항목을 삭제할까요?');">
+                                삭제
+                            </button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <div class="expense-save-row">
+                <p>금액이나 항목명을 수정한 뒤 한 번에 저장할 수 있습니다.</p>
+                <button type="submit" class="expense-save-button">저장하고 이익 다시 계산</button>
+            </div>
         </form>
+
+        <details class="expense-add-panel">
+            <summary>+ 비용 항목 추가</summary>
+            <form th:action="@{/profit/expense-items}" method="post" class="expense-add-form">
+                <input type="hidden" name="month" th:value="${selectedMonth}">
+                <select name="category" aria-label="비용 분류" required>
+                    <option th:each="category : ${expenseCategories}"
+                            th:value="${category.name()}"
+                            th:text="${category.label}">분류</option>
+                </select>
+                <input type="text" name="itemName" maxlength="100" placeholder="예: 전기세, 수도세, 차량 유류비" required>
+                <input type="number" name="amount" min="0" step="1" placeholder="금액" required>
+                <button type="submit" class="expense-add-button">추가</button>
+            </form>
+        </details>
+
+        <div class="expense-auto-note">
+            <strong>참고:</strong> 콩 사용 원가와 손두부 매입원가는 판매·매입 기록에서 자동 계산되므로 월 운영비에 다시 넣지 않아도 됩니다.
+        </div>
     </section>
 
     <section class="report-columns">
@@ -160,14 +237,20 @@
             <h2>비용 구성</h2>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>항목</th><th>금액</th></tr></thead>
+                    <thead><tr><th>분류</th><th>항목</th><th>금액</th></tr></thead>
                     <tbody>
-                    <tr th:each="row : ${report.expenseRows}">
-                        <td th:text="${row.label}"></td>
-                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.amount, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <tr th:each="item : ${expenseItems}">
+                        <td><span class="expense-composition-category" th:text="${item.categoryLabel}">분류</span></td>
+                        <td th:text="${item.itemName}">항목</td>
+                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(item.amount, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
+                    </tr>
+                    <tr>
+                        <td><span class="expense-composition-category">자동 원가</span></td>
+                        <td>손두부 매입원가</td>
+                        <td class="number strong-number" th:text="|${#numbers.formatDecimal(tofuPurchaseCost, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
                     </tr>
                     <tr class="total-row">
-                        <td>콩 원가 + 기타 비용 합계</td>
+                        <td colspan="2">콩 원가 + 운영비 + 기타 자동원가 합계</td>
                         <td class="number strong-number" th:text="|${#numbers.formatDecimal(report.totalCost, 0, 'COMMA', 0, 'POINT')}원|"></td>
                     </tr>
                     </tbody>
@@ -218,7 +301,7 @@
     <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
     <script defer th:src="@{/js/statement-polish.js(v=20260814_1)}"></script>
     <script defer th:src="@{/js/statement-form-align-fix.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"> </script>
+    <script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"></script>
     <script defer th:src="@{/js/special-item-accounting.js(v=20260814_1)}"></script>
     <script defer th:src="@{/js/special-item-accounting-v2.js(v=20260814_2)}"></script>
     <script defer th:src="@{/js/tofu-table-simple.js(v=20260814_1)}"></script>
