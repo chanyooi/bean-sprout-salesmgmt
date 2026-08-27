@@ -7,7 +7,8 @@ public enum ExpenseType {
     EMPLOYEE_2_WAGE("직원 2 월급"),
     MEAL("식비"),
     RENT("공장 월세"),
-    OTHER("기타 비용");
+    OTHER("기타 비용"),
+    TOFU_PURCHASE("손두부 매입원가");
 
     private final String label;
 
