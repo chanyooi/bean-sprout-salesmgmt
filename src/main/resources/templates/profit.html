@@ -264,9 +264,9 @@
             <div>
                 <h2>거래처별 매출·수익성</h2>
                 <p>
-                    먼저 실제 판매 품목으로 콩·박스·비닐·손두부 직접원가와 직접이익을 계산합니다.
-                    그다음 인건비·월세·전기·수도는 판매중량 비중, 차량·배송비는 거래처별 배송일수 비중,
-                    기타 포장 소모품은 포장 개수 비중으로 배부해 최종 예상이익을 계산합니다.
+                    실제 판매 품목으로 콩·박스·비닐·손두부 직접원가와 직접이익을 계산합니다.
+                    인건비·월세·전기·수도와 기타 포장 소모품은 판매중량·포장량에 맞춰 공장 공통비로 나누고,
+                    차량·배송비는 실제 배송일수를 기준으로 나눠 최종 예상이익을 계산합니다.
                 </p>
             </div>
         </div>
@@ -281,7 +281,7 @@
         <div class="vendor-company-common-note" th:if="${report.unallocatedCompanyExpense.signum() != 0}">
             <p>
                 식비·기타처럼 특정 거래처가 발생시켰다고 보기 어려운 비용은 거래처별 수익성에 억지로 나누지 않습니다.
-                이 금액은 아래 거래처 예상이익에는 배부하지 않지만, 위쪽 회사 전체 예상이익 계산에는 그대로 포함됩니다.
+                이 금액은 아래 거래처별 예상이익 계산에서는 제외하지만, 위쪽 회사 전체 예상이익에는 그대로 포함됩니다.
             </p>
             <strong th:text="|회사 공통비 ${#numbers.formatDecimal(report.unallocatedCompanyExpense, 0, 'COMMA', 0, 'POINT')}원|"></strong>
         </div>
@@ -295,17 +295,15 @@
                     <th>판매중량</th>
                     <th>직접원가</th>
                     <th>직접이익</th>
-                    <th>생산공통비</th>
+                    <th>공장 공통비</th>
                     <th>배송비</th>
-                    <th>배송횟수</th>
-                    <th>총 배부비</th>
-                    <th>총원가</th>
-                    <th>최종 예상이익</th>
+                    <th>총비용</th>
+                    <th>예상이익</th>
                     <th>이익률</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(report.vendorRows)}"><td colspan="13">해당 월 판매자료가 없습니다.</td></tr>
+                <tr th:if="${#lists.isEmpty(report.vendorRows)}"><td colspan="11">해당 월 판매자료가 없습니다.</td></tr>
                 <tr th:each="row, status : ${report.vendorRows}"
                     th:classappend="${row.estimatedProfit.signum() < 0} ? ' vendor-loss-row'">
                     <td class="rank" th:text="${status.count}"></td>
@@ -316,10 +314,8 @@
                     <td class="number strong-number vendor-direct-profit-value"
                         th:classappend="${row.directProfit.signum() < 0} ? ' vendor-direct-loss'"
                         th:text="|${#numbers.formatDecimal(row.directProfit, 0, 'COMMA', 0, 'POINT')}원|"></td>
-                    <td class="number" th:text="|${#numbers.formatDecimal(row.productionOverhead, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.productionOverhead.add(row.packagingOverhead), 0, 'COMMA', 0, 'POINT')}원|"></td>
                     <td class="number" th:text="|${#numbers.formatDecimal(row.deliveryOverhead, 0, 'COMMA', 0, 'POINT')}원|"></td>
-                    <td class="number" th:text="|${row.deliveryCount}회|"></td>
-                    <td class="number" th:text="|${#numbers.formatDecimal(row.allocatedOverhead, 0, 'COMMA', 0, 'POINT')}원|"></td>
                     <td class="number" th:text="|${#numbers.formatDecimal(row.totalCost, 0, 'COMMA', 0, 'POINT')}원|"></td>
                     <td class="number strong-number vendor-profit-value" th:text="|${#numbers.formatDecimal(row.estimatedProfit, 0, 'COMMA', 0, 'POINT')}원|"></td>
                     <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.estimatedProfitMarginPercent, 0, 'COMMA', 2, 'POINT')}%|"></td>
