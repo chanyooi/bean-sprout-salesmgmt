@@ -16,6 +16,7 @@ public record MonthlyProfitReport(
         long missingBeanCostUsageCount,
         List<ExpenseRow> expenseRows,
         List<BeanUsageCostResult.Row> beanCostRows,
+        BigDecimal unallocatedCompanyExpense,
         List<VendorProfitRow> vendorRows
 ) {
     public record ExpenseRow(
@@ -32,10 +33,15 @@ public record MonthlyProfitReport(
             BigDecimal sales,
             BigDecimal soldKg,
             BigDecimal directCost,
+            BigDecimal directProfit,
+            BigDecimal productionOverhead,
+            BigDecimal deliveryOverhead,
+            BigDecimal packagingOverhead,
             BigDecimal allocatedOverhead,
             BigDecimal totalCost,
             BigDecimal estimatedProfit,
-            BigDecimal estimatedProfitMarginPercent
+            BigDecimal estimatedProfitMarginPercent,
+            int deliveryCount
     ) {
     }
 }
