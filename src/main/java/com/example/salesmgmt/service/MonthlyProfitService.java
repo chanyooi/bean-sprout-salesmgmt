@@ -12,7 +12,6 @@ import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class MonthlyProfitService {
@@ -21,18 +20,18 @@ public class MonthlyProfitService {
 
     private final MonthlySalesReportService monthlySalesReportService;
     private final BeanInventoryService beanInventoryService;
-    private final MonthlyExpenseService monthlyExpenseService;
+    private final MonthlyExpenseItemService monthlyExpenseItemService;
     private final SpecialItemAccountingService specialItemAccountingService;
 
     public MonthlyProfitService(
             MonthlySalesReportService monthlySalesReportService,
             BeanInventoryService beanInventoryService,
-            MonthlyExpenseService monthlyExpenseService,
+            MonthlyExpenseItemService monthlyExpenseItemService,
             SpecialItemAccountingService specialItemAccountingService
     ) {
         this.monthlySalesReportService = monthlySalesReportService;
         this.beanInventoryService = beanInventoryService;
-        this.monthlyExpenseService = monthlyExpenseService;
+        this.monthlyExpenseItemService = monthlyExpenseItemService;
         this.specialItemAccountingService = specialItemAccountingService;
     }
 
@@ -47,29 +46,25 @@ public class MonthlyProfitService {
             MonthlySalesReport salesReport
     ) {
         BeanUsageCostResult beanCost = beanInventoryService.calculateUsageCost(month);
-        Map<ExpenseType, BigDecimal> expenses = monthlyExpenseService.getExpenses(month);
         SpecialItemAccountingService.SpecialItemAccountingReport specialItems =
                 specialItemAccountingService.report(month);
 
         BigDecimal tofuPurchaseCost = safe(specialItems.tofuPurchaseCost());
+        BigDecimal operatingExpenseTotal = safe(monthlyExpenseItemService.getOperatingExpenseTotal(month));
+        BigDecimal otherExpenseTotal = operatingExpenseTotal.add(tofuPurchaseCost);
 
+        /*
+         * ExpenseRow는 이전 화면/API 호환용으로 유지한다.
+         * 실제 상세 비용 표는 자유 항목 데이터를 직접 표시하며,
+         * 손익 계산에는 위 operatingExpenseTotal을 사용한다.
+         */
         List<MonthlyProfitReport.ExpenseRow> expenseRows = new ArrayList<>();
-        BigDecimal otherExpenseTotal = BigDecimal.ZERO;
-        for (ExpenseType type : ExpenseType.values()) {
-            BigDecimal amount = type == ExpenseType.TOFU_PURCHASE
-                    ? tofuPurchaseCost
-                    : safe(expenses.get(type));
-
-            otherExpenseTotal = otherExpenseTotal.add(amount);
-            expenseRows.add(new MonthlyProfitReport.ExpenseRow(type, money(amount)));
-        }
+        expenseRows.add(new MonthlyProfitReport.ExpenseRow(ExpenseType.OTHER, money(operatingExpenseTotal)));
+        expenseRows.add(new MonthlyProfitReport.ExpenseRow(ExpenseType.TOFU_PURCHASE, money(tofuPurchaseCost)));
 
         /*
          * 손두부/두부판/회수통까지 반영된 실제 표시 매출을 기준으로
          * 이익과 이익률을 한 번만 계산한다.
-         *
-         * 이전에는 서버 계산 후 자바스크립트가 예상이익만 추가 보정해
-         * 월매출·원가·예상이익·이익률의 기준이 서로 달라질 수 있었다.
          */
         BigDecimal sales = safe(specialItems.adjustedSales());
         BigDecimal beanUsageCost = safe(beanCost.knownUsageCost());
