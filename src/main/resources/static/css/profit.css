@@ -38,6 +38,49 @@
     max-height: 680px;
 }
 
+.vendor-cost-basis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0 16px;
+}
+
+.vendor-cost-basis span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 1px solid #dbe6df;
+    border-radius: 999px;
+    background: #f7fbf8;
+    color: #466052;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.vendor-profit-panel table {
+    min-width: 1120px;
+}
+
+.vendor-profit-panel thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f7faf8;
+}
+
+.vendor-profit-panel .vendor-profit-value {
+    color: #176b3a;
+}
+
+.vendor-profit-panel .vendor-loss-row {
+    background: #fff7f7;
+}
+
+.vendor-profit-panel .vendor-loss-row .vendor-profit-value {
+    color: #c43d3d;
+}
+
 @media (max-width: 1000px) {
     .expense-form {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -47,5 +90,14 @@
 @media (max-width: 620px) {
     .expense-form {
         grid-template-columns: 1fr;
+    }
+
+    .vendor-cost-basis {
+        gap: 6px;
+    }
+
+    .vendor-cost-basis span {
+        width: 100%;
+        border-radius: 10px;
     }
 }
