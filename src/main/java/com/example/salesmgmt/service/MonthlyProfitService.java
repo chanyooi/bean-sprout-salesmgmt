@@ -71,12 +71,15 @@ public class MonthlyProfitService {
                         .divide(sales, 2, RoundingMode.HALF_UP);
 
         /*
-         * 거래처별 표는 더 이상 전체 원가를 매출 비중으로 단순 배부하지 않는다.
-         * 실제 판매 품목/수량을 기준으로 콩 종류별 원료비, 박스, 비닐,
-         * 손두부 매입원가를 직접 붙이고 나머지 공통 운영비만 판매중량 비중으로 배부한다.
+         * 거래처별 이익은 비용 성격에 따라 서로 다른 배부 기준을 사용한다.
+         * - 콩·박스·비닐·손두부: 실제 품목/수량 직접원가
+         * - 인건비·시설비: 판매중량 비중
+         * - 차량·배송비: 거래처 배송일수 비중
+         * - 기타 포장비: 포장 개수 비중
+         * - 복리후생·기타: 특정 거래처에 억지로 배부하지 않고 회사 공통비로 별도 표시
          */
-        List<MonthlyProfitReport.VendorProfitRow> vendorRows =
-                vendorProfitAnalysisService.createRows(month, beanCost);
+        VendorProfitAnalysisService.AnalysisResult vendorAnalysis =
+                vendorProfitAnalysisService.analyze(month, beanCost);
 
         return new MonthlyProfitReport(
                 month,
@@ -90,7 +93,8 @@ public class MonthlyProfitService {
                 beanCost.missingCostUsageCount(),
                 List.copyOf(expenseRows),
                 beanCost.rows(),
-                vendorRows
+                money(vendorAnalysis.unallocatedCompanyExpense()),
+                vendorAnalysis.rows()
         );
     }
 
