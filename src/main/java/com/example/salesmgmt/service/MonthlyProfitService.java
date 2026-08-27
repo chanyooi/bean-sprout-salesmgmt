@@ -22,17 +22,20 @@ public class MonthlyProfitService {
     private final BeanInventoryService beanInventoryService;
     private final MonthlyExpenseItemService monthlyExpenseItemService;
     private final SpecialItemAccountingService specialItemAccountingService;
+    private final VendorProfitAnalysisService vendorProfitAnalysisService;
 
     public MonthlyProfitService(
             MonthlySalesReportService monthlySalesReportService,
             BeanInventoryService beanInventoryService,
             MonthlyExpenseItemService monthlyExpenseItemService,
-            SpecialItemAccountingService specialItemAccountingService
+            SpecialItemAccountingService specialItemAccountingService,
+            VendorProfitAnalysisService vendorProfitAnalysisService
     ) {
         this.monthlySalesReportService = monthlySalesReportService;
         this.beanInventoryService = beanInventoryService;
         this.monthlyExpenseItemService = monthlyExpenseItemService;
         this.specialItemAccountingService = specialItemAccountingService;
+        this.vendorProfitAnalysisService = vendorProfitAnalysisService;
     }
 
     @Transactional(readOnly = true)
@@ -53,19 +56,10 @@ public class MonthlyProfitService {
         BigDecimal operatingExpenseTotal = safe(monthlyExpenseItemService.getOperatingExpenseTotal(month));
         BigDecimal otherExpenseTotal = operatingExpenseTotal.add(tofuPurchaseCost);
 
-        /*
-         * ExpenseRow는 이전 화면/API 호환용으로 유지한다.
-         * 실제 상세 비용 표는 자유 항목 데이터를 직접 표시하며,
-         * 손익 계산에는 위 operatingExpenseTotal을 사용한다.
-         */
         List<MonthlyProfitReport.ExpenseRow> expenseRows = new ArrayList<>();
         expenseRows.add(new MonthlyProfitReport.ExpenseRow(ExpenseType.OTHER, money(operatingExpenseTotal)));
         expenseRows.add(new MonthlyProfitReport.ExpenseRow(ExpenseType.TOFU_PURCHASE, money(tofuPurchaseCost)));
 
-        /*
-         * 손두부/두부판/회수통까지 반영된 실제 표시 매출을 기준으로
-         * 이익과 이익률을 한 번만 계산한다.
-         */
         BigDecimal sales = safe(specialItems.adjustedSales());
         BigDecimal beanUsageCost = safe(beanCost.knownUsageCost());
         BigDecimal totalCost = beanUsageCost.add(otherExpenseTotal);
@@ -77,15 +71,12 @@ public class MonthlyProfitService {
                         .divide(sales, 2, RoundingMode.HALF_UP);
 
         /*
-         * 거래처별 표는 기존 판매자료의 매출 비중을 이용한 참고 배부값이다.
-         * 특수품목 보정 전 거래처 합계와의 일관성을 위해 배부 비중 계산에는
-         * 기존 판매보고서 매출을 사용하고, 배부할 총원가만 최신 원가를 반영한다.
+         * 거래처별 표는 더 이상 전체 원가를 매출 비중으로 단순 배부하지 않는다.
+         * 실제 판매 품목/수량을 기준으로 콩 종류별 원료비, 박스, 비닐,
+         * 손두부 매입원가를 직접 붙이고 나머지 공통 운영비만 판매중량 비중으로 배부한다.
          */
-        BigDecimal allocationSales = safe(salesReport.confirmedSales());
-        List<MonthlyProfitReport.VendorProfitRow> vendorRows = salesReport.vendorRows()
-                .stream()
-                .map(row -> createVendorRow(row, allocationSales, totalCost))
-                .toList();
+        List<MonthlyProfitReport.VendorProfitRow> vendorRows =
+                vendorProfitAnalysisService.createRows(month, beanCost);
 
         return new MonthlyProfitReport(
                 month,
@@ -100,29 +91,6 @@ public class MonthlyProfitService {
                 List.copyOf(expenseRows),
                 beanCost.rows(),
                 vendorRows
-        );
-    }
-
-    private MonthlyProfitReport.VendorProfitRow createVendorRow(
-            MonthlySalesReport.VendorRow vendor,
-            BigDecimal totalSales,
-            BigDecimal totalCost
-    ) {
-        BigDecimal vendorSales = safe(vendor.confirmedSales());
-        BigDecimal share = totalSales.signum() == 0
-                ? BigDecimal.ZERO
-                : vendorSales.divide(totalSales, 8, RoundingMode.HALF_UP);
-        BigDecimal allocatedCost = totalCost
-                .multiply(share)
-                .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal allocatedProfit = vendorSales.subtract(allocatedCost);
-
-        return new MonthlyProfitReport.VendorProfitRow(
-                vendor.vendorName(),
-                money(vendorSales),
-                share.multiply(HUNDRED).setScale(2, RoundingMode.HALF_UP),
-                money(allocatedCost),
-                money(allocatedProfit)
         );
     }
 
