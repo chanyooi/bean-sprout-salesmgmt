@@ -42,7 +42,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin: 14px 0 16px;
+    margin: 14px 0 12px;
 }
 
 .vendor-cost-basis span {
@@ -58,8 +58,31 @@
     font-weight: 700;
 }
 
+.vendor-company-common-note {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 0 0 16px;
+    padding: 13px 15px;
+    border: 1px solid #e6dfc9;
+    border-radius: 12px;
+    background: #fffdf6;
+    color: #665b39;
+}
+
+.vendor-company-common-note p {
+    margin: 0;
+    line-height: 1.55;
+}
+
+.vendor-company-common-note strong {
+    white-space: nowrap;
+    color: #473e24;
+}
+
 .vendor-profit-panel table {
-    min-width: 1120px;
+    min-width: 1540px;
 }
 
 .vendor-profit-panel thead th {
@@ -67,6 +90,10 @@
     top: 0;
     z-index: 2;
     background: #f7faf8;
+}
+
+.vendor-profit-panel .vendor-direct-profit-value {
+    color: #315f8c;
 }
 
 .vendor-profit-panel .vendor-profit-value {
@@ -78,6 +105,10 @@
 }
 
 .vendor-profit-panel .vendor-loss-row .vendor-profit-value {
+    color: #c43d3d;
+}
+
+.vendor-profit-panel .vendor-direct-loss {
     color: #c43d3d;
 }
 
@@ -99,5 +130,14 @@
     .vendor-cost-basis span {
         width: 100%;
         border-radius: 10px;
+    }
+
+    .vendor-company-common-note {
+        display: block;
+    }
+
+    .vendor-company-common-note strong {
+        display: block;
+        margin-top: 8px;
     }
 }
