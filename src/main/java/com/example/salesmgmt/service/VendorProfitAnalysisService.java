@@ -2,6 +2,7 @@ package com.example.salesmgmt.service;
 
 import com.example.salesmgmt.domain.BeanType;
 import com.example.salesmgmt.domain.BeanUsageCostResult;
+import com.example.salesmgmt.domain.ExpenseCategory;
 import com.example.salesmgmt.domain.MonthlyProfitReport;
 import com.example.salesmgmt.entity.SalesItemEntity;
 import com.example.salesmgmt.repository.SalesItemRepository;
@@ -17,8 +18,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class VendorProfitAnalysisService {
@@ -45,7 +48,7 @@ public class VendorProfitAnalysisService {
     }
 
     @Transactional(readOnly = true)
-    public List<MonthlyProfitReport.VendorProfitRow> createRows(
+    public AnalysisResult analyze(
             YearMonth month,
             BeanUsageCostResult beanCost
     ) {
@@ -66,6 +69,7 @@ public class VendorProfitAnalysisService {
             String statementName = normalize(item.getSalesOrder().getVendor().getStatementName());
             BigDecimal quantity = nz(item.getQuantity());
             BigDecimal lineAmount = nz(item.getLineAmount());
+            LocalDate deliveryDate = item.getSalesOrder().getDeliveryDate();
 
             VendorAccumulator vendor = vendors.computeIfAbsent(
                     vendorName,
@@ -74,22 +78,24 @@ public class VendorProfitAnalysisService {
 
             if ("손두부".equals(itemName)) {
                 if (statementName.contains("팔공")) {
-                    // 팔공 손두부 행은 매입원가이므로 거래처 매출에서 제외한다.
+                    // 팔공 손두부 행은 매입원가이므로 거래처 매출/배송 횟수에서 제외한다.
                     continue;
                 }
                 vendor.sales = vendor.sales.add(lineAmount);
                 vendor.tofuResaleQty = vendor.tofuResaleQty.add(quantity.abs());
                 totalTofuResaleQty = totalTofuResaleQty.add(quantity.abs());
+                addDeliveryDate(vendor, deliveryDate);
                 continue;
             }
 
             if ("두부판".equals(itemName)) {
-                // 기록 금액은 제외하고, 실제 판 반납수익은 아래에서 다시 배부한다.
+                // 두부판은 팔공 반납 수익으로 별도 계산하며 거래처 배송비 배부에는 넣지 않는다.
                 continue;
             }
 
             // 회수통 등 비생산 항목도 기존 회계 기준대로 매출에는 포함한다.
             vendor.sales = vendor.sales.add(lineAmount);
+            addDeliveryDate(vendor, deliveryDate);
 
             ProductSpec spec = productSpec(itemName);
             if (spec == null) {
@@ -110,7 +116,6 @@ public class VendorProfitAnalysisService {
                 totalVinylUnits = totalVinylUnits.add(quantity);
             }
 
-            LocalDate deliveryDate = item.getSalesOrder().getDeliveryDate();
             if (deliveryDate != null
                     && (latestProductionSalesDate == null || deliveryDate.isAfter(latestProductionSalesDate))) {
                 latestProductionSalesDate = deliveryDate;
@@ -152,24 +157,18 @@ public class VendorProfitAnalysisService {
 
         List<MonthlyExpenseItemService.ExpenseItemView> expenseItems =
                 monthlyExpenseItemService.getItems(month);
-        BigDecimal vinylExpense = expenseByName(expenseItems, "비닐");
-        BigDecimal boxExpenseEntered = expenseByName(expenseItems, "박스");
-        BigDecimal operatingExpenseTotal = expenseItems.stream()
-                .map(MonthlyExpenseItemService.ExpenseItemView::amount)
-                .reduce(ZERO, BigDecimal::add);
 
-        // 박스는 실제 사용수량 x 400원으로 직접 계산하고, 비닐도 실제 포장 개수로 배부한다.
-        // 따라서 입력된 박스/비닐 비용은 공통비에서 중복 차감하지 않는다.
-        BigDecimal commonOverhead = operatingExpenseTotal
-                .subtract(vinylExpense)
-                .subtract(boxExpenseEntered);
-        if (commonOverhead.signum() < 0) {
-            commonOverhead = ZERO;
-        }
-
+        CostPools pools = classifyCostPools(expenseItems);
         BigDecimal vinylCostPerUnit = totalVinylUnits.signum() == 0
                 ? ZERO
-                : vinylExpense.divide(totalVinylUnits, 8, RoundingMode.HALF_UP);
+                : pools.vinylExpense().divide(totalVinylUnits, 8, RoundingMode.HALF_UP);
+        BigDecimal packagingOverheadPerUnit = totalVinylUnits.signum() == 0
+                ? ZERO
+                : pools.packagingOverhead().divide(totalVinylUnits, 8, RoundingMode.HALF_UP);
+
+        int totalDeliveryCount = vendors.values().stream()
+                .mapToInt(vendor -> vendor.deliveryDates.size())
+                .sum();
 
         List<MonthlyProfitReport.VendorProfitRow> rows = new ArrayList<>();
         for (VendorAccumulator vendor : vendors.values()) {
@@ -193,14 +192,30 @@ public class VendorProfitAnalysisService {
                     .add(boxCost)
                     .add(vinylCost)
                     .add(vendor.tofuPurchaseCost);
+            BigDecimal directProfit = vendor.sales.subtract(directCost);
 
-            BigDecimal overhead = totalFinishedKg.signum() == 0
+            // 인건비·월세·전기/수도 같은 생산 공통비는 판매중량 비중으로 배부한다.
+            BigDecimal productionOverhead = totalFinishedKg.signum() == 0
                     ? ZERO
-                    : commonOverhead.multiply(
+                    : pools.productionOverhead().multiply(
                             vendor.finishedKg.divide(totalFinishedKg, 10, RoundingMode.HALF_UP)
                     );
 
-            BigDecimal totalCost = directCost.add(overhead);
+            // 차량·배송비는 거래처에 실제 납품한 날짜 수(배송 stop) 비중으로 배부한다.
+            BigDecimal deliveryOverhead = totalDeliveryCount == 0
+                    ? ZERO
+                    : pools.deliveryOverhead().multiply(
+                            BigDecimal.valueOf(vendor.deliveryDates.size())
+                                    .divide(BigDecimal.valueOf(totalDeliveryCount), 10, RoundingMode.HALF_UP)
+                    );
+
+            // 박스·비닐 외 포장 소모품은 실제 포장 개수 비중으로 배부한다.
+            BigDecimal packagingOverhead = vendor.vinylUnits.multiply(packagingOverheadPerUnit);
+
+            BigDecimal allocatedOverhead = productionOverhead
+                    .add(deliveryOverhead)
+                    .add(packagingOverhead);
+            BigDecimal totalCost = directCost.add(allocatedOverhead);
             BigDecimal profit = vendor.sales.subtract(totalCost);
             BigDecimal margin = vendor.sales.signum() == 0
                     ? ZERO
@@ -212,19 +227,87 @@ public class VendorProfitAnalysisService {
                     money(vendor.sales),
                     money(vendor.finishedKg),
                     money(directCost),
-                    money(overhead),
+                    money(directProfit),
+                    money(productionOverhead),
+                    money(deliveryOverhead),
+                    money(packagingOverhead),
+                    money(allocatedOverhead),
                     money(totalCost),
                     money(profit),
-                    margin
+                    margin,
+                    vendor.deliveryDates.size()
             ));
         }
 
-        return rows.stream()
+        List<MonthlyProfitReport.VendorProfitRow> sortedRows = rows.stream()
                 .sorted(Comparator
                         .comparing(MonthlyProfitReport.VendorProfitRow::sales)
                         .reversed()
                         .thenComparing(MonthlyProfitReport.VendorProfitRow::vendorName))
                 .toList();
+
+        return new AnalysisResult(
+                sortedRows,
+                money(pools.unallocatedCompanyExpense())
+        );
+    }
+
+    /**
+     * 기존 호출부 호환용. 새 손익 화면에서는 analyze()의 회사 공통비 정보까지 사용한다.
+     */
+    @Transactional(readOnly = true)
+    public List<MonthlyProfitReport.VendorProfitRow> createRows(
+            YearMonth month,
+            BeanUsageCostResult beanCost
+    ) {
+        return analyze(month, beanCost).rows();
+    }
+
+    private CostPools classifyCostPools(
+            List<MonthlyExpenseItemService.ExpenseItemView> items
+    ) {
+        BigDecimal vinyl = ZERO;
+        BigDecimal boxEntered = ZERO;
+        BigDecimal production = ZERO;
+        BigDecimal delivery = ZERO;
+        BigDecimal packaging = ZERO;
+        BigDecimal companyCommon = ZERO;
+
+        for (MonthlyExpenseItemService.ExpenseItemView item : items) {
+            BigDecimal amount = nz(item.amount());
+            ExpenseCategory category = item.category();
+            String name = normalize(item.itemName());
+
+            if (category == ExpenseCategory.PACKAGING) {
+                if ("비닐".equals(name)) {
+                    vinyl = vinyl.add(amount);
+                } else if ("박스".equals(name)) {
+                    // 박스는 판매수량 x 400원으로 직접 계산하므로 입력 합계는 거래처 배부에서 제외한다.
+                    boxEntered = boxEntered.add(amount);
+                } else {
+                    packaging = packaging.add(amount);
+                }
+                continue;
+            }
+
+            if (category == ExpenseCategory.PERSONNEL || category == ExpenseCategory.FACILITY) {
+                production = production.add(amount);
+            } else if (category == ExpenseCategory.DELIVERY) {
+                delivery = delivery.add(amount);
+            } else if (category == ExpenseCategory.WELFARE || category == ExpenseCategory.OTHER) {
+                // 식비·기타 비용은 특정 거래처가 발생시킨 비용으로 보기 어려워 회사 공통비로 남긴다.
+                companyCommon = companyCommon.add(amount);
+            }
+        }
+
+        return new CostPools(
+                vinyl,
+                boxEntered,
+                production,
+                delivery,
+                packaging,
+                companyCommon
+        );
     }
 
     private Map<BeanType, BigDecimal> rawBeanKg(
@@ -282,16 +365,6 @@ public class VendorProfitAnalysisService {
         }
     }
 
-    private BigDecimal expenseByName(
-            List<MonthlyExpenseItemService.ExpenseItemView> items,
-            String target
-    ) {
-        return items.stream()
-                .filter(item -> normalize(item.itemName()).equals(target))
-                .map(MonthlyExpenseItemService.ExpenseItemView::amount)
-                .reduce(ZERO, BigDecimal::add);
-    }
-
     private ProductSpec productSpec(String normalizedItemName) {
         if (normalizedItemName.contains("두절")) {
             return new ProductSpec(BeanType.LARGE, BigDecimal.ONE, false, false);
@@ -323,6 +396,12 @@ public class VendorProfitAnalysisService {
         return null;
     }
 
+    private void addDeliveryDate(VendorAccumulator vendor, LocalDate deliveryDate) {
+        if (deliveryDate != null) {
+            vendor.deliveryDates.add(deliveryDate);
+        }
+    }
+
     private Map<BeanType, BigDecimal> emptyBeanMap() {
         Map<BeanType, BigDecimal> result = new EnumMap<>(BeanType.class);
         for (BeanType type : BeanType.values()) {
@@ -346,6 +425,22 @@ public class VendorProfitAnalysisService {
         return value == null ? "" : value.replaceAll("\\s+", "").trim();
     }
 
+    public record AnalysisResult(
+            List<MonthlyProfitReport.VendorProfitRow> rows,
+            BigDecimal unallocatedCompanyExpense
+    ) {
+    }
+
+    private record CostPools(
+            BigDecimal vinylExpense,
+            BigDecimal boxExpenseEntered,
+            BigDecimal productionOverhead,
+            BigDecimal deliveryOverhead,
+            BigDecimal packagingOverhead,
+            BigDecimal unallocatedCompanyExpense
+    ) {
+    }
+
     private record ProductSpec(
             BeanType beanType,
             BigDecimal kgPerUnit,
@@ -363,6 +458,7 @@ public class VendorProfitAnalysisService {
         private BigDecimal tofuResaleQty = ZERO;
         private BigDecimal tofuPurchaseCost = ZERO;
         private final Map<BeanType, BigDecimal> finishedKgByBean = new EnumMap<>(BeanType.class);
+        private final Set<LocalDate> deliveryDates = new LinkedHashSet<>();
 
         private VendorAccumulator(String vendorName) {
             this.vendorName = vendorName;
