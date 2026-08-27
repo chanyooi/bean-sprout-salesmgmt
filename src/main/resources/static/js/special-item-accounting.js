@@ -38,7 +38,6 @@
       '<div class="special-accounting-metric"><span>일반 매출 반영</span><strong>제외</strong></div></div></article></div>';
     target.parentElement.insertBefore(s,target.nextSibling);
   }
-  function parseWon(t){ var m=(t||'').replace(/,/g,'').match(/-?\d+(?:\.\d+)?/); return m?Number(m[0]):null; }
   function patchKpis(r){
     document.querySelectorAll('*').forEach(function(el){
       if(el.children.length) return;
@@ -48,10 +47,6 @@
         if(card){
           var strong=card.querySelector('strong'); if(strong){ strong.textContent=won(r.adjustedSales); if(!card.querySelector('.special-adjusted-badge')){ var b=document.createElement('span'); b.className='special-adjusted-badge'; b.textContent='특수품목 분리'; el.appendChild(b); } }
         }
-      }
-      if(label==='예상이익'){
-        var c=el.closest('.metric-card,.sc-kpi-card,.card,article');
-        if(c){ var s=c.querySelector('strong'); if(s){ var old=parseWon(s.textContent); if(old!==null){ s.textContent=won(old+Number(r.profitAdjustment||0)); } } }
       }
     });
   }
