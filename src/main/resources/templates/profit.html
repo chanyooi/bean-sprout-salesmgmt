@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>원가·이익</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="stylesheet" th:href="@{/css/profit.css}">
+    <link rel="stylesheet" th:href="@{/css/profit.css(v=20260827_2)}">
     <link rel="stylesheet" th:href="@{/css/profit-expense-manager.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
@@ -259,30 +259,52 @@
         </article>
     </section>
 
-    <section class="panel">
+    <section class="panel vendor-profit-panel">
         <div class="panel-heading">
             <div>
-                <h2>거래처별 매출·배부 예상이익</h2>
+                <h2>거래처별 매출·품목원가 예상이익</h2>
                 <p>
-                    현재는 제품별 콩 투입량(수율) 정보가 없으므로 전체 원가를 거래처 매출 비중으로 배부한 참고값입니다.
-                    정확한 거래처별 이익은 추후 품목별 제조원가 기준을 넣으면 계산할 수 있습니다.
+                    거래처가 실제로 가져간 품목과 수량으로 원가를 계산합니다.
+                    대립→두절(1kg), 중립→일반, 소립→곱슬·소립, 녹두→숙주로 연결하고 원료콩은 3,800원/kg,
+                    3.5kg 박스는 개당 400원으로 계산합니다. 비닐은 월 비닐비를 박스·시루 사용 개수로 나누고,
+                    월급·월세·전기세 등 나머지 공통 운영비만 판매중량 비중으로 배부합니다.
                 </p>
             </div>
+        </div>
+        <div class="vendor-cost-basis">
+            <span>일반·곱슬·소립 시루 1개 = 10kg</span>
+            <span>3.5kg 일반·곱슬·숙주 1박스 = 3.5kg</span>
+            <span>두절 수량 1 = 1kg</span>
+            <span>월 콩 사용기록이 없으면 대립 1포·중립 2포·소립 3포/생산일, 녹두 월 6포로 보완</span>
         </div>
         <div class="table-wrap vendor-profit-table-wrap">
             <table>
                 <thead>
-                <tr><th>순위</th><th>거래처</th><th>매출</th><th>매출 비중</th><th>배부 원가</th><th>배부 예상이익</th></tr>
+                <tr>
+                    <th>순위</th>
+                    <th>거래처</th>
+                    <th>매출</th>
+                    <th>판매중량</th>
+                    <th>직접원가</th>
+                    <th>공통비 배부</th>
+                    <th>총원가</th>
+                    <th>예상이익</th>
+                    <th>이익률</th>
+                </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(report.vendorRows)}"><td colspan="6">해당 월 판매자료가 없습니다.</td></tr>
-                <tr th:each="row, status : ${report.vendorRows}">
+                <tr th:if="${#lists.isEmpty(report.vendorRows)}"><td colspan="9">해당 월 판매자료가 없습니다.</td></tr>
+                <tr th:each="row, status : ${report.vendorRows}"
+                    th:classappend="${row.estimatedProfit.signum() < 0} ? ' vendor-loss-row'">
                     <td class="rank" th:text="${status.count}"></td>
                     <td><strong th:text="${row.vendorName}"></strong></td>
                     <td class="number" th:text="|${#numbers.formatDecimal(row.sales, 0, 'COMMA', 0, 'POINT')}원|"></td>
-                    <td class="number" th:text="|${#numbers.formatDecimal(row.salesSharePercent, 0, 'COMMA', 2, 'POINT')}%|"></td>
-                    <td class="number" th:text="|${#numbers.formatDecimal(row.allocatedCost, 0, 'COMMA', 0, 'POINT')}원|"></td>
-                    <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.allocatedEstimatedProfit, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.soldKg, 0, 'COMMA', 1, 'POINT')}kg|"></td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.directCost, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.allocatedOverhead, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <td class="number" th:text="|${#numbers.formatDecimal(row.totalCost, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <td class="number strong-number vendor-profit-value" th:text="|${#numbers.formatDecimal(row.estimatedProfit, 0, 'COMMA', 0, 'POINT')}원|"></td>
+                    <td class="number strong-number" th:text="|${#numbers.formatDecimal(row.estimatedProfitMarginPercent, 0, 'COMMA', 2, 'POINT')}%|"></td>
                 </tr>
                 </tbody>
             </table>
