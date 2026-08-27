@@ -22,15 +22,18 @@ public class MonthlyProfitService {
     private final MonthlySalesReportService monthlySalesReportService;
     private final BeanInventoryService beanInventoryService;
     private final MonthlyExpenseService monthlyExpenseService;
+    private final SpecialItemAccountingService specialItemAccountingService;
 
     public MonthlyProfitService(
             MonthlySalesReportService monthlySalesReportService,
             BeanInventoryService beanInventoryService,
-            MonthlyExpenseService monthlyExpenseService
+            MonthlyExpenseService monthlyExpenseService,
+            SpecialItemAccountingService specialItemAccountingService
     ) {
         this.monthlySalesReportService = monthlySalesReportService;
         this.beanInventoryService = beanInventoryService;
         this.monthlyExpenseService = monthlyExpenseService;
+        this.specialItemAccountingService = specialItemAccountingService;
     }
 
     @Transactional(readOnly = true)
@@ -45,16 +48,30 @@ public class MonthlyProfitService {
     ) {
         BeanUsageCostResult beanCost = beanInventoryService.calculateUsageCost(month);
         Map<ExpenseType, BigDecimal> expenses = monthlyExpenseService.getExpenses(month);
+        SpecialItemAccountingService.SpecialItemAccountingReport specialItems =
+                specialItemAccountingService.report(month);
+
+        BigDecimal tofuPurchaseCost = safe(specialItems.tofuPurchaseCost());
 
         List<MonthlyProfitReport.ExpenseRow> expenseRows = new ArrayList<>();
         BigDecimal otherExpenseTotal = BigDecimal.ZERO;
         for (ExpenseType type : ExpenseType.values()) {
-            BigDecimal amount = safe(expenses.get(type));
+            BigDecimal amount = type == ExpenseType.TOFU_PURCHASE
+                    ? tofuPurchaseCost
+                    : safe(expenses.get(type));
+
             otherExpenseTotal = otherExpenseTotal.add(amount);
             expenseRows.add(new MonthlyProfitReport.ExpenseRow(type, money(amount)));
         }
 
-        BigDecimal sales = safe(salesReport.confirmedSales());
+        /*
+         * 손두부/두부판/회수통까지 반영된 실제 표시 매출을 기준으로
+         * 이익과 이익률을 한 번만 계산한다.
+         *
+         * 이전에는 서버 계산 후 자바스크립트가 예상이익만 추가 보정해
+         * 월매출·원가·예상이익·이익률의 기준이 서로 달라질 수 있었다.
+         */
+        BigDecimal sales = safe(specialItems.adjustedSales());
         BigDecimal beanUsageCost = safe(beanCost.knownUsageCost());
         BigDecimal totalCost = beanUsageCost.add(otherExpenseTotal);
         BigDecimal estimatedProfit = sales.subtract(totalCost);
@@ -64,9 +81,15 @@ public class MonthlyProfitService {
                         .multiply(HUNDRED)
                         .divide(sales, 2, RoundingMode.HALF_UP);
 
+        /*
+         * 거래처별 표는 기존 판매자료의 매출 비중을 이용한 참고 배부값이다.
+         * 특수품목 보정 전 거래처 합계와의 일관성을 위해 배부 비중 계산에는
+         * 기존 판매보고서 매출을 사용하고, 배부할 총원가만 최신 원가를 반영한다.
+         */
+        BigDecimal allocationSales = safe(salesReport.confirmedSales());
         List<MonthlyProfitReport.VendorProfitRow> vendorRows = salesReport.vendorRows()
                 .stream()
-                .map(row -> createVendorRow(row, sales, totalCost))
+                .map(row -> createVendorRow(row, allocationSales, totalCost))
                 .toList();
 
         return new MonthlyProfitReport(
