@@ -212,20 +212,7 @@
             );
     }
 
-    function parseMoney(value) {
-        var match =
-            (value || '')
-                .replace(/,/g, '')
-                .match(
-                    /-?\d+(?:\.\d+)?/
-                );
-
-        return match
-            ? Number(match[0])
-            : null;
-    }
-
-    function patchKpis(report) {
+    function patchSalesKpi(report) {
         document
             .querySelectorAll('*')
             .forEach(
@@ -278,37 +265,6 @@
                             }
                         }
                     }
-
-                    if (label === '예상이익') {
-                        var profitCard =
-                            el.closest(
-                                '.metric-card, .sc-kpi-card, .card, article'
-                            );
-
-                        if (profitCard) {
-                            var profitStrong =
-                                profitCard.querySelector(
-                                    'strong'
-                                );
-
-                            if (profitStrong) {
-                                var oldValue =
-                                    parseMoney(
-                                        profitStrong.textContent
-                                    );
-
-                                if (oldValue !== null) {
-                                    profitStrong.textContent =
-                                        won(
-                                            oldValue
-                                            + Number(
-                                                report.profitAdjustment || 0
-                                            )
-                                        );
-                                }
-                            }
-                        }
-                    }
                 }
             );
     }
@@ -339,7 +295,7 @@
             removeOldCards();
             restoreReturnContainerAndHideTofuRows();
             addTofuTable(report);
-            patchKpis(report);
+            patchSalesKpi(report);
         }
     )
     .catch(
