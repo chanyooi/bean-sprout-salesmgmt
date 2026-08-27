@@ -30,9 +30,12 @@ public record MonthlyProfitReport(
     public record VendorProfitRow(
             String vendorName,
             BigDecimal sales,
-            BigDecimal salesSharePercent,
-            BigDecimal allocatedCost,
-            BigDecimal allocatedEstimatedProfit
+            BigDecimal soldKg,
+            BigDecimal directCost,
+            BigDecimal allocatedOverhead,
+            BigDecimal totalCost,
+            BigDecimal estimatedProfit,
+            BigDecimal estimatedProfitMarginPercent
     ) {
     }
 }
