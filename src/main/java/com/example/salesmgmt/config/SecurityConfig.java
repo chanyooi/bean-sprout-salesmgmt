@@ -39,6 +39,8 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/admin/**",
                                         "/upload/**",
+                                        "/excel/import/**",
+                                        "/daily-entry/**",
                                         "/input-template/**",
                                         "/prices/**",
                                         "/promotions/**"
@@ -48,7 +50,6 @@ public class SecurityConfig {
                                 // 화면 URL과 실제 저장 URL이 다른 관리자 작업도 명시적으로 보호합니다.
                                 .requestMatchers(
                                         HttpMethod.POST,
-                                        "/excel/import",
                                         "/vendor-management/*/prices",
                                         "/vendor-management/*/prices/*"
                                 )
