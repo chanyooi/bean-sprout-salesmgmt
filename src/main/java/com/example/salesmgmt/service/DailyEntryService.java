@@ -186,14 +186,15 @@ public class DailyEntryService {
 
             String orderNumber = orderNumber(date, sequence);
             int sourceRow = sequence + 4;
-            BigDecimal returnContainerUnitPrice = optionalNonNegative(
-                    input.returnContainerUnitPrice(),
-                    expectedVendor + " 회수통단가"
-            );
-            String deliveryMethod = clean(input.deliveryMethod());
-            String note = clean(input.note());
             String statementVendor =
                     vendorRuleService.statementVendorName(expectedVendor);
+
+            // 화면에서는 회수통단가/전달방식/비고를 받지 않는다.
+            // null/빈값을 넘기면 기존 주문 메타데이터는 SalesPersistenceService에서 보존되고,
+            // 새 회수통은 거래처별 기본 단가를 사용한다.
+            BigDecimal returnContainerUnitPrice = null;
+            String deliveryMethod = "";
+            String note = "";
 
             snapshots.add(new OrderSnapshot(
                     orderNumber,
@@ -293,23 +294,6 @@ public class DailyEntryService {
         }
     }
 
-    private BigDecimal optionalNonNegative(String raw, String label) {
-        String value = clean(raw).replace(",", "");
-        if (value.isBlank()) {
-            return null;
-        }
-
-        try {
-            BigDecimal number = new BigDecimal(value);
-            if (number.signum() < 0) {
-                throw new IllegalArgumentException(label + "는 0원 이상으로 입력해주세요.");
-            }
-            return number;
-        } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(label + "를 숫자로 입력해주세요.");
-        }
-    }
-
     private DailyEntryRow toRow(
             int sequence,
             String orderNumber,
@@ -320,7 +304,6 @@ public class DailyEntryService {
         Map<String, BigDecimal> quantities = existing == null
                 ? Map.of()
                 : existing.quantities;
-        SalesOrderEntity order = existing == null ? null : existing.order;
 
         return new DailyEntryRow(
                 sequence,
@@ -337,9 +320,6 @@ public class DailyEntryService {
                 quantities.get("회수통"),
                 quantities.get("손두부"),
                 quantities.get("두부판"),
-                order == null ? null : order.getReturnContainerUnitPrice(),
-                order == null ? "" : clean(order.getDeliveryMethod()),
-                order == null ? "" : clean(order.getNote()),
                 existing != null
         );
     }
@@ -383,9 +363,6 @@ public class DailyEntryService {
             BigDecimal returnContainer,
             BigDecimal tofu,
             BigDecimal tofuPlate,
-            BigDecimal returnContainerUnitPrice,
-            String deliveryMethod,
-            String note,
             boolean saved
     ) {
     }
@@ -401,10 +378,7 @@ public class DailyEntryService {
             String mungSprout,
             String returnContainer,
             String tofu,
-            String tofuPlate,
-            String returnContainerUnitPrice,
-            String deliveryMethod,
-            String note
+            String tofuPlate
     ) {
     }
 }
