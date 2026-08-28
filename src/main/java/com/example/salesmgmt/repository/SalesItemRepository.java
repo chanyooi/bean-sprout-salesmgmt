@@ -28,6 +28,16 @@ public interface SalesItemRepository extends JpaRepository<SalesItemEntity, Long
             select item
             from SalesItemEntity item
             join fetch item.salesOrder salesOrder
+            join fetch salesOrder.vendor vendor
+            where salesOrder.deliveryDate = :date
+            order by salesOrder.orderNumber asc, item.id asc
+            """)
+    List<SalesItemEntity> findForDate(@Param("date") LocalDate date);
+
+    @Query("""
+            select item
+            from SalesItemEntity item
+            join fetch item.salesOrder salesOrder
             order by salesOrder.id asc, item.id asc
             """)
     List<SalesItemEntity> findAllForBackup();
