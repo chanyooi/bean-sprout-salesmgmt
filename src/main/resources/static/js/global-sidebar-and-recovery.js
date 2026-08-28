@@ -3,6 +3,7 @@
 
     function group() {
         if (path === '/') return 'dashboard';
+        if (path.startsWith('/daily-entry')) return 'entry';
         if (path.startsWith('/upload')) return 'upload';
         if (path.startsWith('/statement')) return 'statement';
         if (path.startsWith('/vendor-management')
@@ -23,6 +24,12 @@
                     <rect x="14" y="3" width="7" height="7" rx="2"></rect>
                     <rect x="3" y="14" width="7" height="7" rx="2"></rect>
                     <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+                </svg>`,
+            entry: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                    <path d="M3 9h18M9 9v11M15 9v11"></path>
+                    <path d="M6 6.5h12"></path>
                 </svg>`,
             upload: `
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -125,7 +132,8 @@
             <div class="dgs-section-label">업무 메뉴</div>
             <nav class="dgs-nav">
                 ${link('/', 'dashboard', '대시보드', '오늘의 운영 현황', 'dashboard', 'blue')}
-                ${link('/upload', 'upload', '주문 업로드', '판매자료 등록', 'upload', 'mint')}
+                ${link('/daily-entry', 'entry', '납품 입력', '엑셀처럼 바로 입력', 'entry', 'mint')}
+                ${link('/upload', 'upload', '엑셀 업로드', '파일로 일괄 등록', 'upload', 'sky')}
                 ${statementMenu()}
                 ${link('/vendor-management', 'vendor', '거래처 관리', '단가 · 판매내역', 'vendor', 'indigo')}
                 ${link('/vendors', 'route', '배송 코스', '거래처 배송 순서', 'route', 'sky')}
@@ -208,7 +216,8 @@
 
         nav.innerHTML = `
             ${mobileCard('/', 'dashboard', '대시보드', '오늘의 운영 현황', 'dashboard', 'blue')}
-            ${hasUpload ? mobileCard('/upload', 'upload', '주문 업로드', '판매자료 등록', 'upload', 'mint') : ''}
+            ${mobileCard('/daily-entry', 'entry', '납품 입력', '엑셀처럼 바로 입력', 'entry', 'mint')}
+            ${hasUpload ? mobileCard('/upload', 'upload', '엑셀 업로드', '파일로 일괄 등록', 'upload', 'sky') : ''}
             ${mobileStatementMenu()}
             ${mobileCard('/vendor-management', 'vendor', '거래처 관리', '단가 · 판매내역', 'vendor', 'indigo')}
             ${mobileCard('/vendors', 'route', '배송 코스', '거래처 배송 순서', 'route', 'sky')}
