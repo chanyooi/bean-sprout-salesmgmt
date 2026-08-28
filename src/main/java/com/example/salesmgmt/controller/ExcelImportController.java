@@ -52,9 +52,9 @@ public class ExcelImportController {
             if (jobView.isPresent()) {
                 model.addAttribute("jobId", job);
                 model.addAttribute("jobFilename", jobView.get().originalFilename());
-            } else {
-                model.addAttribute("fatalError", "업로드 처리 정보를 찾을 수 없습니다. 파일을 다시 올려주세요.");
+                return "upload-processing";
             }
+            model.addAttribute("fatalError", "업로드 처리 정보를 찾을 수 없습니다. 파일을 다시 올려주세요.");
         }
         return "upload";
     }
@@ -62,9 +62,9 @@ public class ExcelImportController {
     /**
      * Railway 프록시의 요청 시간 제한을 피하기 위한 기본 업로드 경로.
      * 파일 수신/임시 저장까지만 현재 요청에서 처리하고, 엑셀 검사와 DB 저장은
-     * 백그라운드 작업으로 넘긴 뒤 곧바로 업로드 화면으로 돌아간다.
+     * 백그라운드 작업으로 넘긴 뒤 곧바로 처리 상태 화면으로 이동한다.
      */
-    @PostMapping("/excel/import/start")
+    @PostMapping({"/excel/import", "/excel/import/start"})
     public String startImport(
             @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "preview") String action,
@@ -132,10 +132,10 @@ public class ExcelImportController {
     }
 
     /**
-     * 이전 링크/내부 호출 호환용 동기 경로. 새 업로드 화면에서는 사용하지 않는다.
+     * 문제 진단용 동기 경로. 일반 업로드 화면에서는 호출하지 않는다.
      */
-    @PostMapping("/excel/import")
-    public String importExcel(
+    @PostMapping("/excel/import/sync")
+    public String importExcelSynchronously(
             @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "preview") String action,
             Model model,
