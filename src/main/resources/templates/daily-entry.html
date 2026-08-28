@@ -12,7 +12,7 @@
     <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260814_2)}">
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/daily-entry.css(v=20260828_1)}">
+    <link rel="stylesheet" th:href="@{/css/daily-entry.css(v=20260828_2)}">
 </head>
 <body class="daily-entry-page">
 <main class="container">
@@ -22,8 +22,7 @@
                 <p class="eyebrow">매일 납품 등록</p>
                 <h1>납품 입력</h1>
                 <p>
-                    input_data.xlsx와 같은 거래처 순서로 수량을 입력하고 바로 저장합니다.
-                    엑셀을 따로 작성해 업로드하지 않아도 됩니다.
+                    날짜를 선택하고 거래처별 납품 수량만 입력하면 바로 저장됩니다.
                 </p>
             </div>
             <div class="button-row">
@@ -42,7 +41,7 @@
          th:if="${saveError}"
          th:text="${saveError}"></div>
 
-    <section class="panel">
+    <section class="panel daily-entry-date-panel">
         <div class="daily-entry-toolbar">
             <div>
                 <p class="eyebrow">선택 날짜</p>
@@ -71,13 +70,12 @@
         </div>
     </section>
 
-    <section class="panel">
+    <section class="panel daily-entry-input-panel">
         <div class="daily-entry-help">
             <div>
                 <h2>거래처별 수량 입력</h2>
                 <p class="helper">
-                    노란 칸만 입력하면 됩니다. 수량이 없는 품목은 빈칸으로 두세요.
-                    기존 숫자를 지우고 저장하면 해당 품목이 삭제됩니다.
+                    수량만 입력하세요. 기존 숫자를 지우고 저장하면 해당 품목이 삭제됩니다.
                 </p>
             </div>
             <button type="button"
@@ -94,138 +92,93 @@
 
             <div class="daily-entry-table-wrap">
                 <table class="daily-entry-table">
+                    <colgroup>
+                        <col class="entry-vendor-col">
+                        <col span="10" class="entry-qty-col">
+                    </colgroup>
                     <thead>
                     <tr>
-                        <th>주문번호</th>
-                        <th>날짜</th>
                         <th class="vendor-heading">거래처</th>
-                        <th>두절kg</th>
-                        <th>일반콩나물</th>
-                        <th>소립</th>
-                        <th>곱슬콩나물</th>
-                        <th>3.5kg일반</th>
-                        <th>3.5kg곱슬</th>
-                        <th>숙주</th>
-                        <th>회수통</th>
-                        <th>손두부</th>
-                        <th>두부판</th>
-                        <th>회수통단가</th>
-                        <th>전달방식</th>
-                        <th>비고</th>
-                    </tr>
-                    <tr class="entry-unit-row">
-                        <th>자동생성</th>
-                        <th>납품일</th>
-                        <th class="vendor-heading">고정 거래처</th>
-                        <th>kg</th>
-                        <th>수량</th>
-                        <th>수량</th>
-                        <th>수량</th>
-                        <th>수량</th>
-                        <th>수량</th>
-                        <th>수량</th>
-                        <th>수량</th>
-                        <th>팔공만</th>
-                        <th>팔공만</th>
-                        <th>예외시만</th>
-                        <th>선택 입력</th>
-                        <th>자유 입력</th>
+                        <th><span>두절</span><small>kg</small></th>
+                        <th><span>일반</span></th>
+                        <th><span>소립</span></th>
+                        <th><span>곱슬</span></th>
+                        <th><span>3.5kg</span><small>일반</small></th>
+                        <th><span>3.5kg</span><small>곱슬</small></th>
+                        <th><span>숙주</span></th>
+                        <th><span>회수통</span></th>
+                        <th><span>손두부</span></th>
+                        <th><span>두부판</span></th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="row : ${page.rows}"
                         data-entry-row
                         th:classappend="${row.saved} ? ' has-saved-data' : ''">
-                        <td class="order-cell" th:text="${row.orderNumber}">20260828-001</td>
-                        <td class="date-cell" th:text="${selectedDate}">2026-08-28</td>
-                        <td class="vendor-cell" th:title="${row.vendorName}">
+                        <td class="vendor-cell" th:title="${row.vendorName}" data-label="거래처">
                             <span th:text="${row.vendorName}">산동빅</span>
                             <input type="hidden" name="vendorName" th:value="${row.vendorName}">
                         </td>
 
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="두절kg">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="cutKg" data-entry-input data-entry-col="cutKg"
                                    th:value="${row.cutKg == null ? '' : row.cutKg.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="두절kg">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="일반콩나물">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="regular" data-entry-input data-entry-col="regular"
                                    th:value="${row.regular == null ? '' : row.regular.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="일반콩나물">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="소립">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="small" data-entry-input data-entry-col="small"
                                    th:value="${row.small == null ? '' : row.small.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="소립">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="곱슬콩나물">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="curly" data-entry-input data-entry-col="curly"
                                    th:value="${row.curly == null ? '' : row.curly.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="곱슬콩나물">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="3.5kg일반">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="boxRegular" data-entry-input data-entry-col="boxRegular"
                                    th:value="${row.boxRegular == null ? '' : row.boxRegular.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="3.5kg일반">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="3.5kg곱슬">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="boxCurly" data-entry-input data-entry-col="boxCurly"
                                    th:value="${row.boxCurly == null ? '' : row.boxCurly.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="3.5kg곱슬">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="숙주">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="mungSprout" data-entry-input data-entry-col="mungSprout"
                                    th:value="${row.mungSprout == null ? '' : row.mungSprout.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="숙주">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="회수통">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="returnContainer" data-entry-input data-entry-col="returnContainer"
                                    th:value="${row.returnContainer == null ? '' : row.returnContainer.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="회수통">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="손두부">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="tofu" data-entry-input data-entry-col="tofu"
                                    th:value="${row.tofu == null ? '' : row.tofu.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="손두부">
                         </td>
-                        <td class="qty-cell">
+                        <td class="qty-cell" data-label="두부판">
                             <input type="number" min="0" step="0.001" inputmode="decimal"
                                    name="tofuPlate" data-entry-input data-entry-col="tofuPlate"
                                    th:value="${row.tofuPlate == null ? '' : row.tofuPlate.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
-                        </td>
-                        <td class="meta-price-cell">
-                            <input type="number" min="0" step="1" inputmode="numeric"
-                                   class="metadata-input"
-                                   name="returnContainerUnitPrice"
-                                   data-entry-input data-entry-col="returnContainerUnitPrice"
-                                   th:value="${row.returnContainerUnitPrice == null ? '' : row.returnContainerUnitPrice.stripTrailingZeros().toPlainString()}"
-                                   autocomplete="off">
-                        </td>
-                        <td class="delivery-cell">
-                            <input type="text"
-                                   class="metadata-input"
-                                   name="deliveryMethod"
-                                   data-entry-input data-entry-col="deliveryMethod"
-                                   th:value="${row.deliveryMethod}"
-                                   autocomplete="off">
-                        </td>
-                        <td class="note-cell">
-                            <input type="text"
-                                   class="metadata-input"
-                                   name="note"
-                                   data-entry-input data-entry-col="note"
-                                   th:value="${row.note}"
-                                   autocomplete="off">
+                                   autocomplete="off" aria-label="두부판">
                         </td>
                     </tr>
                     </tbody>
@@ -234,8 +187,7 @@
 
             <div class="daily-entry-save-bar">
                 <p>
-                    엑셀 업로드와 같은 주문번호 규칙으로 저장됩니다.
-                    이미 저장된 날짜를 다시 저장하면 수정·삭제까지 동기화됩니다.
+                    날짜와 주문번호는 자동으로 처리됩니다. 저장된 날짜를 다시 저장하면 수정·삭제까지 반영됩니다.
                 </p>
                 <button type="submit">이 날짜 저장</button>
             </div>
