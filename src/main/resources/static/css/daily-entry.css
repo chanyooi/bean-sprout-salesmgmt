@@ -1,0 +1,348 @@
+.daily-entry-page {
+    --entry-border: #dfe6ee;
+    --entry-soft: #f6f8fb;
+    --entry-input: #fff9d8;
+    --entry-input-focus: #fff2a8;
+    --entry-saved: #eef9f2;
+}
+
+.daily-entry-page .hero {
+    margin-bottom: 18px;
+}
+
+.daily-entry-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: center;
+}
+
+.daily-entry-date-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.daily-entry-date-nav a,
+.daily-entry-date-nav button {
+    white-space: nowrap;
+}
+
+.daily-entry-date-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 250px;
+}
+
+.daily-entry-date-picker input[type="date"] {
+    min-height: 42px;
+    padding: 8px 11px;
+    border: 1px solid #cfd8e3;
+    border-radius: 10px;
+    font: inherit;
+    background: #fff;
+}
+
+.daily-entry-summary {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.daily-entry-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #f3f6f9;
+    border: 1px solid #e1e7ee;
+    color: #44515f;
+    font-size: 13px;
+}
+
+.daily-entry-chip strong {
+    color: #17212b;
+}
+
+.daily-entry-help {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.daily-entry-help p {
+    margin: 0;
+}
+
+.daily-entry-table-wrap {
+    position: relative;
+    overflow: auto;
+    max-height: calc(100vh - 250px);
+    border: 1px solid var(--entry-border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(33, 48, 67, .06);
+}
+
+.daily-entry-table {
+    width: max-content;
+    min-width: 2020px;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    font-size: 13px;
+}
+
+.daily-entry-table th,
+.daily-entry-table td {
+    border-right: 1px solid var(--entry-border);
+    border-bottom: 1px solid var(--entry-border);
+    padding: 5px;
+    vertical-align: middle;
+    background: #fff;
+}
+
+.daily-entry-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    height: 40px;
+    padding: 7px 5px;
+    background: #edf3f7;
+    color: #263746;
+    text-align: center;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.daily-entry-table thead tr.entry-unit-row th {
+    top: 40px;
+    z-index: 6;
+    height: 29px;
+    padding: 4px 5px;
+    background: #f8fafc;
+    color: #768391;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.daily-entry-table tbody tr:hover td {
+    background: #f9fbfd;
+}
+
+.daily-entry-table tbody tr.has-saved-data td:first-child {
+    box-shadow: inset 4px 0 0 #59a873;
+}
+
+.daily-entry-table .vendor-cell,
+.daily-entry-table thead .vendor-heading {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    width: 190px;
+    min-width: 190px;
+    max-width: 190px;
+    background: #fff;
+    box-shadow: 5px 0 8px rgba(31, 45, 61, .06);
+}
+
+.daily-entry-table thead .vendor-heading {
+    z-index: 9;
+    background: #edf3f7;
+}
+
+.daily-entry-table thead tr.entry-unit-row .vendor-heading {
+    background: #f8fafc;
+}
+
+.daily-entry-table tbody tr.has-saved-data .vendor-cell {
+    background: var(--entry-saved);
+}
+
+.daily-entry-table .order-cell {
+    width: 122px;
+    min-width: 122px;
+    color: #75808c;
+    text-align: center;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.daily-entry-table .date-cell {
+    width: 94px;
+    min-width: 94px;
+    color: #75808c;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.daily-entry-table .vendor-cell {
+    padding: 7px 10px;
+    font-weight: 750;
+    color: #27333e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.daily-entry-table .qty-cell {
+    width: 88px;
+    min-width: 88px;
+}
+
+.daily-entry-table .meta-price-cell {
+    width: 105px;
+    min-width: 105px;
+}
+
+.daily-entry-table .delivery-cell {
+    width: 116px;
+    min-width: 116px;
+}
+
+.daily-entry-table .note-cell {
+    width: 190px;
+    min-width: 190px;
+}
+
+.daily-entry-table input {
+    width: 100%;
+    min-width: 0;
+    height: 34px;
+    box-sizing: border-box;
+    border: 1px solid #d7dee7;
+    border-radius: 7px;
+    padding: 5px 7px;
+    font: inherit;
+    background: var(--entry-input);
+    color: #202b35;
+    outline: none;
+}
+
+.daily-entry-table input[type="number"] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.daily-entry-table input:focus {
+    border-color: #6c91bf;
+    background: var(--entry-input-focus);
+    box-shadow: 0 0 0 2px rgba(80, 126, 179, .14);
+}
+
+.daily-entry-table input.entry-has-value {
+    font-weight: 800;
+    color: #17212b;
+}
+
+.daily-entry-table .metadata-input {
+    background: #fff;
+}
+
+.daily-entry-table tr.entry-hidden-row {
+    display: none;
+}
+
+.daily-entry-save-bar {
+    position: sticky;
+    bottom: 12px;
+    z-index: 12;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid #d9e1e9;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 12px 30px rgba(28, 42, 57, .12);
+    backdrop-filter: blur(8px);
+}
+
+.daily-entry-save-bar p {
+    margin: 0;
+    color: #63707c;
+    font-size: 13px;
+}
+
+.daily-entry-save-bar button {
+    min-width: 150px;
+}
+
+.daily-entry-filter-active {
+    background: #eaf4ee !important;
+    border-color: #99c7aa !important;
+    color: #24643d !important;
+}
+
+.daily-entry-alert {
+    margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+    .daily-entry-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .daily-entry-date-picker {
+        min-width: 0;
+    }
+
+    .daily-entry-table-wrap {
+        max-height: none;
+        border-radius: 10px;
+    }
+
+    .daily-entry-save-bar {
+        bottom: 8px;
+    }
+}
+
+@media (max-width: 640px) {
+    .daily-entry-page .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .daily-entry-help {
+        flex-direction: column;
+    }
+
+    .daily-entry-date-nav {
+        width: 100%;
+    }
+
+    .daily-entry-date-nav a,
+    .daily-entry-date-nav button {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+
+    .daily-entry-table {
+        font-size: 12px;
+    }
+
+    .daily-entry-table .vendor-cell,
+    .daily-entry-table thead .vendor-heading {
+        width: 150px;
+        min-width: 150px;
+        max-width: 150px;
+    }
+
+    .daily-entry-save-bar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .daily-entry-save-bar button {
+        width: 100%;
+    }
+}
