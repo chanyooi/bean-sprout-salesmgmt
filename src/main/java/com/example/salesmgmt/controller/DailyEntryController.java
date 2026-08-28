@@ -69,9 +69,6 @@ public class DailyEntryController {
             @RequestParam("returnContainer") String[] returnContainer,
             @RequestParam("tofu") String[] tofu,
             @RequestParam("tofuPlate") String[] tofuPlate,
-            @RequestParam("returnContainerUnitPrice") String[] returnContainerUnitPrice,
-            @RequestParam("deliveryMethod") String[] deliveryMethod,
-            @RequestParam("note") String[] note,
             RedirectAttributes redirectAttributes
     ) {
         try {
@@ -87,9 +84,6 @@ public class DailyEntryController {
             validateLength("회수통", returnContainer, expected);
             validateLength("손두부", tofu, expected);
             validateLength("두부판", tofuPlate, expected);
-            validateLength("회수통단가", returnContainerUnitPrice, expected);
-            validateLength("전달방식", deliveryMethod, expected);
-            validateLength("비고", note, expected);
 
             List<DailyEntryService.RowInput> rows = new ArrayList<>(expected);
             for (int i = 0; i < expected; i++) {
@@ -104,10 +98,7 @@ public class DailyEntryController {
                         mungSprout[i],
                         returnContainer[i],
                         tofu[i],
-                        tofuPlate[i],
-                        returnContainerUnitPrice[i],
-                        deliveryMethod[i],
-                        note[i]
+                        tofuPlate[i]
                 ));
             }
 
