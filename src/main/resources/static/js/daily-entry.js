@@ -6,8 +6,10 @@
     const filterButton = document.querySelector('[data-entry-filter]');
     const rows = Array.from(document.querySelectorAll('[data-entry-row]'));
     const editableInputs = Array.from(form.querySelectorAll('input[data-entry-input]'));
+    const table = form.querySelector('.daily-entry-table');
     let dirty = false;
     let showFilledOnly = false;
+    let highlightedColumn = -1;
 
     function hasMeaningfulValue(input) {
         return String(input.value || '').trim() !== '';
@@ -30,6 +32,33 @@
             filterButton.classList.toggle('daily-entry-filter-active', showFilledOnly);
             filterButton.textContent = showFilledOnly ? '전체 거래처 보기' : '입력 있는 거래처만';
         }
+    }
+
+    function clearColumnHighlight() {
+        if (!table || highlightedColumn < 0) return;
+        table.querySelectorAll('.entry-hover-column')
+                .forEach(cell => cell.classList.remove('entry-hover-column'));
+        highlightedColumn = -1;
+    }
+
+    function highlightColumn(columnIndex) {
+        if (!table || window.matchMedia('(max-width: 720px)').matches) return;
+        if (columnIndex === highlightedColumn) return;
+
+        clearColumnHighlight();
+        highlightedColumn = columnIndex;
+
+        table.querySelectorAll('tr').forEach(row => {
+            const cell = row.cells && row.cells[columnIndex];
+            if (cell) cell.classList.add('entry-hover-column');
+        });
+    }
+
+    if (table) {
+        table.querySelectorAll('thead th, tbody td').forEach(cell => {
+            cell.addEventListener('mouseenter', () => highlightColumn(cell.cellIndex));
+        });
+        table.addEventListener('mouseleave', clearColumnHighlight);
     }
 
     editableInputs.forEach(input => {
