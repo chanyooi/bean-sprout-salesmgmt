@@ -4,6 +4,9 @@
     --entry-input: #fff9d8;
     --entry-input-focus: #fff2a8;
     --entry-saved: #eef9f2;
+    --entry-hover-row: #f3f5f7;
+    --entry-hover-column: #edf0f3;
+    --entry-hover-cross: #e2e6ea;
 }
 
 .daily-entry-page .container {
@@ -135,6 +138,7 @@
     padding: 4px;
     vertical-align: middle;
     background: #fff;
+    transition: background-color .08s ease;
 }
 
 .daily-entry-table thead th {
@@ -165,13 +169,43 @@
     font-weight: 700;
 }
 
+/* 마우스 위치를 엑셀처럼 행 + 열로 함께 보여준다. */
 .daily-entry-table tbody tr:hover td {
-    background: #f9fbfd;
+    background: var(--entry-hover-row);
+}
+
+.daily-entry-table tbody tr:hover td input[type="number"] {
+    background: #f5f6f7;
+}
+
+.daily-entry-table th.entry-hover-column,
+.daily-entry-table td.entry-hover-column {
+    background: var(--entry-hover-column) !important;
+}
+
+.daily-entry-table td.entry-hover-column input[type="number"] {
+    background: var(--entry-hover-column);
+}
+
+.daily-entry-table tbody tr:hover td.entry-hover-column {
+    background: var(--entry-hover-cross) !important;
+}
+
+.daily-entry-table tbody tr:hover td.entry-hover-column input[type="number"] {
+    background: var(--entry-hover-cross);
 }
 
 .daily-entry-table tbody tr.has-saved-data .vendor-cell {
     box-shadow: inset 4px 0 0 #59a873;
     background: var(--entry-saved);
+}
+
+.daily-entry-table tbody tr.has-saved-data:hover .vendor-cell {
+    background: var(--entry-hover-row);
+}
+
+.daily-entry-table tbody tr.has-saved-data .vendor-cell.entry-hover-column {
+    background: var(--entry-hover-cross) !important;
 }
 
 .daily-entry-table .vendor-cell,
@@ -206,29 +240,32 @@
 .daily-entry-table input[type="number"] {
     width: 100%;
     min-width: 0;
-    height: 31px;
+    height: 35px;
     box-sizing: border-box;
     border: 1px solid #d7dee7;
     border-radius: 6px;
     padding: 3px 4px;
     font: inherit;
-    font-size: 12px;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
     text-align: right;
     font-variant-numeric: tabular-nums;
     background: var(--entry-input);
-    color: #202b35;
+    color: #17212b;
     outline: none;
+    transition: background-color .08s ease, border-color .08s ease, box-shadow .08s ease;
 }
 
 .daily-entry-table input[type="number"]:focus {
     border-color: #6c91bf;
-    background: var(--entry-input-focus);
+    background: var(--entry-input-focus) !important;
     box-shadow: 0 0 0 2px rgba(80, 126, 179, .14);
 }
 
 .daily-entry-table input.entry-has-value {
-    font-weight: 800;
-    color: #17212b;
+    font-weight: 850;
+    color: #111827;
 }
 
 .daily-entry-table tr.entry-hidden-row {
@@ -304,7 +341,7 @@
     .daily-entry-table input[type="number"] {
         padding-left: 2px;
         padding-right: 2px;
-        font-size: 11px;
+        font-size: 15px;
     }
 }
 
@@ -430,9 +467,14 @@
     }
 
     .daily-entry-table input[type="number"] {
-        height: 34px;
-        font-size: 13px;
+        height: 38px;
+        font-size: 16px;
         text-align: center;
+    }
+
+    .daily-entry-table th.entry-hover-column,
+    .daily-entry-table td.entry-hover-column {
+        background: inherit !important;
     }
 
     .daily-entry-save-bar {
