@@ -6,8 +6,21 @@
     --entry-saved: #eef9f2;
 }
 
+.daily-entry-page .container {
+    width: min(1540px, calc(100% - 24px));
+}
+
 .daily-entry-page .hero {
     margin-bottom: 18px;
+}
+
+.daily-entry-date-panel {
+    padding-top: 18px;
+    padding-bottom: 18px;
+}
+
+.daily-entry-input-panel {
+    padding: 18px;
 }
 
 .daily-entry-toolbar {
@@ -32,13 +45,13 @@
 .daily-entry-date-picker {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-width: 250px;
+    min-width: 190px;
 }
 
 .daily-entry-date-picker input[type="date"] {
-    min-height: 42px;
-    padding: 8px 11px;
+    width: 100%;
+    min-height: 40px;
+    padding: 7px 10px;
     border: 1px solid #cfd8e3;
     border-radius: 10px;
     font: inherit;
@@ -49,20 +62,20 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 12px;
+    margin-top: 10px;
 }
 
 .daily-entry-chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 32px;
-    padding: 6px 10px;
+    min-height: 30px;
+    padding: 5px 9px;
     border-radius: 999px;
     background: #f3f6f9;
     border: 1px solid #e1e7ee;
     color: #44515f;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .daily-entry-chip strong {
@@ -74,7 +87,11 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+}
+
+.daily-entry-help h2 {
+    margin-bottom: 6px;
 }
 
 .daily-entry-help p {
@@ -83,28 +100,39 @@
 
 .daily-entry-table-wrap {
     position: relative;
-    overflow: auto;
-    max-height: calc(100vh - 250px);
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: calc(100vh - 235px);
     border: 1px solid var(--entry-border);
-    border-radius: 14px;
+    border-radius: 12px;
     background: #fff;
     box-shadow: 0 8px 28px rgba(33, 48, 67, .06);
 }
 
 .daily-entry-table {
-    width: max-content;
-    min-width: 2020px;
+    width: 100%;
+    min-width: 0;
     border-collapse: separate;
     border-spacing: 0;
     table-layout: fixed;
-    font-size: 13px;
+    font-size: 12px;
+}
+
+.daily-entry-table .entry-vendor-col {
+    width: 18%;
+}
+
+.daily-entry-table .entry-qty-col {
+    width: 8.2%;
 }
 
 .daily-entry-table th,
 .daily-entry-table td {
+    min-width: 0;
     border-right: 1px solid var(--entry-border);
     border-bottom: 1px solid var(--entry-border);
-    padding: 5px;
+    padding: 4px;
     vertical-align: middle;
     background: #fff;
 }
@@ -113,32 +141,37 @@
     position: sticky;
     top: 0;
     z-index: 6;
-    height: 40px;
-    padding: 7px 5px;
+    height: 44px;
+    padding: 5px 2px;
     background: #edf3f7;
     color: #263746;
     text-align: center;
+    font-size: 11.5px;
     font-weight: 800;
-    white-space: nowrap;
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
-.daily-entry-table thead tr.entry-unit-row th {
-    top: 40px;
-    z-index: 6;
-    height: 29px;
-    padding: 4px 5px;
-    background: #f8fafc;
-    color: #768391;
-    font-size: 11px;
-    font-weight: 600;
+.daily-entry-table thead th span,
+.daily-entry-table thead th small {
+    display: block;
+}
+
+.daily-entry-table thead th small {
+    margin-top: 2px;
+    color: #6f7d89;
+    font-size: 10px;
+    font-weight: 700;
 }
 
 .daily-entry-table tbody tr:hover td {
     background: #f9fbfd;
 }
 
-.daily-entry-table tbody tr.has-saved-data td:first-child {
+.daily-entry-table tbody tr.has-saved-data .vendor-cell {
     box-shadow: inset 4px 0 0 #59a873;
+    background: var(--entry-saved);
 }
 
 .daily-entry-table .vendor-cell,
@@ -146,11 +179,8 @@
     position: sticky;
     left: 0;
     z-index: 4;
-    width: 190px;
-    min-width: 190px;
-    max-width: 190px;
     background: #fff;
-    box-shadow: 5px 0 8px rgba(31, 45, 61, .06);
+    box-shadow: 4px 0 7px rgba(31, 45, 61, .06);
 }
 
 .daily-entry-table thead .vendor-heading {
@@ -158,80 +188,38 @@
     background: #edf3f7;
 }
 
-.daily-entry-table thead tr.entry-unit-row .vendor-heading {
-    background: #f8fafc;
-}
-
-.daily-entry-table tbody tr.has-saved-data .vendor-cell {
-    background: var(--entry-saved);
-}
-
-.daily-entry-table .order-cell {
-    width: 122px;
-    min-width: 122px;
-    color: #75808c;
-    text-align: center;
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.daily-entry-table .date-cell {
-    width: 94px;
-    min-width: 94px;
-    color: #75808c;
-    text-align: center;
-    white-space: nowrap;
-}
-
 .daily-entry-table .vendor-cell {
-    padding: 7px 10px;
+    padding: 5px 7px;
     font-weight: 750;
     color: #27333e;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 11.5px;
 }
 
 .daily-entry-table .qty-cell {
-    width: 88px;
-    min-width: 88px;
+    width: auto;
 }
 
-.daily-entry-table .meta-price-cell {
-    width: 105px;
-    min-width: 105px;
-}
-
-.daily-entry-table .delivery-cell {
-    width: 116px;
-    min-width: 116px;
-}
-
-.daily-entry-table .note-cell {
-    width: 190px;
-    min-width: 190px;
-}
-
-.daily-entry-table input {
+.daily-entry-table input[type="number"] {
     width: 100%;
     min-width: 0;
-    height: 34px;
+    height: 31px;
     box-sizing: border-box;
     border: 1px solid #d7dee7;
-    border-radius: 7px;
-    padding: 5px 7px;
+    border-radius: 6px;
+    padding: 3px 4px;
     font: inherit;
+    font-size: 12px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
     background: var(--entry-input);
     color: #202b35;
     outline: none;
 }
 
-.daily-entry-table input[type="number"] {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
-.daily-entry-table input:focus {
+.daily-entry-table input[type="number"]:focus {
     border-color: #6c91bf;
     background: var(--entry-input-focus);
     box-shadow: 0 0 0 2px rgba(80, 126, 179, .14);
@@ -242,26 +230,22 @@
     color: #17212b;
 }
 
-.daily-entry-table .metadata-input {
-    background: #fff;
-}
-
 .daily-entry-table tr.entry-hidden-row {
     display: none;
 }
 
 .daily-entry-save-bar {
     position: sticky;
-    bottom: 12px;
+    bottom: 10px;
     z-index: 12;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    margin-top: 14px;
-    padding: 12px 14px;
+    margin-top: 12px;
+    padding: 10px 12px;
     border: 1px solid #d9e1e9;
-    border-radius: 14px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, .96);
     box-shadow: 0 12px 30px rgba(28, 42, 57, .12);
     backdrop-filter: blur(8px);
@@ -270,11 +254,11 @@
 .daily-entry-save-bar p {
     margin: 0;
     color: #63707c;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .daily-entry-save-bar button {
-    min-width: 150px;
+    min-width: 140px;
 }
 
 .daily-entry-filter-active {
@@ -285,6 +269,42 @@
 
 .daily-entry-alert {
     margin-bottom: 12px;
+}
+
+@media (max-width: 1180px) {
+    .daily-entry-page .container {
+        width: calc(100% - 16px);
+    }
+
+    .daily-entry-input-panel {
+        padding: 12px;
+    }
+
+    .daily-entry-table .entry-vendor-col {
+        width: 16%;
+    }
+
+    .daily-entry-table .entry-qty-col {
+        width: 8.4%;
+    }
+
+    .daily-entry-table thead th {
+        font-size: 10.5px;
+        padding-left: 1px;
+        padding-right: 1px;
+    }
+
+    .daily-entry-table .vendor-cell {
+        padding-left: 5px;
+        padding-right: 5px;
+        font-size: 10.5px;
+    }
+
+    .daily-entry-table input[type="number"] {
+        padding-left: 2px;
+        padding-right: 2px;
+        font-size: 11px;
+    }
 }
 
 @media (max-width: 900px) {
@@ -298,7 +318,6 @@
 
     .daily-entry-table-wrap {
         max-height: none;
-        border-radius: 10px;
     }
 
     .daily-entry-save-bar {
@@ -306,10 +325,11 @@
     }
 }
 
-@media (max-width: 640px) {
+/* 휴대폰/좁은 화면에서는 가로 스크롤 대신 거래처별 카드형 입력으로 전환한다. */
+@media (max-width: 720px) {
     .daily-entry-page .container {
-        padding-left: 10px;
-        padding-right: 10px;
+        padding-left: 8px;
+        padding-right: 8px;
     }
 
     .daily-entry-help {
@@ -320,21 +340,98 @@
         width: 100%;
     }
 
-    .daily-entry-date-nav a,
-    .daily-entry-date-nav button {
+    .daily-entry-date-nav a {
         flex: 1 1 auto;
         text-align: center;
     }
 
-    .daily-entry-table {
-        font-size: 12px;
+    .daily-entry-date-picker {
+        flex: 1 1 100%;
+        order: -1;
     }
 
-    .daily-entry-table .vendor-cell,
-    .daily-entry-table thead .vendor-heading {
-        width: 150px;
-        min-width: 150px;
-        max-width: 150px;
+    .daily-entry-table-wrap {
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .daily-entry-table,
+    .daily-entry-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .daily-entry-table colgroup,
+    .daily-entry-table thead {
+        display: none;
+    }
+
+    .daily-entry-table tbody tr {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0;
+        width: 100%;
+        margin-bottom: 10px;
+        overflow: hidden;
+        border: 1px solid var(--entry-border);
+        border-radius: 10px;
+        background: #fff;
+    }
+
+    .daily-entry-table tbody tr.entry-hidden-row {
+        display: none;
+    }
+
+    .daily-entry-table td,
+    .daily-entry-table .vendor-cell {
+        position: static;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        border-right: 1px solid var(--entry-border);
+        border-bottom: 1px solid var(--entry-border);
+        box-shadow: none;
+        background: #fff;
+    }
+
+    .daily-entry-table .vendor-cell {
+        grid-column: 1 / -1;
+        padding: 9px 10px;
+        font-size: 13px;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        background: #f6f9fb;
+    }
+
+    .daily-entry-table tbody tr.has-saved-data .vendor-cell {
+        box-shadow: inset 4px 0 0 #59a873;
+        background: var(--entry-saved);
+    }
+
+    .daily-entry-table .qty-cell {
+        padding: 5px;
+    }
+
+    .daily-entry-table .qty-cell::before {
+        content: attr(data-label);
+        display: block;
+        min-height: 22px;
+        margin-bottom: 3px;
+        color: #6a7784;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 1.1;
+        text-align: center;
+    }
+
+    .daily-entry-table input[type="number"] {
+        height: 34px;
+        font-size: 13px;
+        text-align: center;
     }
 
     .daily-entry-save-bar {
@@ -344,5 +441,11 @@
 
     .daily-entry-save-bar button {
         width: 100%;
+    }
+}
+
+@media (max-width: 430px) {
+    .daily-entry-table tbody tr {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
