@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh"
+          th:if="${jobState == 'RUNNING'}"
+          th:content="${'2;url=/input-data/recovery/wait?job=' + jobId}">
+    <title>현재 장부 복구 중</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
+    <style>
+        .recovery-wait-wrap { max-width: 720px; margin: 9vh auto 0; }
+        .recovery-wait-card { padding: 42px 28px; text-align: center; }
+        .recovery-wait-spinner {
+            width: 44px; height: 44px; margin: 0 auto 20px;
+            border: 4px solid #e5e9ee; border-top-color: #3569d4;
+            border-radius: 50%; animation: recovery-wait-spin .9s linear infinite;
+        }
+        .recovery-wait-card h1 { margin-bottom: 10px; }
+        .recovery-wait-card p { margin: 8px 0; }
+        @keyframes recovery-wait-spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<main class="container recovery-wait-wrap">
+    <section class="panel recovery-wait-card" th:if="${jobState == 'RUNNING'}">
+        <div class="recovery-wait-spinner" aria-hidden="true"></div>
+        <p class="eyebrow">현재 장부 복구 중</p>
+        <h1>원래 input_data.xlsx 양식으로 만들고 있습니다</h1>
+        <p>사이트 DB의 판매내용을 날짜별 시트와 거래처별 입력칸에 다시 채우고 있습니다.</p>
+        <p>완료되면 자동으로 다운로드가 시작됩니다.</p>
+    </section>
+
+    <section class="panel recovery-wait-card" th:unless="${jobState == 'RUNNING'}">
+        <p class="eyebrow">장부 복구 실패</p>
+        <h1>복구 파일을 만들지 못했습니다</h1>
+        <p th:text="${jobError != null ? jobError : '작업이 만료되었습니다. 다시 시도해주세요.'}"></p>
+        <div class="button-row" style="justify-content:center; margin-top:20px;">
+            <a class="secondary-link" th:href="@{/upload}">엑셀 업로드로 돌아가기</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>
