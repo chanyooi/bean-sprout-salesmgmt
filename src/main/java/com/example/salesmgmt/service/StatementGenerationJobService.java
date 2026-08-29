@@ -17,8 +17,6 @@ import java.time.YearMonth;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Service
 public class StatementGenerationJobService {
@@ -28,15 +26,17 @@ public class StatementGenerationJobService {
 
     private final StatementWorkbookOnePassService onePassService;
     private final FilteredStatementWorkbookService filteredService;
-    private final ExecutorService executor = Executors.newFixedThreadPool(2);
+    private final HeavyFileTaskExecutor heavyFileTaskExecutor;
     private final Map<String, Job> jobs = new ConcurrentHashMap<>();
 
     public StatementGenerationJobService(
             StatementWorkbookOnePassService onePassService,
-            FilteredStatementWorkbookService filteredService
+            FilteredStatementWorkbookService filteredService,
+            HeavyFileTaskExecutor heavyFileTaskExecutor
     ) {
         this.onePassService = onePassService;
         this.filteredService = filteredService;
+        this.heavyFileTaskExecutor = heavyFileTaskExecutor;
     }
 
     public String start(
@@ -51,7 +51,7 @@ public class StatementGenerationJobService {
         Job job = new Job();
         jobs.put(id, job);
 
-        executor.submit(() -> {
+        heavyFileTaskExecutor.submit(() -> {
             long started = System.nanoTime();
             try {
                 StatementWorkbookResult generated = deliveryMethod == null
@@ -171,8 +171,7 @@ public class StatementGenerationJobService {
     }
 
     @PreDestroy
-    public void shutdown() {
-        executor.shutdownNow();
+    public void cleanupFiles() {
         jobs.values().forEach(job -> {
             if (job.result != null) {
                 deleteQuietly(job.result.path());
