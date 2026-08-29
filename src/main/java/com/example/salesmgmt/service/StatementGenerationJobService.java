@@ -8,6 +8,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.YearMonth;
@@ -51,7 +54,7 @@ public class StatementGenerationJobService {
         executor.submit(() -> {
             long started = System.nanoTime();
             try {
-                StatementWorkbookResult result = deliveryMethod == null
+                StatementWorkbookResult generated = deliveryMethod == null
                         ? onePassService.generate(templateFile, month, includeEmpty)
                         : filteredService.generate(
                                 templateFile,
@@ -59,7 +62,24 @@ public class StatementGenerationJobService {
                                 includeEmpty,
                                 deliveryMethod
                         );
+
+                Path file = Files.createTempFile("statement-download-", ".xlsx");
+                try {
+                    Files.write(file, generated.fileBytes());
+                } catch (IOException | RuntimeException exception) {
+                    deleteQuietly(file);
+                    throw exception;
+                }
+
+                JobFileResult result = new JobFileResult(
+                        file,
+                        generated.filename(),
+                        generated.generatedSheetCount(),
+                        generated.sheetWithSalesCount(),
+                        generated.warningCount()
+                );
                 job.complete(result);
+
                 long elapsedMs = (System.nanoTime() - started) / 1_000_000L;
                 log.info(
                         "Statement generation completed. jobId={}, month={}, deliveryMethod={}, elapsedMs={}, bytes={}",
@@ -67,7 +87,7 @@ public class StatementGenerationJobService {
                         month,
                         deliveryMethod,
                         elapsedMs,
-                        result.fileBytes().length
+                        safeSize(file)
                 );
             } catch (Exception exception) {
                 job.fail(safeMessage(exception));
@@ -97,19 +117,50 @@ public class StatementGenerationJobService {
         );
     }
 
-    public StatementWorkbookResult result(String id) {
+    public JobFileResult result(String id) {
+        cleanupExpired();
         Job job = jobs.get(id);
         if (job == null || job.state != JobState.READY || job.result == null) {
             return null;
         }
-        StatementWorkbookResult result = job.result;
-        jobs.remove(id);
-        return result;
+        if (!Files.exists(job.result.path())) {
+            job.fail("생성된 명세서 파일을 찾을 수 없습니다. 다시 생성해주세요.");
+            return null;
+        }
+        job.updatedAt = Instant.now();
+        return job.result;
     }
 
     private void cleanupExpired() {
         Instant cutoff = Instant.now().minus(RETENTION);
-        jobs.entrySet().removeIf(entry -> entry.getValue().updatedAt.isBefore(cutoff));
+        jobs.entrySet().removeIf(entry -> {
+            Job job = entry.getValue();
+            if (!job.updatedAt.isBefore(cutoff)) {
+                return false;
+            }
+            if (job.result != null) {
+                deleteQuietly(job.result.path());
+            }
+            return true;
+        });
+    }
+
+    private long safeSize(Path path) {
+        try {
+            return path == null ? 0L : Files.size(path);
+        } catch (IOException exception) {
+            return 0L;
+        }
+    }
+
+    private void deleteQuietly(Path path) {
+        if (path == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException ignored) {
+        }
     }
 
     private String safeMessage(Exception exception) {
@@ -122,6 +173,11 @@ public class StatementGenerationJobService {
     @PreDestroy
     public void shutdown() {
         executor.shutdownNow();
+        jobs.values().forEach(job -> {
+            if (job.result != null) {
+                deleteQuietly(job.result.path());
+            }
+        });
     }
 
     public enum JobState {
@@ -138,19 +194,35 @@ public class StatementGenerationJobService {
     ) {
     }
 
+    public record JobFileResult(
+            Path path,
+            String filename,
+            int generatedSheetCount,
+            int sheetWithSalesCount,
+            int warningCount
+    ) {
+    }
+
     private static final class Job {
         private volatile JobState state = JobState.RUNNING;
-        private volatile StatementWorkbookResult result;
+        private volatile JobFileResult result;
         private volatile String error;
         private volatile Instant updatedAt = Instant.now();
 
-        private void complete(StatementWorkbookResult result) {
+        private void complete(JobFileResult result) {
             this.result = result;
             this.state = JobState.READY;
             this.updatedAt = Instant.now();
         }
 
         private void fail(String error) {
+            if (this.result != null) {
+                try {
+                    Files.deleteIfExists(this.result.path());
+                } catch (IOException ignored) {
+                }
+                this.result = null;
+            }
             this.error = error;
             this.state = JobState.FAILED;
             this.updatedAt = Instant.now();
