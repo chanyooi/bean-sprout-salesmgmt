@@ -149,13 +149,25 @@ public class ExcelImportJobService {
                     saveResult
             );
 
-            // DB 반영까지 성공한 바로 그 업로드 파일을 수정 없이 보관한다.
-            // 이후 다른 PC에서는 복구 엑셀을 새로 만들 필요 없이 이 원본을 즉시 내려받는다.
-            inputWorkbookSnapshotService.storeLatestUploadedWorkbook(
-                    tempFile,
-                    originalFilename,
-                    result.orderSnapshots()
-            );
+            String originalFileWarning = null;
+            try {
+                // DB 반영까지 성공한 바로 그 업로드 파일을 수정 없이 보관한다.
+                // 이후 다른 PC에서는 복구 엑셀을 새로 만들 필요 없이 이 원본을 즉시 내려받는다.
+                inputWorkbookSnapshotService.storeLatestUploadedWorkbook(
+                        tempFile,
+                        originalFilename,
+                        result.orderSnapshots()
+                );
+            } catch (RuntimeException snapshotException) {
+                log.error(
+                        "판매자료 저장은 성공했지만 input_data.xlsx 원본 보관에 실패했습니다. jobId={}",
+                        jobId,
+                        snapshotException
+                );
+                originalFileWarning =
+                        "판매자료 저장은 완료됐지만 업로드 원본 파일 보관에 실패했습니다. "
+                                + "장부 원본 다운로드 기능은 이번 업로드 파일을 제공하지 못할 수 있습니다.";
+            }
 
             jobs.put(jobId, JobView.completed(
                     jobId,
@@ -163,7 +175,7 @@ public class ExcelImportJobService {
                     originalFilename,
                     null,
                     saveResult,
-                    null,
+                    originalFileWarning,
                     null
             ));
         } catch (SalesDataConflictException exception) {
