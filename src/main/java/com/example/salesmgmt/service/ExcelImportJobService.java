@@ -136,7 +136,9 @@ public class ExcelImportJobService {
                 return;
             }
 
-            String beforeSnapshot = uploadHistoryService.captureSalesSnapshot();
+            String beforeSnapshot = uploadHistoryService.captureSalesSnapshot(
+                    result.orderSnapshots()
+            );
             SaveResult saveResult = salesPersistenceService.save(
                     result.records(),
                     result.orderSnapshots()
