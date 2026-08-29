@@ -39,8 +39,6 @@
             <div class="button-row">
                 <a class="secondary-link" th:href="@{/admin/safety}">업로드 이력·복구</a>
                 <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
-
-
                 <a class="secondary-link" th:href="@{/profit}">원가·이익</a>
                 <a class="secondary-link" th:href="@{/statements}">거래명세서</a>
                 <a class="secondary-link" th:href="@{/reports/monthly}">월매출 현황</a>
@@ -48,6 +46,25 @@
                 <a class="secondary-link" th:href="@{/sales}">저장 데이터 보기</a>
             </div>
         </div>
+    </section>
+
+    <section class="input-recovery-card">
+        <h2>최근 업로드 원본</h2>
+        <p>
+            <strong>검사 후 DB 저장에 성공했던 input_data.xlsx 파일 자체를 그대로 보관합니다.</strong>
+            다른 컴퓨터에 원본 장부가 없어도 여기서 최근 업로드 파일을 바로 다시 받을 수 있습니다.
+        </p>
+        <form class="input-recovery-grid" action="/input-data/recovery" method="get">
+            <label>
+                정산월
+                <input id="originalWorkbookMonth" type="month" name="month" required>
+            </label>
+            <button type="submit" class="input-recovery-button">업로드했던 원본 다운로드</button>
+        </form>
+        <p class="helper" style="margin-top:12px;">
+            파일을 새로 재구성하는 방식이 아니라 업로드했던 원본 바이트를 그대로 내려받기 때문에 빠릅니다.
+            이 기능 적용 이후 정상 저장된 업로드부터 원본이 보관됩니다.
+        </p>
     </section>
 
     <section class="panel">
@@ -58,7 +75,9 @@
             </div>
             <a class="primary-link" th:href="@{/input-template}">새 월 장부 다운로드</a>
         </div>
-    </section>    <section class="panel">
+    </section>
+
+    <section class="panel">
         <form th:action="@{/excel/import}"
               method="post"
               enctype="multipart/form-data"
@@ -223,25 +242,36 @@
         </section>
     </section>
 </main>
-    <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260814_2)}"></script>
-    <form id="songcheonPcLogoutForm"
-          th:action="@{/logout}"
-          method="post"
-          style="display:none"
-          aria-hidden="true"></form>
-    <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-polish.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-form-align-fix.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"> </script>
-    <script defer th:src="@{/js/special-item-accounting.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/special-item-accounting-v2.js(v=20260814_2)}"></script>
-    <script defer th:src="@{/js/tofu-table-simple.js(v=20260814_1)}"></script>
-    <script defer th:src="@{/js/sms-send-management.js(v=20260817_1)}"></script>
-    <script defer th:src="@{/js/sms-send-inline-v2.js(v=20260817_2)}"></script>
-    <script defer th:src="@{/js/statement-send-premium-v2.js(v=20260817_2)}"></script>
-    <script defer th:src="@{/js/statement-column-order.js(v=20260817_1)}"></script>
+
+<script>
+(function () {
+    const monthInput = document.getElementById('originalWorkbookMonth');
+    if (!monthInput || monthInput.value) return;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    monthInput.value = `${year}-${month}`;
+})();
+</script>
+<script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
+<script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
+<script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260814_2)}"></script>
+<form id="songcheonPcLogoutForm"
+      th:action="@{/logout}"
+      method="post"
+      style="display:none"
+      aria-hidden="true"></form>
+<script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/statement-polish.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/statement-form-align-fix.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"> </script>
+<script defer th:src="@{/js/special-item-accounting.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/special-item-accounting-v2.js(v=20260814_2)}"></script>
+<script defer th:src="@{/js/tofu-table-simple.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/sms-send-management.js(v=20260817_1)}"></script>
+<script defer th:src="@{/js/sms-send-inline-v2.js(v=20260817_2)}"></script>
+<script defer th:src="@{/js/statement-send-premium-v2.js(v=20260817_2)}"></script>
+<script defer th:src="@{/js/statement-column-order.js(v=20260817_1)}"></script>
 </body>
 </html>
