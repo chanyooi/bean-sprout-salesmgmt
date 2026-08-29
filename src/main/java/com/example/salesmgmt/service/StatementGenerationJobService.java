@@ -26,16 +26,19 @@ public class StatementGenerationJobService {
 
     private final StatementWorkbookOnePassService onePassService;
     private final FilteredStatementWorkbookService filteredService;
+    private final StatementFinalBillingPatchService finalBillingPatchService;
     private final HeavyFileTaskExecutor heavyFileTaskExecutor;
     private final Map<String, Job> jobs = new ConcurrentHashMap<>();
 
     public StatementGenerationJobService(
             StatementWorkbookOnePassService onePassService,
             FilteredStatementWorkbookService filteredService,
+            StatementFinalBillingPatchService finalBillingPatchService,
             HeavyFileTaskExecutor heavyFileTaskExecutor
     ) {
         this.onePassService = onePassService;
         this.filteredService = filteredService;
+        this.finalBillingPatchService = finalBillingPatchService;
         this.heavyFileTaskExecutor = heavyFileTaskExecutor;
     }
 
@@ -62,6 +65,13 @@ public class StatementGenerationJobService {
                                 includeEmpty,
                                 deliveryMethod
                         );
+
+                // Excel이 파일을 열 때 수식을 다시 계산하기를 기다리지 않고,
+                // DB의 실제 판매금액 합계로 각 시트의 최종 청구금액을 확정한다.
+                generated = finalBillingPatchService.patchMonthly(
+                        generated,
+                        month
+                );
 
                 Path file = Files.createTempFile("statement-download-", ".xlsx");
                 try {
