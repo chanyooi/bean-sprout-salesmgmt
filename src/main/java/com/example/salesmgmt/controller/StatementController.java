@@ -5,6 +5,7 @@ import com.example.salesmgmt.domain.StatementWorkbookResult;
 import com.example.salesmgmt.service.FilteredStatementWorkbookService;
 import com.example.salesmgmt.service.SalesManagementService;
 import com.example.salesmgmt.service.SingleVendorStatementWorkbookService;
+import com.example.salesmgmt.service.StatementFinalBillingPatchService;
 import com.example.salesmgmt.service.StatementGenerationJobService;
 import com.example.salesmgmt.service.StatementTemplateStorageService;
 import com.example.salesmgmt.service.StatementWorkbookOnePassService;
@@ -42,6 +43,7 @@ public class StatementController {
     private final StatementWorkbookOnePassService statementWorkbookService;
     private final FilteredStatementWorkbookService filteredStatementWorkbookService;
     private final SingleVendorStatementWorkbookService singleVendorStatementWorkbookService;
+    private final StatementFinalBillingPatchService finalBillingPatchService;
     private final SalesManagementService salesManagementService;
     private final StatementTemplateStorageService statementTemplateStorageService;
     private final StatementGenerationJobService statementGenerationJobService;
@@ -50,6 +52,7 @@ public class StatementController {
             StatementWorkbookOnePassService statementWorkbookService,
             FilteredStatementWorkbookService filteredStatementWorkbookService,
             SingleVendorStatementWorkbookService singleVendorStatementWorkbookService,
+            StatementFinalBillingPatchService finalBillingPatchService,
             SalesManagementService salesManagementService,
             StatementTemplateStorageService statementTemplateStorageService,
             StatementGenerationJobService statementGenerationJobService
@@ -57,6 +60,7 @@ public class StatementController {
         this.statementWorkbookService = statementWorkbookService;
         this.filteredStatementWorkbookService = filteredStatementWorkbookService;
         this.singleVendorStatementWorkbookService = singleVendorStatementWorkbookService;
+        this.finalBillingPatchService = finalBillingPatchService;
         this.salesManagementService = salesManagementService;
         this.statementTemplateStorageService = statementTemplateStorageService;
         this.statementGenerationJobService = statementGenerationJobService;
@@ -80,9 +84,15 @@ public class StatementController {
             @RequestParam String month
     ) {
         try {
+            YearMonth selectedMonth = YearMonth.parse(month);
             StatementWorkbookResult result = singleVendorStatementWorkbookService.generate(
                     vendorId,
-                    YearMonth.parse(month)
+                    selectedMonth
+            );
+            result = finalBillingPatchService.patchVendor(
+                    result,
+                    vendorId,
+                    selectedMonth
             );
             return fileResponse(result);
         } catch (DateTimeParseException exception) {
@@ -183,6 +193,10 @@ public class StatementController {
                             deliveryMethod
                     );
 
+            result = finalBillingPatchService.patchMonthly(
+                    result,
+                    selectedMonth
+            );
             return fileResponse(result);
         } catch (DateTimeParseException exception) {
             return badRequest("생성 월 형식이 올바르지 않습니다.");
