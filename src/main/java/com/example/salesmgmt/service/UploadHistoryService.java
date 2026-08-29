@@ -1,5 +1,6 @@
 package com.example.salesmgmt.service;
 
+import com.example.salesmgmt.domain.OrderSnapshot;
 import com.example.salesmgmt.domain.SaveResult;
 import com.example.salesmgmt.entity.*;
 import com.example.salesmgmt.repository.*;
@@ -12,11 +13,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class UploadHistoryService {
+
+    private static final int BACKUP_QUERY_CHUNK = 500;
 
     private final UploadHistoryRepository historyRepository;
     private final SalesOrderRepository orderRepository;
@@ -38,13 +42,62 @@ public class UploadHistoryService {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 과거 내부 호출 호환용 전체 백업입니다.
+     * 일반 Excel 업로드에서는 아래의 범위 백업 메서드를 사용합니다.
+     */
     @Transactional(readOnly = true)
     public String captureSalesSnapshot() {
         List<SalesOrderEntity> allOrders = orderRepository.findAllForBackup();
         List<SalesItemEntity> allItems = itemRepository.findAllForBackup();
+        return serializeBackup(new SalesBackup(
+                false,
+                List.of(),
+                toOrderBackups(allOrders, allItems)
+        ));
+    }
 
+    /**
+     * 업로드가 실제로 건드릴 주문번호만 백업합니다.
+     * 예전에는 업로드할 때마다 과거 전체 판매 DB를 전부 읽어 JSON으로 만들었기 때문에
+     * 데이터가 쌓일수록 업로드 시간과 메모리 사용량이 계속 증가했습니다.
+     */
+    @Transactional(readOnly = true)
+    public String captureSalesSnapshot(List<OrderSnapshot> snapshots) {
+        if (snapshots == null || snapshots.isEmpty()) {
+            return serializeBackup(new SalesBackup(true, List.of(), List.of()));
+        }
+
+        List<String> orderNumbers = new ArrayList<>(new LinkedHashSet<>(
+                snapshots.stream()
+                        .map(OrderSnapshot::orderNumber)
+                        .filter(number -> number != null && !number.isBlank())
+                        .toList()
+        ));
+
+        List<SalesOrderEntity> orders = new ArrayList<>();
+        List<SalesItemEntity> items = new ArrayList<>();
+
+        for (int start = 0; start < orderNumbers.size(); start += BACKUP_QUERY_CHUNK) {
+            int end = Math.min(start + BACKUP_QUERY_CHUNK, orderNumbers.size());
+            List<String> chunk = orderNumbers.subList(start, end);
+            orders.addAll(orderRepository.findForBackupByOrderNumbers(chunk));
+            items.addAll(itemRepository.findForBackupByOrderNumbers(chunk));
+        }
+
+        return serializeBackup(new SalesBackup(
+                true,
+                List.copyOf(orderNumbers),
+                toOrderBackups(orders, items)
+        ));
+    }
+
+    private List<OrderBackup> toOrderBackups(
+            List<SalesOrderEntity> orders,
+            List<SalesItemEntity> items
+    ) {
         Map<Long, List<ItemBackup>> itemsByOrderId = new LinkedHashMap<>();
-        for (SalesItemEntity item : allItems) {
+        for (SalesItemEntity item : items) {
             Long orderId = item.getSalesOrder().getId();
             itemsByOrderId
                     .computeIfAbsent(orderId, ignored -> new ArrayList<>())
@@ -55,14 +108,9 @@ public class UploadHistoryService {
                     ));
         }
 
-        List<OrderBackup> orders = new ArrayList<>(allOrders.size());
-        for (SalesOrderEntity order : allOrders) {
-            List<ItemBackup> items = itemsByOrderId.getOrDefault(
-                    order.getId(),
-                    List.of()
-            );
-
-            orders.add(new OrderBackup(
+        List<OrderBackup> backups = new ArrayList<>(orders.size());
+        for (SalesOrderEntity order : orders) {
+            backups.add(new OrderBackup(
                     order.getOrderNumber(),
                     order.getDeliveryDate(),
                     order.getVendor().getInputName(),
@@ -71,14 +119,15 @@ public class UploadHistoryService {
                     order.getNote(),
                     order.getSourceSheet(),
                     order.getSourceRow(),
-                    List.copyOf(items)
+                    List.copyOf(itemsByOrderId.getOrDefault(order.getId(), List.of()))
             ));
         }
+        return List.copyOf(backups);
+    }
 
+    private String serializeBackup(SalesBackup backup) {
         try {
-            return objectMapper.writeValueAsString(
-                    new SalesBackup(orders)
-            );
+            return objectMapper.writeValueAsString(backup);
         } catch (JacksonException exception) {
             throw new IllegalStateException(
                     "업로드 전 백업을 만들지 못했습니다.",
@@ -146,10 +195,46 @@ public class UploadHistoryService {
             );
         }
 
+        if (Boolean.TRUE.equals(backup.scoped())) {
+            restoreScopedBackup(backup);
+        } else {
+            restoreLegacyFullBackup(backup);
+        }
+
+        latest.markRestored();
+    }
+
+    /** 새 방식: 이번 업로드가 건드린 주문만 원래 상태로 되돌립니다. */
+    private void restoreScopedBackup(SalesBackup backup) {
+        List<String> affectedOrderNumbers = backup.orderNumbers() == null
+                ? List.of()
+                : backup.orderNumbers();
+
+        for (String orderNumber : affectedOrderNumbers) {
+            orderRepository.findByOrderNumber(orderNumber).ifPresent(order -> {
+                itemRepository.deleteAllBySalesOrder_Id(order.getId());
+                orderRepository.delete(order);
+            });
+        }
+        itemRepository.flush();
+        orderRepository.flush();
+
+        restoreOrders(backup.orders());
+    }
+
+    /** 기존 업로드 이력은 예전 방식 그대로 전체 DB 복구가 가능하도록 유지합니다. */
+    private void restoreLegacyFullBackup(SalesBackup backup) {
         itemRepository.deleteAllInBatch();
         orderRepository.deleteAllInBatch();
+        restoreOrders(backup.orders());
+    }
 
-        for (OrderBackup savedOrder : backup.orders()) {
+    private void restoreOrders(List<OrderBackup> savedOrders) {
+        if (savedOrders == null) {
+            return;
+        }
+
+        for (OrderBackup savedOrder : savedOrders) {
             VendorEntity vendor = vendorRepository
                     .findByInputName(savedOrder.vendorName())
                     .orElseThrow(() -> new IllegalStateException(
@@ -170,6 +255,9 @@ public class UploadHistoryService {
                     )
             );
 
+            if (savedOrder.items() == null) {
+                continue;
+            }
             for (ItemBackup savedItem : savedOrder.items()) {
                 itemRepository.save(new SalesItemEntity(
                         order,
@@ -179,8 +267,6 @@ public class UploadHistoryService {
                 ));
             }
         }
-
-        latest.markRestored();
     }
 
     private String safeFileName(String name) {
@@ -190,7 +276,12 @@ public class UploadHistoryService {
         return name.length() > 255 ? name.substring(0, 255) : name;
     }
 
-    public record SalesBackup(List<OrderBackup> orders) {}
+    public record SalesBackup(
+            Boolean scoped,
+            List<String> orderNumbers,
+            List<OrderBackup> orders
+    ) {}
+
     public record OrderBackup(
             String orderNumber,
             LocalDate deliveryDate,
@@ -202,6 +293,7 @@ public class UploadHistoryService {
             Integer sourceRow,
             List<ItemBackup> items
     ) {}
+
     public record ItemBackup(
             String itemName,
             BigDecimal quantity,
