@@ -8,6 +8,8 @@ import com.example.salesmgmt.service.SingleVendorStatementWorkbookService;
 import com.example.salesmgmt.service.StatementGenerationJobService;
 import com.example.salesmgmt.service.StatementTemplateStorageService;
 import com.example.salesmgmt.service.StatementWorkbookOnePassService;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +21,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
@@ -137,10 +141,11 @@ public class StatementController {
     }
 
     @GetMapping("/download/result")
-    public ResponseEntity<byte[]> downloadResult(
+    public ResponseEntity<?> downloadResult(
             @RequestParam String jobId
     ) {
-        StatementWorkbookResult result = statementGenerationJobService.result(jobId);
+        StatementGenerationJobService.JobFileResult result =
+                statementGenerationJobService.result(jobId);
         if (result == null) {
             return ResponseEntity.status(409)
                     .contentType(new MediaType(
@@ -148,7 +153,7 @@ public class StatementController {
                             "plain",
                             StandardCharsets.UTF_8
                     ))
-                    .body("명세서가 아직 준비되지 않았습니다.".getBytes(StandardCharsets.UTF_8));
+                    .body("명세서가 아직 준비되지 않았습니다.");
         }
         return fileResponse(result);
     }
@@ -187,10 +192,7 @@ public class StatementController {
     }
 
     private ResponseEntity<byte[]> fileResponse(StatementWorkbookResult result) {
-        String encodedFilename = URLEncoder.encode(
-                result.filename(),
-                StandardCharsets.UTF_8
-        ).replace("+", "%20");
+        String encodedFilename = encodeFilename(result.filename());
 
         return ResponseEntity.ok()
                 .header(
@@ -202,6 +204,46 @@ public class StatementController {
                 .header("X-Generation-Warnings", Integer.toString(result.warningCount()))
                 .contentType(XLSX_MEDIA_TYPE)
                 .body(result.fileBytes());
+    }
+
+    /**
+     * 백그라운드에서 이미 만든 파일은 byte[]로 다시 메모리에 올리지 않고
+     * 디스크 파일을 HTTP 응답으로 스트리밍합니다.
+     */
+    private ResponseEntity<?> fileResponse(
+            StatementGenerationJobService.JobFileResult result
+    ) {
+        String encodedFilename = encodeFilename(result.filename());
+        Resource resource = new FileSystemResource(result.path());
+
+        try {
+            return ResponseEntity.ok()
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename*=UTF-8''" + encodedFilename
+                    )
+                    .header("X-Generated-Sheets", Integer.toString(result.generatedSheetCount()))
+                    .header("X-Sheets-With-Sales", Integer.toString(result.sheetWithSalesCount()))
+                    .header("X-Generation-Warnings", Integer.toString(result.warningCount()))
+                    .contentType(XLSX_MEDIA_TYPE)
+                    .contentLength(Files.size(result.path()))
+                    .body(resource);
+        } catch (IOException exception) {
+            return ResponseEntity.internalServerError()
+                    .contentType(new MediaType(
+                            "text",
+                            "plain",
+                            StandardCharsets.UTF_8
+                    ))
+                    .body("생성된 명세서 파일을 읽지 못했습니다. 다시 생성해주세요.");
+        }
+    }
+
+    private String encodeFilename(String filename) {
+        return URLEncoder.encode(
+                filename,
+                StandardCharsets.UTF_8
+        ).replace("+", "%20");
     }
 
     private ResponseEntity<byte[]> badRequest(String message) {
