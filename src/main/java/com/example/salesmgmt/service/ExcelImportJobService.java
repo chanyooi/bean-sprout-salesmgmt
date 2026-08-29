@@ -3,7 +3,6 @@ package com.example.salesmgmt.service;
 import com.example.salesmgmt.domain.ExcelImportResult;
 import com.example.salesmgmt.domain.SaveResult;
 import com.example.salesmgmt.exception.SalesDataConflictException;
-import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,8 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Service
 public class ExcelImportJobService {
@@ -34,27 +31,25 @@ public class ExcelImportJobService {
     private final ExcelImportService excelImportService;
     private final SalesPersistenceService salesPersistenceService;
     private final UploadHistoryService uploadHistoryService;
+    private final HeavyFileTaskExecutor heavyFileTaskExecutor;
     private final Map<String, JobView> jobs = new ConcurrentHashMap<>();
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "excel-import-worker");
-        thread.setDaemon(true);
-        return thread;
-    });
 
     public ExcelImportJobService(
             ExcelImportService excelImportService,
             SalesPersistenceService salesPersistenceService,
-            UploadHistoryService uploadHistoryService
+            UploadHistoryService uploadHistoryService,
+            HeavyFileTaskExecutor heavyFileTaskExecutor
     ) {
         this.excelImportService = excelImportService;
         this.salesPersistenceService = salesPersistenceService;
         this.uploadHistoryService = uploadHistoryService;
+        this.heavyFileTaskExecutor = heavyFileTaskExecutor;
     }
 
     /**
      * Railway의 HTTP 요청을 엑셀 파싱/DB 동기화가 끝날 때까지 붙잡아두지 않는다.
      * 요청 안에서는 업로드 파일을 임시 파일로 복사한 뒤 즉시 job id를 반환하고,
-     * 실제 무거운 처리는 단일 백그라운드 워커에서 순서대로 실행한다.
+     * 실제 무거운 처리는 공용 파일 워커에서 순서대로 실행한다.
      */
     public String start(MultipartFile file, String action) {
         validateFile(file);
@@ -75,7 +70,9 @@ public class ExcelImportJobService {
 
         String jobId = UUID.randomUUID().toString();
         jobs.put(jobId, JobView.processing(jobId, normalizedAction, originalFilename));
-        executor.submit(() -> process(jobId, normalizedAction, originalFilename, tempFile));
+        heavyFileTaskExecutor.submit(
+                () -> process(jobId, normalizedAction, originalFilename, tempFile)
+        );
         return jobId;
     }
 
@@ -149,7 +146,6 @@ public class ExcelImportJobService {
                     saveResult
             );
 
-            // 저장 성공 뒤에는 대용량 변환 목록을 메모리에 계속 들고 있지 않는다.
             jobs.put(jobId, JobView.completed(
                     jobId,
                     action,
@@ -201,11 +197,6 @@ public class ExcelImportJobService {
     private void cleanupExpiredJobs() {
         Instant cutoff = Instant.now().minus(JOB_RETENTION);
         jobs.entrySet().removeIf(entry -> entry.getValue().createdAt().isBefore(cutoff));
-    }
-
-    @PreDestroy
-    public void shutdown() {
-        executor.shutdownNow();
     }
 
     public enum JobState {
