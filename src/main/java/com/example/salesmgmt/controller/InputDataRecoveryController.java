@@ -1,6 +1,7 @@
 package com.example.salesmgmt.controller;
 
 import com.example.salesmgmt.service.InputDataRecoveryJobService;
+import com.example.salesmgmt.service.InputWorkbookSnapshotService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
@@ -27,30 +28,61 @@ public class InputDataRecoveryController {
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
 
+    private final InputWorkbookSnapshotService snapshotService;
     private final InputDataRecoveryJobService recoveryJobService;
 
     public InputDataRecoveryController(
+            InputWorkbookSnapshotService snapshotService,
             InputDataRecoveryJobService recoveryJobService
     ) {
+        this.snapshotService = snapshotService;
         this.recoveryJobService = recoveryJobService;
     }
 
     /**
-     * 현재 DB 내용을 매일 업로드하던 input_data.xlsx 원본 양식으로 복구합니다.
-     * 무거운 POI 작업은 공용 백그라운드 워커에서 실행해 요청 타임아웃을 피합니다.
+     * 평소 DB 반영에 사용했던 input_data.xlsx 원본 자체를 내려받습니다.
+     * Apache POI로 새 파일을 만들지 않기 때문에 별도 복구 작업 대기 시간이 없습니다.
+     * through 파라미터는 예전 화면과의 호환을 위해 받아도 무시합니다.
      */
     @GetMapping("/input-data/recovery")
-    public String startRecovery(
+    public ResponseEntity<?> downloadLatestUploadedWorkbook(
             @RequestParam String month,
             @RequestParam(required = false) String through
     ) {
         YearMonth selectedMonth = parseMonth(month);
-        LocalDate endDate = parseEndDate(selectedMonth, through);
 
-        String jobId = recoveryJobService.start(selectedMonth, endDate);
-        return "redirect:/input-data/recovery/wait?job=" + jobId;
+        var stored = snapshotService.findLatest(selectedMonth);
+        if (stored.isEmpty()) {
+            return ResponseEntity.status(404)
+                    .contentType(new MediaType("text", "plain", StandardCharsets.UTF_8))
+                    .body(
+                            selectedMonth
+                                    + "에 저장된 업로드 원본이 아직 없습니다. "
+                                    + "이 기능 적용 후 input_data.xlsx를 한 번 정상 업로드하면 "
+                                    + "그 다음부터는 업로드했던 파일 그대로 즉시 다운로드할 수 있습니다."
+                    );
+        }
+
+        InputWorkbookSnapshotService.StoredWorkbook workbook = stored.get();
+        String filename = workbook.filename();
+        if (filename == null || filename.isBlank()) {
+            filename = "input_data.xlsx";
+        }
+
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(filename, StandardCharsets.UTF_8)
+                .build();
+
+        return ResponseEntity.ok()
+                .contentType(XLSX_MEDIA_TYPE)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .contentLength(workbook.bytes().length)
+                .body(workbook.bytes());
     }
 
+    /**
+     * 예전 DB 재생성 방식의 대기/결과 URL은 기존 열린 탭 호환용으로 남겨둡니다.
+     */
     @GetMapping("/input-data/recovery/wait")
     public String waitForRecovery(
             @RequestParam String job,
@@ -109,26 +141,5 @@ public class InputDataRecoveryController {
                     "정산월 형식이 올바르지 않습니다. 예: 2026-08"
             );
         }
-    }
-
-    private LocalDate parseEndDate(
-            YearMonth month,
-            String through
-    ) {
-        LocalDate endDate;
-        try {
-            endDate = (through == null || through.isBlank())
-                    ? month.atEndOfMonth()
-                    : LocalDate.parse(through);
-        } catch (DateTimeParseException exception) {
-            throw new IllegalArgumentException("기준일 형식이 올바르지 않습니다.");
-        }
-
-        if (!YearMonth.from(endDate).equals(month)) {
-            throw new IllegalArgumentException(
-                    "기준일은 선택한 정산월 안의 날짜여야 합니다."
-            );
-        }
-        return endDate;
     }
 }
