@@ -31,6 +31,7 @@ public class ExcelImportJobService {
     private final ExcelImportService excelImportService;
     private final SalesPersistenceService salesPersistenceService;
     private final UploadHistoryService uploadHistoryService;
+    private final InputWorkbookSnapshotService inputWorkbookSnapshotService;
     private final HeavyFileTaskExecutor heavyFileTaskExecutor;
     private final Map<String, JobView> jobs = new ConcurrentHashMap<>();
 
@@ -38,11 +39,13 @@ public class ExcelImportJobService {
             ExcelImportService excelImportService,
             SalesPersistenceService salesPersistenceService,
             UploadHistoryService uploadHistoryService,
+            InputWorkbookSnapshotService inputWorkbookSnapshotService,
             HeavyFileTaskExecutor heavyFileTaskExecutor
     ) {
         this.excelImportService = excelImportService;
         this.salesPersistenceService = salesPersistenceService;
         this.uploadHistoryService = uploadHistoryService;
+        this.inputWorkbookSnapshotService = inputWorkbookSnapshotService;
         this.heavyFileTaskExecutor = heavyFileTaskExecutor;
     }
 
@@ -144,6 +147,14 @@ public class ExcelImportJobService {
                     originalFilename,
                     beforeSnapshot,
                     saveResult
+            );
+
+            // DB 반영까지 성공한 바로 그 업로드 파일을 수정 없이 보관한다.
+            // 이후 다른 PC에서는 복구 엑셀을 새로 만들 필요 없이 이 원본을 즉시 내려받는다.
+            inputWorkbookSnapshotService.storeLatestUploadedWorkbook(
+                    tempFile,
+                    originalFilename,
+                    result.orderSnapshots()
             );
 
             jobs.put(jobId, JobView.completed(
