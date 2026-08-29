@@ -14,8 +14,6 @@ import java.time.YearMonth;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Service
 public class InputTemplateGenerationJobService {
@@ -24,16 +22,16 @@ public class InputTemplateGenerationJobService {
     private static final Duration RETENTION = Duration.ofMinutes(30);
 
     private final InputTemplateWorkbookService workbookService;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "input-template-worker");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final HeavyFileTaskExecutor heavyFileTaskExecutor;
     private final Map<String, Job> jobs = new ConcurrentHashMap<>();
     private final Map<YearMonth, String> activeByMonth = new ConcurrentHashMap<>();
 
-    public InputTemplateGenerationJobService(InputTemplateWorkbookService workbookService) {
+    public InputTemplateGenerationJobService(
+            InputTemplateWorkbookService workbookService,
+            HeavyFileTaskExecutor heavyFileTaskExecutor
+    ) {
         this.workbookService = workbookService;
+        this.heavyFileTaskExecutor = heavyFileTaskExecutor;
     }
 
     public synchronized String start(YearMonth month) {
@@ -55,7 +53,7 @@ public class InputTemplateGenerationJobService {
         jobs.put(id, job);
         activeByMonth.put(month, id);
 
-        executor.submit(() -> generate(id, job));
+        heavyFileTaskExecutor.submit(() -> generate(id, job));
         return id;
     }
 
@@ -153,8 +151,7 @@ public class InputTemplateGenerationJobService {
     }
 
     @PreDestroy
-    public void shutdown() {
-        executor.shutdownNow();
+    public void cleanupFiles() {
         jobs.values().forEach(job -> deleteQuietly(job.path));
     }
 
