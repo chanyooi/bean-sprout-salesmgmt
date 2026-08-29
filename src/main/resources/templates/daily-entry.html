@@ -75,7 +75,7 @@
             <div>
                 <h2>거래처별 수량 입력</h2>
                 <p class="helper">
-                    수량만 입력하세요. 기존 숫자를 지우고 저장하면 해당 품목이 삭제됩니다.
+                    수량은 정수 단위로 입력하세요. 기존 숫자를 지우고 저장하면 해당 품목이 삭제됩니다.
                 </p>
             </div>
             <button type="button"
@@ -121,61 +121,61 @@
                         </td>
 
                         <td class="qty-cell" data-label="두절kg">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="cutKg" data-entry-input data-entry-col="cutKg"
                                    th:value="${row.cutKg == null ? '' : row.cutKg.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="두절kg">
                         </td>
                         <td class="qty-cell" data-label="일반콩나물">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="regular" data-entry-input data-entry-col="regular"
                                    th:value="${row.regular == null ? '' : row.regular.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="일반콩나물">
                         </td>
                         <td class="qty-cell" data-label="소립">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="small" data-entry-input data-entry-col="small"
                                    th:value="${row.small == null ? '' : row.small.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="소립">
                         </td>
                         <td class="qty-cell" data-label="곱슬콩나물">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="curly" data-entry-input data-entry-col="curly"
                                    th:value="${row.curly == null ? '' : row.curly.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="곱슬콩나물">
                         </td>
                         <td class="qty-cell" data-label="3.5kg일반">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="boxRegular" data-entry-input data-entry-col="boxRegular"
                                    th:value="${row.boxRegular == null ? '' : row.boxRegular.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="3.5kg일반">
                         </td>
                         <td class="qty-cell" data-label="3.5kg곱슬">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="boxCurly" data-entry-input data-entry-col="boxCurly"
                                    th:value="${row.boxCurly == null ? '' : row.boxCurly.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="3.5kg곱슬">
                         </td>
                         <td class="qty-cell" data-label="숙주">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="mungSprout" data-entry-input data-entry-col="mungSprout"
                                    th:value="${row.mungSprout == null ? '' : row.mungSprout.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="숙주">
                         </td>
                         <td class="qty-cell" data-label="회수통">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="returnContainer" data-entry-input data-entry-col="returnContainer"
                                    th:value="${row.returnContainer == null ? '' : row.returnContainer.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="회수통">
                         </td>
                         <td class="qty-cell" data-label="손두부">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="tofu" data-entry-input data-entry-col="tofu"
                                    th:value="${row.tofu == null ? '' : row.tofu.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="손두부">
                         </td>
                         <td class="qty-cell" data-label="두부판">
-                            <input type="number" min="0" step="0.001" inputmode="decimal"
+                            <input type="number" min="0" step="1" inputmode="numeric"
                                    name="tofuPlate" data-entry-input data-entry-col="tofuPlate"
                                    th:value="${row.tofuPlate == null ? '' : row.tofuPlate.stripTrailingZeros().toPlainString()}"
                                    autocomplete="off" aria-label="두부판">
