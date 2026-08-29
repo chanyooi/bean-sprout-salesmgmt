@@ -3,6 +3,7 @@ package com.example.salesmgmt.repository;
 import com.example.salesmgmt.entity.SalesOrderEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,4 +18,15 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrderEntity, Lo
             order by orderEntity.id asc
             """)
     List<SalesOrderEntity> findAllForBackup();
+
+    @Query("""
+            select orderEntity
+            from SalesOrderEntity orderEntity
+            join fetch orderEntity.vendor
+            where orderEntity.orderNumber in :orderNumbers
+            order by orderEntity.id asc
+            """)
+    List<SalesOrderEntity> findForBackupByOrderNumbers(
+            @Param("orderNumbers") List<String> orderNumbers
+    );
 }
