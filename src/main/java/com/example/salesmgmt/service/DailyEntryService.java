@@ -5,7 +5,9 @@ import com.example.salesmgmt.domain.OrderSnapshot;
 import com.example.salesmgmt.domain.SaveResult;
 import com.example.salesmgmt.entity.SalesItemEntity;
 import com.example.salesmgmt.entity.SalesOrderEntity;
+import com.example.salesmgmt.entity.VendorEntity;
 import com.example.salesmgmt.repository.SalesItemRepository;
+import com.example.salesmgmt.repository.VendorRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,8 +16,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class DailyEntryService {
@@ -24,8 +28,9 @@ public class DailyEntryService {
             DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /**
-     * input_data.xlsx의 5~80행 거래처 순서를 그대로 유지한다.
-     * 이 순서가 주문번호 뒤 3자리와 연결되므로 임의로 정렬하면 안 된다.
+     * 기존 input_data.xlsx의 5~80행 거래처 순서를 그대로 유지한다.
+     * 기존 76개 거래처는 주문번호 뒤 3자리와 연결되어 있으므로 순서를 바꾸지 않는다.
+     * 거래처 관리에서 새로 등록한 거래처는 DB id 순서대로 이 목록 뒤에 자동 추가한다.
      */
     public static final List<String> VENDOR_ORDER = List.of(
             "산동빅",
@@ -109,19 +114,42 @@ public class DailyEntryService {
     private final SalesItemRepository salesItemRepository;
     private final SalesPersistenceService salesPersistenceService;
     private final VendorRuleService vendorRuleService;
+    private final VendorRepository vendorRepository;
 
     public DailyEntryService(
             SalesItemRepository salesItemRepository,
             SalesPersistenceService salesPersistenceService,
-            VendorRuleService vendorRuleService
+            VendorRuleService vendorRuleService,
+            VendorRepository vendorRepository
     ) {
         this.salesItemRepository = salesItemRepository;
         this.salesPersistenceService = salesPersistenceService;
         this.vendorRuleService = vendorRuleService;
+        this.vendorRepository = vendorRepository;
+    }
+
+    /**
+     * 납품 입력에서 사용할 실제 거래처 목록.
+     * 기존 76개는 고정 순서를 유지하고, 새 거래처만 DB id 오름차순으로 뒤에 붙인다.
+     * 따라서 새 거래처를 추가해도 기존 거래처의 주문번호 순번은 변하지 않는다.
+     */
+    @Transactional(readOnly = true)
+    public List<String> vendorOrder() {
+        Set<String> ordered = new LinkedHashSet<>(VENDOR_ORDER);
+
+        vendorRepository.findAll().stream()
+                .sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+                .map(VendorEntity::getInputName)
+                .map(this::clean)
+                .filter(name -> !name.isBlank())
+                .forEach(ordered::add);
+
+        return List.copyOf(ordered);
     }
 
     @Transactional(readOnly = true)
     public DailyEntryPage load(LocalDate date) {
+        List<String> vendors = vendorOrder();
         Map<String, ExistingOrder> existingByOrder = new LinkedHashMap<>();
 
         for (SalesItemEntity item : salesItemRepository.findForDate(date)) {
@@ -133,12 +161,12 @@ public class DailyEntryService {
             existing.quantities.put(item.getItemName(), item.getQuantity());
         }
 
-        List<DailyEntryRow> rows = new ArrayList<>(VENDOR_ORDER.size());
+        List<DailyEntryRow> rows = new ArrayList<>(vendors.size());
         int filledVendorCount = 0;
 
-        for (int index = 0; index < VENDOR_ORDER.size(); index++) {
+        for (int index = 0; index < vendors.size(); index++) {
             int sequence = index + 1;
-            String vendorName = VENDOR_ORDER.get(index);
+            String vendorName = vendors.get(index);
             String orderNumber = orderNumber(date, sequence);
             ExistingOrder existing = existingByOrder.get(orderNumber);
 
@@ -163,19 +191,20 @@ public class DailyEntryService {
     }
 
     public SaveResult save(LocalDate date, List<RowInput> rows) {
-        if (rows == null || rows.size() != VENDOR_ORDER.size()) {
+        List<String> vendors = vendorOrder();
+        if (rows == null || rows.size() != vendors.size()) {
             throw new IllegalArgumentException(
                     "입력 행 수가 올바르지 않습니다. 화면을 새로고침한 뒤 다시 저장해주세요."
             );
         }
 
         List<DeliveryRecord> records = new ArrayList<>();
-        List<OrderSnapshot> snapshots = new ArrayList<>(VENDOR_ORDER.size());
+        List<OrderSnapshot> snapshots = new ArrayList<>(vendors.size());
         String sourceSheet = date.format(ORDER_DATE);
 
-        for (int index = 0; index < VENDOR_ORDER.size(); index++) {
+        for (int index = 0; index < vendors.size(); index++) {
             int sequence = index + 1;
-            String expectedVendor = VENDOR_ORDER.get(index);
+            String expectedVendor = vendors.get(index);
             RowInput input = rows.get(index);
 
             if (!expectedVendor.equals(clean(input.vendorName()))) {
@@ -189,9 +218,6 @@ public class DailyEntryService {
             String statementVendor =
                     vendorRuleService.statementVendorName(expectedVendor);
 
-            // 화면에서는 회수통단가/전달방식/비고를 받지 않는다.
-            // null/빈값을 넘기면 기존 주문 메타데이터는 SalesPersistenceService에서 보존되고,
-            // 새 회수통은 거래처별 기본 단가를 사용한다.
             BigDecimal returnContainerUnitPrice = null;
             String deliveryMethod = "";
             String note = "";
