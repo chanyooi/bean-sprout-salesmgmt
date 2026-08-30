@@ -49,7 +49,7 @@ public class DailyEntryController {
         model.addAttribute("previousDate", selectedDate.minusDays(1).toString());
         model.addAttribute("nextDate", selectedDate.plusDays(1).toString());
         model.addAttribute("today", LocalDate.now(KOREA_ZONE).toString());
-        model.addAttribute("vendorCount", DailyEntryService.VENDOR_ORDER.size());
+        model.addAttribute("vendorCount", page.rows().size());
         return "daily-entry";
     }
 
@@ -72,7 +72,7 @@ public class DailyEntryController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            int expected = DailyEntryService.VENDOR_ORDER.size();
+            int expected = dailyEntryService.vendorOrder().size();
             validateLength("거래처", vendorNames, expected);
             validateLength("두절", cutKg, expected);
             validateLength("일반콩나물", regular, expected);
