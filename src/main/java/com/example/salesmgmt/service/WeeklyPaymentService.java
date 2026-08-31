@@ -1,9 +1,12 @@
 package com.example.salesmgmt.service;
 
+import com.example.salesmgmt.domain.PaymentCycle;
 import com.example.salesmgmt.entity.SalesItemEntity;
 import com.example.salesmgmt.entity.VendorEntity;
+import com.example.salesmgmt.entity.VendorProfileEntity;
 import com.example.salesmgmt.entity.WeeklyPaymentEntity;
 import com.example.salesmgmt.repository.SalesItemRepository;
+import com.example.salesmgmt.repository.VendorProfileRepository;
 import com.example.salesmgmt.repository.VendorRepository;
 import com.example.salesmgmt.repository.WeeklyPaymentRepository;
 import org.springframework.stereotype.Service;
@@ -19,7 +22,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -28,26 +30,20 @@ public class WeeklyPaymentService {
     private static final BigDecimal ZERO = BigDecimal.ZERO;
     private static final String COMPLETE_NOTE = "주별 입금 완료 자동 처리";
 
-    private static final List<TargetVendor> TARGETS = List.of(
-            new TargetVendor("옥계빅", List.of("옥계빅")),
-            new TargetVendor("상모빅", List.of("상모빅")),
-            new TargetVendor("고향가마솥", List.of("고향가마솥", "고향가마솥추어탕", "고향추어탕")),
-            new TargetVendor("명희네", List.of("명희네", "명희네해장", "명희네해장국")),
-            new TargetVendor("플래쉬", List.of("플래쉬", "플래시")),
-            new TargetVendor("더킹마트", List.of("더킹마트"))
-    );
-
     private final WeeklyPaymentRepository weeklyPaymentRepository;
     private final VendorRepository vendorRepository;
+    private final VendorProfileRepository vendorProfileRepository;
     private final SalesItemRepository salesItemRepository;
 
     public WeeklyPaymentService(
             WeeklyPaymentRepository weeklyPaymentRepository,
             VendorRepository vendorRepository,
+            VendorProfileRepository vendorProfileRepository,
             SalesItemRepository salesItemRepository
     ) {
         this.weeklyPaymentRepository = weeklyPaymentRepository;
         this.vendorRepository = vendorRepository;
+        this.vendorProfileRepository = vendorProfileRepository;
         this.salesItemRepository = salesItemRepository;
     }
 
@@ -68,27 +64,10 @@ public class WeeklyPaymentService {
         LocalDate weekStart = normalizeWeekStart(requestedWeekStart);
         LocalDate weekEnd = weekStart.plusDays(6);
 
-        List<VendorEntity> allVendors = vendorRepository.findAllByOrderByInputNameAsc();
-        Map<String, VendorEntity> vendorsByNormalizedName = new HashMap<>();
-        for (VendorEntity vendor : allVendors) {
-            vendorsByNormalizedName.put(normalizeName(vendor.getInputName()), vendor);
-        }
-
-        List<ResolvedTarget> resolvedTargets = new ArrayList<>();
-        List<String> missingTargets = new ArrayList<>();
-        for (int index = 0; index < TARGETS.size(); index++) {
-            TargetVendor target = TARGETS.get(index);
-            VendorEntity vendor = resolveVendor(target, vendorsByNormalizedName);
-            if (vendor == null) {
-                missingTargets.add(target.displayName());
-            } else {
-                resolvedTargets.add(new ResolvedTarget(index, target.displayName(), vendor));
-            }
-        }
-
-        Map<Long, ResolvedTarget> targetByVendorId = new HashMap<>();
-        for (ResolvedTarget target : resolvedTargets) {
-            targetByVendorId.put(target.vendor().getId(), target);
+        List<VendorProfileEntity> weeklyProfiles = weeklyProfiles();
+        Map<Long, VendorEntity> targetByVendorId = new LinkedHashMap<>();
+        for (VendorProfileEntity profile : weeklyProfiles) {
+            targetByVendorId.put(profile.getVendor().getId(), profile.getVendor());
         }
 
         Map<Long, BigDecimal[]> dailyByVendor = new LinkedHashMap<>();
@@ -125,16 +104,15 @@ public class WeeklyPaymentService {
             );
         }
 
-        resolvedTargets.sort(Comparator.comparingInt(ResolvedTarget::order));
-
         List<VendorRow> rows = new ArrayList<>();
         BigDecimal billedTotal = ZERO;
         BigDecimal paidTotal = ZERO;
         BigDecimal outstandingTotal = ZERO;
         long outstandingVendorCount = 0;
 
-        for (ResolvedTarget target : resolvedTargets) {
-            Long vendorId = target.vendor().getId();
+        for (VendorProfileEntity profile : weeklyProfiles) {
+            VendorEntity vendor = profile.getVendor();
+            Long vendorId = vendor.getId();
             BigDecimal[] daily = dailyByVendor.getOrDefault(vendorId, zeroWeek());
             BigDecimal billed = safe(billedByVendor.get(vendorId));
             BigDecimal paid = safe(paidByVendor.get(vendorId));
@@ -149,7 +127,7 @@ public class WeeklyPaymentService {
 
             rows.add(new VendorRow(
                     vendorId,
-                    target.vendor().getInputName(),
+                    vendor.getInputName(),
                     money(daily[0]),
                     money(daily[1]),
                     money(daily[2]),
@@ -184,7 +162,7 @@ public class WeeklyPaymentService {
                 missingPriceCount,
                 List.copyOf(rows),
                 List.copyOf(paymentRows),
-                List.copyOf(missingTargets)
+                List.of()
         );
     }
 
@@ -247,30 +225,31 @@ public class WeeklyPaymentService {
         if (vendorId == null) {
             throw new IllegalArgumentException("거래처가 필요합니다.");
         }
+
         VendorEntity vendor = vendorRepository.findById(vendorId)
                 .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
-        String normalized = normalizeName(vendor.getInputName());
-        boolean target = TARGETS.stream()
-                .flatMap(config -> config.aliases().stream())
-                .map(this::normalizeName)
-                .anyMatch(normalized::equals);
-        if (!target) {
+
+        VendorProfileEntity profile = vendorProfileRepository.findByVendor_Id(vendorId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "거래처 관리에서 입금주기를 먼저 설정해주세요."
+                ));
+
+        if (!profile.isActive() || profile.getPaymentCycle() != PaymentCycle.WEEKLY) {
             throw new IllegalArgumentException("주별 입금확인 대상 거래처가 아닙니다.");
         }
         return vendor;
     }
 
-    private VendorEntity resolveVendor(
-            TargetVendor target,
-            Map<String, VendorEntity> vendorsByNormalizedName
-    ) {
-        for (String alias : target.aliases()) {
-            VendorEntity vendor = vendorsByNormalizedName.get(normalizeName(alias));
-            if (vendor != null) {
-                return vendor;
-            }
-        }
-        return null;
+    private List<VendorProfileEntity> weeklyProfiles() {
+        return vendorProfileRepository.findAllWithVendor()
+                .stream()
+                .filter(VendorProfileEntity::isActive)
+                .filter(profile -> profile.getPaymentCycle() == PaymentCycle.WEEKLY)
+                .sorted(Comparator.comparing(
+                        profile -> profile.getVendor().getInputName(),
+                        String.CASE_INSENSITIVE_ORDER
+                ))
+                .toList();
     }
 
     private LocalDate normalizeWeekStart(LocalDate date) {
@@ -295,15 +274,6 @@ public class WeeklyPaymentService {
         return "미입금";
     }
 
-    private String normalizeName(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.replaceAll("\\s+", "")
-                .trim()
-                .toLowerCase(Locale.KOREA);
-    }
-
     private BigDecimal safe(BigDecimal value) {
         return value == null ? ZERO : value;
     }
@@ -314,9 +284,6 @@ public class WeeklyPaymentService {
         }
         return value.stripTrailingZeros();
     }
-
-    private record TargetVendor(String displayName, List<String> aliases) {}
-    private record ResolvedTarget(int order, String displayName, VendorEntity vendor) {}
 
     public record WeeklyReport(
             LocalDate weekStart,
