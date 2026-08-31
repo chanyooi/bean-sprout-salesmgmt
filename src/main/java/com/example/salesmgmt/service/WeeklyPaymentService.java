@@ -19,7 +19,6 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +85,7 @@ public class WeeklyPaymentService {
             }
 
             LocalDate date = item.getSalesOrder().getDeliveryDate();
-            int dayIndex = date.getDayOfWeek().getValue() - 1;
+            int dayIndex = sundayFirstIndex(date.getDayOfWeek());
             BigDecimal amount = safe(item.getLineAmount());
 
             BigDecimal[] daily = dailyByVendor.computeIfAbsent(vendorId, ignored -> zeroWeek());
@@ -254,7 +253,11 @@ public class WeeklyPaymentService {
 
     private LocalDate normalizeWeekStart(LocalDate date) {
         LocalDate base = date == null ? LocalDate.now() : date;
-        return base.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        return base.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+    }
+
+    private int sundayFirstIndex(DayOfWeek dayOfWeek) {
+        return dayOfWeek == DayOfWeek.SUNDAY ? 0 : dayOfWeek.getValue();
     }
 
     private BigDecimal[] zeroWeek() {
@@ -301,13 +304,13 @@ public class WeeklyPaymentService {
     public record VendorRow(
             Long vendorId,
             String vendorName,
+            BigDecimal sundayAmount,
             BigDecimal mondayAmount,
             BigDecimal tuesdayAmount,
             BigDecimal wednesdayAmount,
             BigDecimal thursdayAmount,
             BigDecimal fridayAmount,
             BigDecimal saturdayAmount,
-            BigDecimal sundayAmount,
             BigDecimal billedAmount,
             BigDecimal paidAmount,
             BigDecimal outstandingAmount,
