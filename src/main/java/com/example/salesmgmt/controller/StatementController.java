@@ -120,7 +120,19 @@ public class StatementController {
                     includeEmpty,
                     deliveryMethod
             );
-            return ResponseEntity.accepted().body(Map.of("jobId", jobId));
+            StatementGenerationJobService.JobSnapshot snapshot =
+                    statementGenerationJobService.status(jobId);
+
+            Map<String, String> body = new LinkedHashMap<>();
+            body.put("jobId", jobId);
+            body.put("state", snapshot.state().name());
+            if (snapshot.filename() != null) {
+                body.put("filename", snapshot.filename());
+            }
+            if (snapshot.error() != null) {
+                body.put("error", snapshot.error());
+            }
+            return ResponseEntity.accepted().body(body);
         } catch (DateTimeParseException exception) {
             return jsonBadRequest("생성 월 형식이 올바르지 않습니다.");
         } catch (IllegalArgumentException exception) {
@@ -220,10 +232,6 @@ public class StatementController {
                 .body(result.fileBytes());
     }
 
-    /**
-     * 백그라운드에서 이미 만든 파일은 byte[]로 다시 메모리에 올리지 않고
-     * 디스크 파일을 HTTP 응답으로 스트리밍합니다.
-     */
     private ResponseEntity<?> fileResponse(
             StatementGenerationJobService.JobFileResult result
     ) {
