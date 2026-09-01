@@ -9,11 +9,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.YearMonth;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,23 +26,28 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StatementGenerationJobService {
 
     private static final Logger log = LoggerFactory.getLogger(StatementGenerationJobService.class);
-    private static final Duration RETENTION = Duration.ofMinutes(30);
+    private static final Duration JOB_RETENTION = Duration.ofMinutes(30);
+    private static final Duration CACHE_RETENTION = Duration.ofHours(12);
 
     private final StatementWorkbookOnePassService onePassService;
     private final FilteredStatementWorkbookService filteredService;
     private final StatementFinalBillingPatchService finalBillingPatchService;
+    private final StatementCacheFingerprintService fingerprintService;
     private final HeavyFileTaskExecutor heavyFileTaskExecutor;
     private final Map<String, Job> jobs = new ConcurrentHashMap<>();
+    private final Map<CacheKey, CachedFile> cache = new ConcurrentHashMap<>();
 
     public StatementGenerationJobService(
             StatementWorkbookOnePassService onePassService,
             FilteredStatementWorkbookService filteredService,
             StatementFinalBillingPatchService finalBillingPatchService,
+            StatementCacheFingerprintService fingerprintService,
             HeavyFileTaskExecutor heavyFileTaskExecutor
     ) {
         this.onePassService = onePassService;
         this.filteredService = filteredService;
         this.finalBillingPatchService = finalBillingPatchService;
+        this.fingerprintService = fingerprintService;
         this.heavyFileTaskExecutor = heavyFileTaskExecutor;
     }
 
@@ -54,6 +63,37 @@ public class StatementGenerationJobService {
         Job job = new Job();
         jobs.put(id, job);
 
+        CacheKey cacheKey;
+        try {
+            cacheKey = new CacheKey(
+                    month,
+                    includeEmpty,
+                    deliveryMethod,
+                    fingerprintService.fingerprint(month),
+                    templateFingerprint(templateFile)
+            );
+        } catch (Exception exception) {
+            job.fail(safeMessage(exception));
+            return id;
+        }
+
+        CachedFile cached = cache.get(cacheKey);
+        if (cached != null && Files.exists(cached.result().path())) {
+            cached.touch();
+            job.complete(cached.result());
+            log.info(
+                    "Statement cache hit. jobId={}, month={}, deliveryMethod={}, bytes={}",
+                    id,
+                    month,
+                    deliveryMethod,
+                    safeSize(cached.result().path())
+            );
+            return id;
+        }
+        if (cached != null) {
+            cache.remove(cacheKey, cached);
+        }
+
         heavyFileTaskExecutor.submit(() -> {
             long started = System.nanoTime();
             try {
@@ -66,14 +106,12 @@ public class StatementGenerationJobService {
                                 deliveryMethod
                         );
 
-                // Excel이 파일을 열 때 수식을 다시 계산하기를 기다리지 않고,
-                // DB의 실제 판매금액 합계로 각 시트의 최종 청구금액을 확정한다.
                 generated = finalBillingPatchService.patchMonthly(
                         generated,
                         month
                 );
 
-                Path file = Files.createTempFile("statement-download-", ".xlsx");
+                Path file = Files.createTempFile("statement-cache-", ".xlsx");
                 try {
                     Files.write(file, generated.fileBytes());
                 } catch (IOException | RuntimeException exception) {
@@ -86,13 +124,19 @@ public class StatementGenerationJobService {
                         generated.filename(),
                         generated.generatedSheetCount(),
                         generated.sheetWithSalesCount(),
-                        generated.warningCount()
+                        generated.warningCount(),
+                        true
                 );
+
+                CachedFile previous = cache.put(cacheKey, new CachedFile(result));
+                if (previous != null && !previous.result().path().equals(file)) {
+                    deleteQuietly(previous.result().path());
+                }
                 job.complete(result);
 
                 long elapsedMs = (System.nanoTime() - started) / 1_000_000L;
                 log.info(
-                        "Statement generation completed. jobId={}, month={}, deliveryMethod={}, elapsedMs={}, bytes={}",
+                        "Statement generation completed and cached. jobId={}, month={}, deliveryMethod={}, elapsedMs={}, bytes={}",
                         id,
                         month,
                         deliveryMethod,
@@ -141,16 +185,45 @@ public class StatementGenerationJobService {
         return job.result;
     }
 
+    private String templateFingerprint(MultipartFile templateFile) throws IOException {
+        if (templateFile == null || templateFile.isEmpty()) {
+            return "empty-template";
+        }
+        MessageDigest digest = sha256();
+        digest.update(templateFile.getBytes());
+        return HexFormat.of().formatHex(digest.digest());
+    }
+
+    private MessageDigest sha256() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256을 사용할 수 없습니다.", exception);
+        }
+    }
+
     private void cleanupExpired() {
-        Instant cutoff = Instant.now().minus(RETENTION);
+        Instant now = Instant.now();
+        Instant jobCutoff = now.minus(JOB_RETENTION);
         jobs.entrySet().removeIf(entry -> {
             Job job = entry.getValue();
-            if (!job.updatedAt.isBefore(cutoff)) {
+            if (!job.updatedAt.isBefore(jobCutoff)) {
                 return false;
             }
-            if (job.result != null) {
+            if (job.result != null && !job.result.cached()) {
                 deleteQuietly(job.result.path());
             }
+            return true;
+        });
+
+        Instant cacheCutoff = now.minus(CACHE_RETENTION);
+        cache.entrySet().removeIf(entry -> {
+            CachedFile cached = entry.getValue();
+            if (!cached.lastAccessed().isBefore(cacheCutoff)
+                    && Files.exists(cached.result().path())) {
+                return false;
+            }
+            deleteQuietly(cached.result().path());
             return true;
         });
     }
@@ -182,8 +255,9 @@ public class StatementGenerationJobService {
 
     @PreDestroy
     public void cleanupFiles() {
+        cache.values().forEach(cached -> deleteQuietly(cached.result().path()));
         jobs.values().forEach(job -> {
-            if (job.result != null) {
+            if (job.result != null && !job.result.cached()) {
                 deleteQuietly(job.result.path());
             }
         });
@@ -208,8 +282,39 @@ public class StatementGenerationJobService {
             String filename,
             int generatedSheetCount,
             int sheetWithSalesCount,
-            int warningCount
+            int warningCount,
+            boolean cached
     ) {
+    }
+
+    private record CacheKey(
+            YearMonth month,
+            boolean includeEmpty,
+            StatementDeliveryMethod deliveryMethod,
+            String dataFingerprint,
+            String templateFingerprint
+    ) {
+    }
+
+    private static final class CachedFile {
+        private final JobFileResult result;
+        private volatile Instant lastAccessed = Instant.now();
+
+        private CachedFile(JobFileResult result) {
+            this.result = result;
+        }
+
+        private JobFileResult result() {
+            return result;
+        }
+
+        private Instant lastAccessed() {
+            return lastAccessed;
+        }
+
+        private void touch() {
+            lastAccessed = Instant.now();
+        }
     }
 
     private static final class Job {
@@ -225,7 +330,7 @@ public class StatementGenerationJobService {
         }
 
         private void fail(String error) {
-            if (this.result != null) {
+            if (this.result != null && !this.result.cached()) {
                 try {
                     Files.deleteIfExists(this.result.path());
                 } catch (IOException ignored) {
