@@ -13,8 +13,65 @@
         return Number(value || 0).toLocaleString('ko-KR') + '원';
     }
 
+    function safe(value, fallback) {
+        return value == null || String(value).trim() === '' ? (fallback || '-') : String(value);
+    }
+
+    function injectVendorBasicInfo() {
+        var match = /^\/vendor-management\/(\d+)(?:\/)?$/.exec(window.location.pathname || '');
+        if (!match || document.querySelector('.vendor-detail-basic-info')) return;
+
+        var vendorId = match[1];
+        fetch('/vendor-management/' + encodeURIComponent(vendorId) + '/profile.json', {
+            credentials: 'same-origin',
+            cache: 'no-store'
+        })
+            .then(function (response) {
+                if (!response.ok) throw new Error('기본정보를 불러오지 못했습니다.');
+                return response.json();
+            })
+            .then(function (profile) {
+                var main = document.querySelector('.vendor-v2-shell');
+                if (!main) return;
+
+                var firstPanel = main.querySelector('.v2-panel');
+                if (!firstPanel) return;
+
+                var routeText = profile.routeCode === 'NONE'
+                    ? '미지정'
+                    : safe(profile.routeLabel) + (profile.routeOrder ? ' · ' + profile.routeOrder + '번' : '');
+
+                var section = document.createElement('section');
+                section.className = 'v2-panel vendor-detail-basic-info';
+                section.innerHTML =
+                    '<div class="vendor-basic-head">' +
+                        '<div><h2>거래처 기본정보</h2><p style="margin:4px 0 0;color:#8b95a1;font-size:12px">거래처 관리에 저장된 기본정보입니다.</p></div>' +
+                        '<a class="vendor-basic-edit-link" href="/vendor-management">전체 거래처 정보 보기</a>' +
+                    '</div>' +
+                    '<div class="vendor-basic-grid">' +
+                        basicItem('상태', profile.active ? '활성' : '비활성') +
+                        basicItem('배송코스', routeText) +
+                        basicItem('입금주기', safe(profile.paymentCycleLabel)) +
+                        basicItem('전화번호', safe(profile.phone)) +
+                        basicItem('주소', safe(profile.address)) +
+                        '<div class="vendor-basic-item vendor-basic-memo"><span>메모</span><strong>' + escapeHtml(safe(profile.memo)) + '</strong></div>' +
+                    '</div>';
+
+                firstPanel.parentNode.insertBefore(section, firstPanel);
+            })
+            .catch(function () {
+                // 기본정보 표시 실패가 주문/단가 관리 기능을 막지 않도록 조용히 종료한다.
+            });
+    }
+
+    function basicItem(label, value) {
+        return '<div class="vendor-basic-item"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(safe(value)) + '</strong></div>';
+    }
+
     function load() {
         if (!window.location.pathname.startsWith('/vendor-management/')) return;
+
+        injectVendorBasicInfo();
 
         var table = document.querySelector('.order-table');
         if (!table || table.dataset.calendarReady === 'true') return;
