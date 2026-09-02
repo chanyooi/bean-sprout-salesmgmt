@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>거래명세서</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="stylesheet" th:href="@{/css/statements.css}">
+    <link rel="stylesheet" th:href="@{/css/statements.css(v=20260902_1)}">
     <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
@@ -16,7 +16,6 @@
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/statement-polish.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/statement-form-align-fix.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/statement-template-subtle.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/special-item-accounting.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/special-item-accounting-v2.css(v=20260814_2)}">
@@ -37,11 +36,6 @@
                     넣어 완성된 월간 명세서를 다운로드합니다.
                 </p>
             </div>
-            <div class="button-row">
-                <a class="secondary-link home-dashboard-link" th:href="@{/}">홈(대시보드)</a>
-                <a class="secondary-link" th:href="@{/statement-export(month=${selectedMonth})}">PDF·이미지·공유</a>
-                <a class="secondary-link" th:href="@{/statement-send(month=${selectedMonth})}">발송 기록</a>
-            </div>
         </div>
     </section>
 
@@ -54,45 +48,51 @@
               method="post"
               enctype="multipart/form-data">
 
-            <div class="statement-field">
-                <label for="month">생성 월</label>
-                <input id="month"
-                       name="month"
-                       type="month"
-                       th:value="${selectedMonth}"
-                       required>
+            <div class="statement-builder-grid">
+                <div class="statement-field">
+                    <label for="month">생성 월</label>
+                    <input id="month"
+                           name="month"
+                           type="month"
+                           th:value="${selectedMonth}"
+                           required>
+                </div>
+
+                <div class="statement-field file-field">
+                    <label for="templateFile">새 기본 템플릿 등록 <span style="font-weight:600;color:#8b95a1">(선택)</span></label>
+                    <input id="templateFile"
+                           name="templateFile"
+                           type="file"
+                           accept=".xlsx">
+                    <p class="template-help">
+                        새 .xlsx 파일을 선택하면 템플릿 구조를 검사한 뒤 앞으로 사용할 기본 템플릿으로 저장합니다.
+                        등록하지 않을 때는 현재 기본 템플릿을 그대로 사용합니다.
+                    </p>
+                    <span class="template-current"
+                          th:text="|현재 기본 템플릿: ${currentTemplateFilename}|">현재 기본 템플릿: template.xlsx</span>
+                </div>
             </div>
 
-            <div class="statement-field file-field">
-                <label for="templateFile">새 기본 템플릿 등록 (선택)</label>
-                <input id="templateFile"
-                       name="templateFile"
-                       type="file"
-                       accept=".xlsx">
-                <small>
-                    새 .xlsx 파일을 선택하고 아래 다운로드 버튼을 누르면 템플릿 구조를 검사한 뒤
-                    앞으로 사용할 기본 템플릿으로 저장됩니다. 다음부터는 파일을 다시 선택할 필요가 없습니다.
-                </small>
-                <small style="display:block;margin-top:5px;color:#3182f6"
-                       th:text="|현재 기본 템플릿: ${currentTemplateFilename}|">현재 기본 템플릿: template.xlsx</small>
+            <div class="statement-options-row">
+                <label class="checkbox-field">
+                    <input type="checkbox"
+                           name="includeEmpty"
+                           value="true">
+                    <span>판매가 없는 거래처의 빈 명세서도 포함</span>
+                </label>
+
+                <div class="statement-actions">
+                    <button type="submit" class="statement-primary-action">전체 엑셀 다운로드</button>
+                    <button type="submit" name="deliveryMethod" value="FAX" class="statement-secondary-action">팩스 거래처</button>
+                    <button type="submit" name="deliveryMethod" value="MAIL" class="statement-secondary-action">우편 거래처</button>
+                    <button type="submit" name="deliveryMethod" value="SMS" class="statement-sms-action">문자 거래처</button>
+                </div>
             </div>
 
-            <label class="checkbox-field">
-                <input type="checkbox"
-                       name="includeEmpty"
-                       value="true">
-                <span>판매가 없는 거래처의 빈 명세서도 포함</span>
-            </label>
-
-            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
-                <button type="submit">전체 엑셀 다운로드</button>
-                <button type="submit" name="deliveryMethod" value="FAX" style="background:#4e5968">팩스 거래처</button>
-                <button type="submit" name="deliveryMethod" value="MAIL" style="background:#4e5968">우편 거래처</button>
-                <button type="submit" name="deliveryMethod" value="SMS" style="background:#3182f6">문자 거래처</button>
+            <div class="statement-form-note">
+                <small id="statementDownloadStatus"></small>
+                <small class="statement-delivery-help">팩스·우편·문자 버튼은 거래처 관리에서 지정한 전달 방식에 맞는 거래처 시트만 따로 저장합니다.</small>
             </div>
-            <small id="statementDownloadStatus"
-                   style="display:block;margin-top:10px;color:#3182f6;font-weight:700"></small>
-            <small style="display:block;margin-top:10px;color:#8b95a1">팩스·우편·문자 버튼은 거래처 관리에서 지정한 명세서 전달 방식에 맞는 거래처 시트만 따로 저장합니다.</small>
         </form>
     </section>
 
@@ -158,7 +158,8 @@
         }
 
         const startedAt = Date.now();
-        status.textContent = '명세서를 생성하고 있습니다. 이 화면에서 기다려주세요.';
+        status.textContent = '명세서를 준비하고 있습니다.';
+        status.style.color = '#3182f6';
 
         try {
             const startResponse = await fetch('/statements/download/start', {
@@ -172,6 +173,13 @@
             }
 
             const jobId = startBody.jobId;
+            if (startBody.state === 'READY') {
+                status.textContent = '준비된 명세서를 바로 다운로드합니다.';
+                window.location.href = '/statements/download/result?jobId=' + encodeURIComponent(jobId);
+                await wait(800);
+                return;
+            }
+
             while (true) {
                 await wait(1000);
                 const elapsedSeconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
@@ -204,9 +212,6 @@
         } finally {
             running = false;
             setButtonsDisabled(false);
-            if (!status.style.color) {
-                status.style.color = '#3182f6';
-            }
         }
     });
 })();
@@ -222,7 +227,6 @@
       aria-hidden="true"></form>
 <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
 <script defer th:src="@{/js/statement-polish.js(v=20260814_1)}"></script>
-<script defer th:src="@{/js/statement-form-align-fix.js(v=20260814_1)}"></script>
 <script defer th:src="@{/js/statement-template-subtle.js(v=20260814_1)}"></script>
 <script defer th:src="@{/js/special-item-accounting.js(v=20260814_1)}"></script>
 <script defer th:src="@{/js/special-item-accounting-v2.js(v=20260814_2)}"></script>
