@@ -31,28 +31,35 @@ public class StatementDeliveryService {
 
     @Transactional(readOnly = true)
     public List<StatementSendRow> queue(YearMonth month) {
-        return settingRepository
-                .findAllByOrderByVendor_InputNameAsc()
+        return vendorRepository
+                .findAllByOrderByInputNameAsc()
                 .stream()
-                .map(setting -> {
-                    Long vendorId =
-                            setting.getVendor().getId();
+                .map(vendor -> {
+                    Long vendorId = vendor.getId();
+                    var setting = settingRepository.findByVendor_Id(vendorId);
+                    var log = logRepository.findByVendor_IdAndMonthKey(
+                            vendorId,
+                            month.toString()
+                    );
 
-                    var log = logRepository
-                            .findByVendor_IdAndMonthKey(
-                                    vendorId,
-                                    month.toString()
-                            );
+                    String phone = setting
+                            .map(this::resolvedPhone)
+                            .orElseGet(() -> vendorProfileRepository
+                                    .findByVendor_Id(vendorId)
+                                    .map(VendorProfileEntity::getPhone)
+                                    .orElse(null));
+
+                    String memo = setting
+                            .map(StatementDeliverySettingEntity::getMemo)
+                            .orElse(null);
 
                     return new StatementSendRow(
                             vendorId,
-                            setting.getVendor().getInputName(),
-                            resolvedPhone(setting),
-                            setting.getMemo(),
+                            vendor.getInputName(),
+                            phone,
+                            memo,
                             log.isPresent(),
-                            log.map(
-                                    StatementDeliveryLogEntity::getSentAt
-                            ).orElse(null)
+                            log.map(StatementDeliveryLogEntity::getSentAt).orElse(null)
                     );
                 })
                 .toList();
