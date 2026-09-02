@@ -2,6 +2,7 @@ package com.example.salesmgmt.controller;
 
 import com.example.salesmgmt.domain.ItemCatalog;
 import com.example.salesmgmt.domain.PaymentCycle;
+import com.example.salesmgmt.domain.RouteCode;
 import com.example.salesmgmt.domain.StatementDeliveryMethod;
 import com.example.salesmgmt.repository.VendorRepository;
 import com.example.salesmgmt.service.PriceManagementService;
@@ -53,7 +54,44 @@ public class VendorHubController {
     @GetMapping("/vendor-management")
     public String vendorManagement(Model model) {
         model.addAttribute("vendors", priceManagementService.findVendors());
+        model.addAttribute("vendorProfiles", vendorManagementService.findAllRows());
+        model.addAttribute("routeCodes", RouteCode.values());
+        model.addAttribute("paymentCycles", PaymentCycle.values());
         return "vendor-management";
+    }
+
+    @PostMapping("/vendor-management/profile/update")
+    public String updateVendorProfile(
+            @RequestParam Long vendorId,
+            @RequestParam(defaultValue = "false") boolean active,
+            @RequestParam RouteCode routeCode,
+            @RequestParam(required = false) Integer routeOrder,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String phone,
+            @RequestParam PaymentCycle paymentCycle,
+            @RequestParam(required = false) String memo,
+            @RequestParam(required = false) BigDecimal latitude,
+            @RequestParam(required = false) BigDecimal longitude,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            vendorManagementService.updateProfile(
+                    vendorId,
+                    active,
+                    routeCode,
+                    routeOrder,
+                    address,
+                    phone,
+                    paymentCycle,
+                    memo,
+                    latitude,
+                    longitude
+            );
+            redirectAttributes.addFlashAttribute("successMessage", "거래처 기본정보를 저장했습니다.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return "redirect:/vendor-management";
     }
 
     @GetMapping("/vendor-management/new")
