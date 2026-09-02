@@ -8,7 +8,7 @@
     <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260814_2)}">
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/vendor-management-v2.css(v=20260818_1)}">
+    <link rel="stylesheet" th:href="@{/css/vendor-management-v2.css(v=20260902_2)}">
     <link rel="stylesheet" th:href="@{/css/vendor-order-calendar.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/vendor-order-calendar-readability.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/vendor-detail-mobile-polish.css(v=20260827_1)}">
@@ -28,12 +28,49 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
             <a class="secondary-link"
                th:href="@{/statements/vendor-download(vendorId=${detail.vendorId},month=${selectedMonth})}">명세서 다운로드</a>
-            <a class="secondary-link" th:href="@{/vendors}">배송코스·기본정보</a>
+            <a class="secondary-link" th:href="@{/vendor-management}">거래처 정보</a>
         </div>
     </section>
 
     <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
     <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <section class="v2-panel vendor-detail-basic-info" th:if="${profile != null}">
+        <div class="vendor-basic-head">
+            <h2>거래처 기본정보</h2>
+            <a class="vendor-basic-edit-link" th:href="@{/vendor-management}">전체 정보에서 수정</a>
+        </div>
+        <div class="vendor-basic-grid">
+            <div class="vendor-basic-item">
+                <span>사용 상태</span>
+                <strong th:text="${profile.active ? '활성' : '비활성'}">활성</strong>
+            </div>
+            <div class="vendor-basic-item">
+                <span>배송코스</span>
+                <strong th:text="${profile.routeCode.name() == 'NONE' ? '미지정' : profile.routeCode.label}">A코스</strong>
+            </div>
+            <div class="vendor-basic-item">
+                <span>배송순서</span>
+                <strong th:text="${profile.routeOrder == null ? '-' : profile.routeOrder + '번'}">1번</strong>
+            </div>
+            <div class="vendor-basic-item">
+                <span>정산방식</span>
+                <strong th:text="${profile.paymentCycle.label}">월 단위</strong>
+            </div>
+            <div class="vendor-basic-item">
+                <span>전화번호</span>
+                <strong th:text="${profile.phone == null or #strings.isEmpty(profile.phone) ? '-' : profile.phone}">-</strong>
+            </div>
+            <div class="vendor-basic-item" style="grid-column:span 3">
+                <span>주소</span>
+                <strong th:text="${profile.address == null or #strings.isEmpty(profile.address) ? '-' : profile.address}">-</strong>
+            </div>
+            <div class="vendor-basic-item vendor-basic-memo">
+                <span>메모</span>
+                <strong th:text="${profile.memo == null or #strings.isEmpty(profile.memo) ? '-' : profile.memo}">-</strong>
+            </div>
+        </div>
+    </section>
 
     <section class="v2-panel">
         <h2>명세서 전달 방식</h2>
