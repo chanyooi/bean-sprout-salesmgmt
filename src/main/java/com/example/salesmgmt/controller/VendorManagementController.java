@@ -68,6 +68,7 @@ public class VendorManagementController {
             @RequestParam(required = false) String memo,
             @RequestParam(required = false) BigDecimal latitude,
             @RequestParam(required = false) BigDecimal longitude,
+            @RequestParam(required = false) String returnTo,
             RedirectAttributes redirectAttributes
     ) {
         try {
@@ -95,6 +96,10 @@ public class VendorManagementController {
                     "errorMessage",
                     exception.getMessage()
             );
+        }
+
+        if (returnTo != null && returnTo.startsWith("/vendor-management")) {
+            return "redirect:" + returnTo;
         }
 
         if (routeCode != null && routeCode != RouteCode.NONE) {
