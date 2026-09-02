@@ -47,9 +47,9 @@ public class StatementExportController {
         boolean managedSmsRecipient = vendorId != null
                 && deliveryService.isManaged(vendorId);
 
-        // 사용자가 "명세서 보기"로 실제 명세서를 열면 그 즉시 해당 월 발송완료로 기록한다.
-        // 기존 공유 버튼의 markSent 호출은 중복 저장되지 않으므로 그대로 안전하게 동작한다.
-        if (managedSmsRecipient) {
+        // 명세서 보기로 실제 거래처 명세서를 열면 문자 발송 대상 등록 여부와 관계없이
+        // 해당 월의 발송완료 기록을 남긴다. 같은 거래처/월은 중복 저장되지 않는다.
+        if (vendorId != null) {
             deliveryService.markSent(vendorId, selectedMonth);
         }
 
