@@ -8,7 +8,7 @@
     <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260814_2)}">
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/vendor-management-v2.css(v=20260818_1)}">
+    <link rel="stylesheet" th:href="@{/css/vendor-management-v2.css(v=20260902_1)}">
 </head>
 <body>
 <main class="vendor-v2-shell">
@@ -16,7 +16,7 @@
         <div>
             <p>거래처 업무</p>
             <h1>거래처 관리</h1>
-            <p>거래처를 선택하면 기본단가, 월별 사용금액, 일별 주문과 행사 단가를 한 화면에서 관리할 수 있습니다.</p>
+            <p>거래처 기본정보와 단가, 월별 사용금액, 주문내역을 한 곳에서 관리합니다.</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
             <a class="secondary-link" th:href="@{/vendor-management/new}" style="background:#3182f6;color:#fff;border-color:#3182f6">+ 거래처 추가</a>
@@ -24,23 +24,89 @@
         </div>
     </section>
 
-    <section class="v2-panel">
-        <input id="vendorSearch" class="vendor-search" type="search" placeholder="거래처명 검색">
+    <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <section class="v2-panel vendor-master-panel">
+        <div class="vendor-master-heading">
+            <div>
+                <h2>거래처 정보</h2>
+                <p>전체 거래처를 스크롤해서 확인하고 기본정보를 바로 수정할 수 있습니다.</p>
+            </div>
+            <strong class="vendor-count" th:text="|전체 ${#lists.size(vendorProfiles)}곳|">전체 0곳</strong>
+        </div>
+
+        <input id="vendorSearch" class="vendor-search" type="search" placeholder="거래처명 · 주소 · 전화번호 검색">
         <div class="initial-filter" id="initialFilter">
             <button type="button" class="active" data-initial="">전체</button>
             <button type="button" data-initial="ㄱ">ㄱ</button><button type="button" data-initial="ㄴ">ㄴ</button><button type="button" data-initial="ㄷ">ㄷ</button><button type="button" data-initial="ㄹ">ㄹ</button><button type="button" data-initial="ㅁ">ㅁ</button><button type="button" data-initial="ㅂ">ㅂ</button><button type="button" data-initial="ㅅ">ㅅ</button><button type="button" data-initial="ㅇ">ㅇ</button><button type="button" data-initial="ㅈ">ㅈ</button><button type="button" data-initial="ㅊ">ㅊ</button><button type="button" data-initial="ㅋ">ㅋ</button><button type="button" data-initial="ㅌ">ㅌ</button><button type="button" data-initial="ㅍ">ㅍ</button><button type="button" data-initial="ㅎ">ㅎ</button>
         </div>
 
-        <div class="vendor-list" id="vendorList">
-            <a th:each="vendor : ${vendors}"
-               th:href="@{/vendor-management/{id}(id=${vendor.id})}"
-               th:data-name="${vendor.inputName}">
-                <span class="vendor-card-name">
-                    <strong th:text="${vendor.inputName}">거래처</strong>
-                    <small th:if="${vendor.statementName != vendor.inputName}" th:text="|명세서: ${vendor.statementName}|">명세서명</small>
-                </span>
-                <span>›</span>
-            </a>
+        <div class="vendor-info-scroll" id="vendorList">
+            <article class="vendor-info-card"
+                     th:each="row, stat : ${vendorProfiles}"
+                     th:data-name="${row.vendorName}"
+                     th:data-search="|${row.vendorName} ${row.address == null ? '' : row.address} ${row.phone == null ? '' : row.phone}|">
+                <div class="vendor-info-card-main">
+                    <span class="vendor-info-number" th:text="${stat.count}">1</span>
+                    <div class="vendor-info-copy">
+                        <strong th:text="${row.vendorName}">거래처</strong>
+                        <div class="vendor-info-meta">
+                            <span th:text="${row.active ? '활성' : '비활성'}">활성</span>
+                            <span th:text="${row.routeCode.name() == 'NONE' ? '출고 순서 미지정' : row.routeCode.label + ' · ' + (row.routeOrder == null ? '-' : row.routeOrder + '번')}">코스</span>
+                            <span th:text="${row.paymentCycle.label}">월 단위</span>
+                        </div>
+                        <small th:if="${row.address != null and !#strings.isEmpty(row.address)}" th:text="${row.address}">주소</small>
+                        <small th:if="${row.phone != null and !#strings.isEmpty(row.phone)}" th:text="|전화 ${row.phone}|">전화</small>
+                    </div>
+                    <div class="vendor-info-actions">
+                        <a class="vendor-open-button" th:href="@{/vendor-management/{id}(id=${row.vendorId})}">거래처 보기</a>
+                        <button type="button" class="vendor-edit-toggle">기본정보 수정</button>
+                    </div>
+                </div>
+
+                <form class="vendor-inline-edit"
+                      th:action="@{/vendor-management/profile/update}"
+                      method="post"
+                      hidden>
+                    <input type="hidden" name="vendorId" th:value="${row.vendorId}">
+                    <input type="hidden" name="routeOrder" th:value="${row.routeOrder}">
+                    <input type="hidden" name="latitude" th:value="${row.latitude}">
+                    <input type="hidden" name="longitude" th:value="${row.longitude}">
+                    <input type="hidden" name="returnTo" value="/vendor-management">
+
+                    <label class="vendor-inline-check">
+                        <input type="checkbox" name="active" value="true" th:checked="${row.active}">
+                        <span>사용 중</span>
+                    </label>
+                    <label>배송코스
+                        <select name="routeCode">
+                            <option th:each="code : ${routeCodes}"
+                                    th:value="${code.name()}"
+                                    th:selected="${row.routeCode == code}"
+                                    th:text="${code.label}"></option>
+                        </select>
+                    </label>
+                    <label>입금주기
+                        <select name="paymentCycle">
+                            <option th:each="cycle : ${paymentCycles}"
+                                    th:value="${cycle.name()}"
+                                    th:selected="${row.paymentCycle == cycle}"
+                                    th:text="${cycle.label}"></option>
+                        </select>
+                    </label>
+                    <label class="wide">주소
+                        <input type="text" name="address" th:value="${row.address}" placeholder="거래처 주소">
+                    </label>
+                    <label>전화번호
+                        <input type="text" name="phone" th:value="${row.phone}" placeholder="전화번호">
+                    </label>
+                    <label class="wide">메모
+                        <input type="text" name="memo" th:value="${row.memo}" placeholder="배송/거래처 메모">
+                    </label>
+                    <button type="submit" class="vendor-inline-save">저장</button>
+                </form>
+            </article>
         </div>
     </section>
 </main>
@@ -50,13 +116,14 @@
 <script>
 (function(){
   var search=document.getElementById('vendorSearch');
-  var list=[].slice.call(document.querySelectorAll('#vendorList a'));
+  var cards=[].slice.call(document.querySelectorAll('#vendorList .vendor-info-card'));
   var activeInitial='';
   var choseong=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
   function firstInitial(name){var c=(name||'').trim().charCodeAt(0);if(c<0xAC00||c>0xD7A3)return '';return choseong[Math.floor((c-0xAC00)/588)];}
-  function apply(){var q=(search.value||'').trim().toLowerCase();list.forEach(function(a){var n=(a.dataset.name||'');var ok=(!q||n.toLowerCase().indexOf(q)>=0)&&(!activeInitial||firstInitial(n)===activeInitial);a.style.display=ok?'flex':'none';});}
+  function apply(){var q=(search.value||'').trim().toLowerCase();cards.forEach(function(card){var n=card.dataset.name||'';var hay=(card.dataset.search||'').toLowerCase();var ok=(!q||hay.indexOf(q)>=0)&&(!activeInitial||firstInitial(n)===activeInitial);card.style.display=ok?'block':'none';});}
   search.addEventListener('input',apply);
   document.getElementById('initialFilter').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;document.querySelectorAll('#initialFilter button').forEach(function(x){x.classList.remove('active')});b.classList.add('active');activeInitial=b.dataset.initial||'';apply();});
+  document.addEventListener('click',function(e){var button=e.target.closest('.vendor-edit-toggle');if(!button)return;var card=button.closest('.vendor-info-card');var form=card.querySelector('.vendor-inline-edit');var opening=form.hasAttribute('hidden');if(opening){form.removeAttribute('hidden');button.textContent='수정 닫기';}else{form.setAttribute('hidden','');button.textContent='기본정보 수정';}});
 })();
 </script>
 </body>
