@@ -76,12 +76,13 @@
                 <tr th:each="row : ${vendorProfiles}">
                     <td>
                         <form th:id="${'vendor-profile-form-' + row.vendorId}"
-                              th:action="@{/vendor-management/profile/update}"
+                              th:action="@{/vendors/update}"
                               method="post">
                             <input type="hidden" name="vendorId" th:value="${row.vendorId}">
                             <input type="hidden" name="routeOrder" th:value="${row.routeOrder}">
                             <input type="hidden" name="latitude" th:value="${row.latitude}">
                             <input type="hidden" name="longitude" th:value="${row.longitude}">
+                            <input type="hidden" name="returnTo" value="/vendor-management">
                         </form>
                         <input type="checkbox"
                                name="active"
