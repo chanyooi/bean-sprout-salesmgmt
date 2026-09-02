@@ -44,6 +44,15 @@ public class StatementExportController {
                         ? YearMonth.now()
                         : YearMonth.parse(month);
 
+        boolean managedSmsRecipient = vendorId != null
+                && deliveryService.isManaged(vendorId);
+
+        // 사용자가 "명세서 보기"로 실제 명세서를 열면 그 즉시 해당 월 발송완료로 기록한다.
+        // 기존 공유 버튼의 markSent 호출은 중복 저장되지 않으므로 그대로 안전하게 동작한다.
+        if (managedSmsRecipient) {
+            deliveryService.markSent(vendorId, selectedMonth);
+        }
+
         var statement = vendorId == null
                 ? null
                 : service.create(selectedMonth, vendorId);
@@ -62,9 +71,15 @@ public class StatementExportController {
                         includeReceivable ? previousReceivable : BigDecimal.ZERO
                 );
 
+        var sendQueue = deliveryService.queue(selectedMonth);
+        long sentCount = sendQueue.stream().filter(row -> row.sent()).count();
+
         model.addAttribute("selectedMonth", selectedMonth.toString());
         model.addAttribute("selectedVendorId", vendorId);
         model.addAttribute("vendors", service.vendors());
+        model.addAttribute("sendQueue", sendQueue);
+        model.addAttribute("sentCount", sentCount);
+        model.addAttribute("pendingCount", sendQueue.size() - sentCount);
 
         model.addAttribute(
                 "recipientPhone",
@@ -72,11 +87,7 @@ public class StatementExportController {
                         ? null
                         : deliveryService.phoneForVendor(vendorId)
         );
-        model.addAttribute(
-                "managedSmsRecipient",
-                vendorId != null
-                        && deliveryService.isManaged(vendorId)
-        );
+        model.addAttribute("managedSmsRecipient", managedSmsRecipient);
         model.addAttribute(
                 "alreadySent",
                 vendorId != null
