@@ -190,3 +190,8 @@
     text-align: right !important;
     font-variant-numeric: tabular-nums !important;
 }
+
+/* 거래처 기본정보는 거래처 관리 화면으로 이동했으므로 배송코스 페이지에서는 숨긴다. */
+main[data-selected-route] .route-order-panel + .panel {
+    display: none !important;
+}
