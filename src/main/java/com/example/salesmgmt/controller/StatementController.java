@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -76,6 +77,28 @@ public class StatementController {
         model.addAttribute("currentTemplateFilename", statementTemplateStorageService.currentFilename());
         model.addAttribute("currentTemplateUpdatedAt", statementTemplateStorageService.currentUpdatedAt());
         return "statements";
+    }
+
+    @PostMapping("/template")
+    public String saveTemplate(
+            @RequestParam("templateFile") MultipartFile templateFile,
+            @RequestParam(required = false) String month,
+            RedirectAttributes redirectAttributes
+    ) {
+        YearMonth selectedMonth = salesManagementService.resolveMonth(month);
+        try {
+            if (templateFile == null || templateFile.isEmpty()) {
+                throw new IllegalArgumentException("등록할 .xlsx 템플릿 파일을 선택해주세요.");
+            }
+            statementTemplateStorageService.resolveAndSaveIfUploaded(templateFile);
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "새 기본 명세서 템플릿을 저장했습니다."
+            );
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return "redirect:/statements?month=" + selectedMonth;
     }
 
     @GetMapping("/vendor-download")
