@@ -19,6 +19,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -125,17 +126,16 @@ public class StatementController {
         }
     }
 
-    @PostMapping("/download/start")
+    @RequestMapping(value = "/download/start", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<Map<String, String>> startDownload(
-            @RequestParam(value = "templateFile", required = false) MultipartFile templateFile,
             @RequestParam String month,
-            @RequestParam(defaultValue = "false") boolean includeEmpty,
+            @RequestParam(defaultValue = "true") boolean includeEmpty,
             @RequestParam(required = false) StatementDeliveryMethod deliveryMethod
     ) {
         try {
             YearMonth selectedMonth = YearMonth.parse(month);
             MultipartFile effectiveTemplate =
-                    statementTemplateStorageService.resolveAndSaveIfUploaded(templateFile);
+                    statementTemplateStorageService.resolveAndSaveIfUploaded(null);
 
             String jobId = statementGenerationJobService.start(
                     effectiveTemplate,
@@ -207,7 +207,7 @@ public class StatementController {
     public ResponseEntity<byte[]> download(
             @RequestParam(value = "templateFile", required = false) MultipartFile templateFile,
             @RequestParam String month,
-            @RequestParam(defaultValue = "false") boolean includeEmpty,
+            @RequestParam(defaultValue = "true") boolean includeEmpty,
             @RequestParam(required = false) StatementDeliveryMethod deliveryMethod
     ) {
         try {
