@@ -157,6 +157,16 @@
         });
     }
 
+    async function parseJsonResponse(response) {
+        const text = await response.text();
+        if (!text) return {};
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            return {error: text};
+        }
+    }
+
     form.addEventListener('submit', async function (event) {
         event.preventDefault();
         if (running) {
@@ -166,9 +176,12 @@
         running = true;
         setButtonsDisabled(true);
         const submitter = event.submitter;
-        const formData = new FormData(form);
-        if (submitter && submitter.name) {
-            formData.set(submitter.name, submitter.value);
+        const month = form.querySelector('[name="month"]').value;
+        const params = new URLSearchParams();
+        params.set('month', month);
+        params.set('includeEmpty', 'true');
+        if (submitter && submitter.name === 'deliveryMethod') {
+            params.set('deliveryMethod', submitter.value);
         }
 
         const startedAt = Date.now();
@@ -176,12 +189,12 @@
         status.style.color = '#3182f6';
 
         try {
-            const startResponse = await fetch('/statements/download/start', {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
+            const startResponse = await fetch('/statements/download/start?' + params.toString(), {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store'
             });
-            const startBody = await startResponse.json();
+            const startBody = await parseJsonResponse(startResponse);
             if (!startResponse.ok || !startBody.jobId) {
                 throw new Error(startBody.error || '명세서 생성을 시작하지 못했습니다.');
             }
@@ -203,7 +216,7 @@
                     '/statements/download/status?jobId=' + encodeURIComponent(jobId),
                     {credentials: 'same-origin', cache: 'no-store'}
                 );
-                const pollBody = await pollResponse.json();
+                const pollBody = await parseJsonResponse(pollResponse);
 
                 if (pollBody.state === 'READY') {
                     status.textContent = '완료되었습니다. 다운로드를 시작합니다.';
