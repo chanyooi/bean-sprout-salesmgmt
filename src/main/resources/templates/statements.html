@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>거래명세서</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="stylesheet" th:href="@{/css/statements.css(v=20260902_1)}">
+    <link rel="stylesheet" th:href="@{/css/statements.css(v=20260903_1)}">
     <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/premium-mobile-greenfix.css(v=20260813_1)}">
@@ -39,17 +39,20 @@
         </div>
     </section>
 
-    <section class="panel">
+    <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <section class="panel statement-builder-panel">
         <h2>엑셀 거래명세서 만들기</h2>
 
         <form class="statement-form"
               id="statementDownloadForm"
               th:action="@{/statements/download}"
-              method="post"
-              enctype="multipart/form-data">
+              method="post">
+            <input type="hidden" name="includeEmpty" value="true">
 
-            <div class="statement-builder-grid">
-                <div class="statement-field">
+            <div class="statement-download-layout">
+                <div class="statement-field month-field">
                     <label for="month">생성 월</label>
                     <input id="month"
                            name="month"
@@ -57,29 +60,6 @@
                            th:value="${selectedMonth}"
                            required>
                 </div>
-
-                <div class="statement-field file-field">
-                    <label for="templateFile">새 기본 템플릿 등록 <span style="font-weight:600;color:#8b95a1">(선택)</span></label>
-                    <input id="templateFile"
-                           name="templateFile"
-                           type="file"
-                           accept=".xlsx">
-                    <p class="template-help">
-                        새 .xlsx 파일을 선택하면 템플릿 구조를 검사한 뒤 앞으로 사용할 기본 템플릿으로 저장합니다.
-                        등록하지 않을 때는 현재 기본 템플릿을 그대로 사용합니다.
-                    </p>
-                    <span class="template-current"
-                          th:text="|현재 기본 템플릿: ${currentTemplateFilename}|">현재 기본 템플릿: template.xlsx</span>
-                </div>
-            </div>
-
-            <div class="statement-options-row">
-                <label class="checkbox-field">
-                    <input type="checkbox"
-                           name="includeEmpty"
-                           value="true">
-                    <span>판매가 없는 거래처의 빈 명세서도 포함</span>
-                </label>
 
                 <div class="statement-actions">
                     <button type="submit" class="statement-primary-action">전체 엑셀 다운로드</button>
@@ -89,11 +69,45 @@
                 </div>
             </div>
 
+            <div class="statement-default-note">
+                판매가 없는 거래처의 빈 명세서도 기본으로 포함됩니다.
+            </div>
+
             <div class="statement-form-note">
                 <small id="statementDownloadStatus"></small>
                 <small class="statement-delivery-help">팩스·우편·문자 버튼은 거래처 관리에서 지정한 전달 방식에 맞는 거래처 시트만 따로 저장합니다.</small>
             </div>
         </form>
+    </section>
+
+    <section class="panel statement-template-panel">
+        <div class="template-panel-heading">
+            <div>
+                <h2>기본 템플릿 관리</h2>
+                <p>명세서 양식을 바꿀 때만 새 .xlsx 파일을 등록하면 됩니다.</p>
+            </div>
+            <span class="template-current"
+                  th:text="|현재 기본 템플릿: ${currentTemplateFilename}|">현재 기본 템플릿: template.xlsx</span>
+        </div>
+
+        <form class="template-upload-form"
+              th:action="@{/statements/template}"
+              method="post"
+              enctype="multipart/form-data">
+            <input type="hidden" name="month" th:value="${selectedMonth}">
+            <div class="statement-field file-field">
+                <label for="templateFile">새 기본 템플릿 등록</label>
+                <input id="templateFile"
+                       name="templateFile"
+                       type="file"
+                       accept=".xlsx"
+                       required>
+            </div>
+            <button type="submit" class="template-save-button">템플릿 저장</button>
+        </form>
+        <p class="template-help">
+            등록한 템플릿은 전체·팩스·우편·문자·거래처별 개별 명세서에 계속 사용됩니다.
+        </p>
     </section>
 
     <section class="panel statement-guide">
@@ -112,8 +126,8 @@
                 <p>거래처 관리에서 팩스·우편·문자로 분류하면 해당 방식 거래처 시트만 모아서 다운로드합니다.</p>
             </article>
             <article>
-                <strong>기본 템플릿</strong>
-                <p>새 템플릿을 한 번 등록하면 전체·팩스·우편·문자·거래처별 개별 다운로드에 계속 같은 양식을 사용합니다.</p>
+                <strong>빈 명세서 포함</strong>
+                <p>판매가 없는 거래처도 기본으로 포함해 전체 거래처 명세서를 만들 수 있습니다.</p>
             </article>
         </div>
     </section>
