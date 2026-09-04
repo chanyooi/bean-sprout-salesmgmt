@@ -22,6 +22,14 @@
             document.head.appendChild(link);
         }
 
+        if (!document.querySelector('link[data-vendor-order-contrast-fix]')) {
+            var contrastLink = document.createElement('link');
+            contrastLink.rel = 'stylesheet';
+            contrastLink.href = '/css/vendor-order-contrast-fix.css?v=20260824_1';
+            contrastLink.dataset.vendorOrderContrastFix = 'true';
+            document.head.appendChild(contrastLink);
+        }
+
         if (!document.querySelector('script[data-vendor-order-calendar]')) {
             var script = document.createElement('script');
             script.src = '/js/vendor-order-calendar.js?v=20260819_1';
