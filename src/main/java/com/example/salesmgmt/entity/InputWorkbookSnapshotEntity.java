@@ -38,9 +38,16 @@ public class InputWorkbookSnapshotEntity {
     private long fileSize;
 
     /**
-     * Railway의 로컬 파일시스템은 재배포/재시작 때 사라질 수 있으므로
-     * 가장 최근에 성공적으로 저장한 input_data.xlsx 원본을 DB에 보관합니다.
-     * Base64를 LONGTEXT로 저장해 MySQL BLOB 크기 제약과 테스트 DB 차이를 피합니다.
+     * 새 업로드는 원본 바이트를 그대로 LONGBLOB에 저장합니다.
+     * Base64 문자열을 만들지 않아 업로드 직후 메모리 피크를 줄입니다.
+     */
+    @Lob
+    @Column(name = "file_data", columnDefinition = "LONGBLOB")
+    private byte[] fileData;
+
+    /**
+     * 기존 배포에서 저장한 원본과의 하위 호환용 컬럼입니다.
+     * 새 저장에서는 빈 문자열만 남기고, 읽을 때 fileData가 없으면 이 값을 사용합니다.
      */
     @Lob
     @Column(name = "file_base64", nullable = false, columnDefinition = "LONGTEXT")
@@ -53,20 +60,21 @@ public class InputWorkbookSnapshotEntity {
             String monthKey,
             String fileName,
             long fileSize,
-            String fileBase64
+            byte[] fileData
     ) {
         this.monthKey = monthKey;
-        replace(fileName, fileSize, fileBase64);
+        replace(fileName, fileSize, fileData);
     }
 
     public void replace(
             String fileName,
             long fileSize,
-            String fileBase64
+            byte[] fileData
     ) {
         this.fileName = fileName;
         this.fileSize = fileSize;
-        this.fileBase64 = fileBase64;
+        this.fileData = fileData;
+        this.fileBase64 = "";
         this.uploadedAt = LocalDateTime.now();
     }
 
@@ -75,5 +83,6 @@ public class InputWorkbookSnapshotEntity {
     public String getFileName() { return fileName; }
     public LocalDateTime getUploadedAt() { return uploadedAt; }
     public long getFileSize() { return fileSize; }
+    public byte[] getFileData() { return fileData; }
     public String getFileBase64() { return fileBase64; }
 }
