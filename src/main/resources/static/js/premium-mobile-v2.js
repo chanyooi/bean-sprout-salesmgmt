@@ -120,3 +120,182 @@
     backdrop.addEventListener('click', closeDrawer);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 })();
+
+// Galaxy / Android: prepare the statement image before the user taps Share.
+// This keeps navigator.share() inside the original user gesture and avoids
+// large PNG canvas memory spikes that can occur on Android browsers.
+(function () {
+    if (!/Android/i.test(navigator.userAgent)) return;
+    if (!window.location.pathname.startsWith('/statement-export')) return;
+
+    const target = document.getElementById('statementCapture');
+    const shareButton = document.getElementById('shareStatement');
+    if (!target || !shareButton || typeof window.html2canvas !== 'function') return;
+
+    const params = new URLSearchParams(window.location.search);
+    const monthInput = document.querySelector('input[name="month"]');
+    const vendorSelect = document.querySelector('select[name="vendorId"]');
+    const month = params.get('month') || monthInput?.value || 'month';
+    const vendorId = params.get('vendorId') || vendorSelect?.value || '';
+    const vendorName = (vendorSelect?.selectedOptions?.[0]?.textContent || '명세서').trim();
+    const safeName = vendorName.replace(/[\\/:*?"<>|]/g, '_');
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+    let preparedBlob = null;
+    let preparedFile = null;
+    let preparing = null;
+
+    function canvasToBlob(canvas, type, quality) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(
+                blob => blob ? resolve(blob) : reject(new Error('이미지 생성 실패')),
+                type,
+                quality
+            );
+        });
+    }
+
+    async function prepareShareFile(force) {
+        if (!force && preparedFile && preparedBlob) return preparedFile;
+        if (!force && preparing) return preparing;
+
+        preparing = (async () => {
+            if (document.fonts?.ready) {
+                try { await document.fonts.ready; } catch (ignored) {}
+            }
+
+            const lowMemory = typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4;
+            const scale = lowMemory ? 1 : 1.2;
+            const canvas = await window.html2canvas(target, {
+                scale,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false,
+                imageTimeout: 8000
+            });
+
+            let blob;
+            try {
+                blob = await canvasToBlob(canvas, 'image/jpeg', lowMemory ? 0.84 : 0.9);
+            } catch (firstError) {
+                blob = await canvasToBlob(canvas, 'image/jpeg', 0.78);
+            }
+
+            preparedBlob = blob;
+            preparedFile = new File(
+                [blob],
+                `${month}_${safeName}_명세서.jpg`,
+                { type: 'image/jpeg', lastModified: Date.now() }
+            );
+            return preparedFile;
+        })();
+
+        try {
+            return await preparing;
+        } finally {
+            preparing = null;
+        }
+    }
+
+    async function markSent() {
+        if (!vendorId) return;
+        const body = new URLSearchParams();
+        body.set('vendorId', vendorId);
+        body.set('month', month);
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' };
+        if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        try {
+            await fetch('/statement-send/mark-sent', {
+                method: 'POST',
+                headers,
+                body,
+                credentials: 'same-origin'
+            });
+        } catch (ignored) {}
+    }
+
+    function downloadPreparedFile() {
+        if (!preparedBlob || !preparedFile) return;
+        const url = URL.createObjectURL(preparedBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = preparedFile.name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    async function warmup() {
+        shareButton.disabled = true;
+        shareButton.textContent = '공유용 이미지 준비 중...';
+        try {
+            await prepareShareFile(false);
+            shareButton.textContent = '이미지로 바로 공유';
+        } catch (error) {
+            console.error('Android statement image warmup failed', error);
+            shareButton.textContent = '이미지 다시 준비';
+        } finally {
+            shareButton.disabled = false;
+        }
+    }
+
+    // Capture-phase handler runs before the older inline click listener.
+    // On Android we stop that listener and use the prebuilt lightweight JPEG.
+    shareButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        if (!preparedFile || !preparedBlob) {
+            shareButton.disabled = true;
+            shareButton.textContent = '이미지 준비 중...';
+            prepareShareFile(true)
+                .then(() => {
+                    shareButton.textContent = '준비 완료 · 다시 눌러 공유';
+                })
+                .catch(error => {
+                    console.error('Android statement image prepare retry failed', error);
+                    shareButton.textContent = '이미지로 바로 공유';
+                    alert('이미지 생성에 실패했습니다. 잠시 후 다시 눌러주세요.');
+                })
+                .finally(() => { shareButton.disabled = false; });
+            return;
+        }
+
+        if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [preparedFile] }))) {
+            // Call share immediately, before any await, so Android keeps user activation.
+            const sharePromise = navigator.share({
+                title: `${safeName} ${month} 명세서`,
+                text: `안녕하세요 송천 콩나물입니다. ${safeName} ${month} 명세서입니다. 감사합니다.`,
+                files: [preparedFile]
+            });
+
+            shareButton.disabled = true;
+            sharePromise
+                .then(async () => {
+                    await markSent();
+                    shareButton.textContent = '공유 완료 · 발송기록 저장됨';
+                })
+                .catch(error => {
+                    if (error?.name !== 'AbortError') {
+                        console.error('Android Web Share failed', error);
+                        downloadPreparedFile();
+                        alert('공유창을 열지 못해 이미지 파일로 저장했습니다. 저장된 이미지를 문자에서 첨부해주세요.');
+                    }
+                    shareButton.textContent = '이미지로 바로 공유';
+                })
+                .finally(() => { shareButton.disabled = false; });
+            return;
+        }
+
+        downloadPreparedFile();
+        shareButton.textContent = '이미지 저장 완료';
+    }, { capture: true });
+
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(warmup, { timeout: 1800 });
+    } else {
+        window.setTimeout(warmup, 350);
+    }
+})();
