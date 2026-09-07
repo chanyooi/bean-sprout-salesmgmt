@@ -16,6 +16,12 @@ spring:
       hibernate:
         format_sql: true
 
+  session:
+    timeout: 12h
+    jdbc:
+      initialize-schema: always
+      cleanup-cron: "0 */30 * * * *"
+
   servlet:
     multipart:
       max-file-size: 20MB
