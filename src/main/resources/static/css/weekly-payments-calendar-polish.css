@@ -1,0 +1,168 @@
+/* Weekly payment calendar: keep blue for emphasis only. */
+.weekly-calendar-panel {
+    background: #ffffff !important;
+    border: 1px solid #e5e8eb !important;
+    box-shadow: 0 8px 24px rgba(35, 53, 78, .045) !important;
+}
+
+.weekly-calendar-head h2 {
+    color: #191f28 !important;
+}
+
+.weekly-calendar-actions .calendar-nav-button {
+    border: 1px solid #dfe4ea !important;
+    background: #ffffff !important;
+    color: #4e5968 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.weekly-calendar-actions .calendar-nav-button:hover {
+    border-color: #cbd3dc !important;
+    background: #f6f8fa !important;
+    color: #333d4b !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.weekly-calendar-actions .calendar-today-button {
+    border: 1px solid #3182f6 !important;
+    background: #3182f6 !important;
+    color: #ffffff !important;
+    box-shadow: 0 5px 14px rgba(49, 130, 246, .14) !important;
+}
+
+.weekly-calendar-actions .calendar-today-button:hover {
+    border-color: #246bfd !important;
+    background: #246bfd !important;
+    box-shadow: 0 7px 16px rgba(49, 130, 246, .18) !important;
+}
+
+.calendar-week-row {
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.calendar-week-row .calendar-day {
+    border: 1px solid #e8edf2 !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #333d4b !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.calendar-week-row .calendar-day:hover {
+    background: #e9f2ff !important;
+    border-color: #bdd5fb !important;
+    color: #1f5fc7 !important;
+    box-shadow: none !important;
+    transform: translateY(-1px) !important;
+}
+
+.calendar-week-row:hover,
+.calendar-week-row.keyboard-focus {
+    border-color: #d6e5fb !important;
+    background: #f7faff !important;
+    box-shadow: 0 4px 14px rgba(49, 130, 246, .055) !important;
+}
+
+.calendar-week-row:hover .calendar-day,
+.calendar-week-row.keyboard-focus .calendar-day {
+    border-color: #d9e7fb !important;
+    background: #eef5ff !important;
+    color: #274f86 !important;
+    box-shadow: none !important;
+}
+
+.calendar-week-row:hover .calendar-day:hover,
+.calendar-week-row.keyboard-focus .calendar-day:focus-visible {
+    border-color: #9fc4fa !important;
+    background: #e2eeff !important;
+    color: #174f9f !important;
+}
+
+.calendar-week-row .calendar-day.outside-month {
+    border-color: #eef1f4 !important;
+    background: #f7f8fa !important;
+    color: #b0b8c1 !important;
+}
+
+.calendar-week-row:hover .calendar-day.outside-month,
+.calendar-week-row.keyboard-focus .calendar-day.outside-month {
+    border-color: #e2e9f2 !important;
+    background: #f2f6fb !important;
+    color: #9aa5b1 !important;
+}
+
+.calendar-week-row .calendar-day.sunday .day-number {
+    color: #e5484d !important;
+}
+
+.calendar-week-row .calendar-day.saturday .day-number {
+    color: #3182f6 !important;
+}
+
+.calendar-week-row.selected {
+    border-color: #8bb8f7 !important;
+    background: #edf5ff !important;
+    box-shadow: 0 0 0 2px rgba(49, 130, 246, .07) !important;
+}
+
+.calendar-week-row.selected .calendar-day {
+    border-color: #c8dcfa !important;
+    background: #f4f8ff !important;
+    color: #274f86 !important;
+    box-shadow: none !important;
+}
+
+.calendar-week-row.selected .calendar-day:first-child .day-number {
+    background: #3182f6 !important;
+    color: #ffffff !important;
+}
+
+.calendar-week-row.selected .calendar-day.saturday .day-number {
+    color: #246bfd !important;
+}
+
+.calendar-week-row.selected .calendar-day:first-child.sunday .day-number {
+    color: #ffffff !important;
+}
+
+.calendar-day.today::after {
+    content: '' !important;
+    width: 7px !important;
+    height: 7px !important;
+    right: 10px !important;
+    top: 10px !important;
+    border-radius: 999px !important;
+    background: #3182f6 !important;
+}
+
+.selected-week-summary {
+    border: 1px solid #edf0f3 !important;
+    background: #f8fafb !important;
+}
+
+@media (max-width: 640px) {
+    .weekly-calendar-panel {
+        padding: 16px !important;
+    }
+
+    .calendar-week-row {
+        gap: 3px !important;
+        padding: 3px !important;
+    }
+
+    .calendar-week-row .calendar-day {
+        min-height: 46px !important;
+        padding: 4px !important;
+        border-radius: 10px !important;
+    }
+
+    .calendar-week-row .calendar-day .day-number {
+        width: 27px !important;
+        height: 27px !important;
+    }
+}
