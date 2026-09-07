@@ -18,11 +18,11 @@ import java.util.Set;
 @Service
 public class FilteredStatementWorkbookService {
 
-    private final StatementWorkbookV2Service statementWorkbookService;
+    private final StatementWorkbookOnePassService statementWorkbookService;
     private final VendorRepository vendorRepository;
 
     public FilteredStatementWorkbookService(
-            StatementWorkbookV2Service statementWorkbookService,
+            StatementWorkbookOnePassService statementWorkbookService,
             VendorRepository vendorRepository
     ) {
         this.statementWorkbookService = statementWorkbookService;
@@ -36,6 +36,15 @@ public class FilteredStatementWorkbookService {
             boolean includeEmptySheets,
             StatementDeliveryMethod deliveryMethod
     ) {
+        /*
+         * 예전에는 StatementWorkbookV2Service를 사용했습니다.
+         * V2는 legacy workbook 생성 -> 다시 XSSFWorkbook으로 열기 과정을 거치고,
+         * 이 서비스가 그 결과를 또 열어 필터링했기 때문에 Railway의 작은 메모리에서
+         * 팩스/우편/문자 다운로드 시 순간 메모리 사용량이 크게 치솟았습니다.
+         *
+         * 전체 명세서와 동일한 one-pass 생성기를 사용한 뒤 한 번만 필터링하여
+         * 동일한 결과를 유지하면서 중간 workbook 한 세트를 없앱니다.
+         */
         StatementWorkbookResult base = statementWorkbookService.generate(
                 templateFile,
                 month,
@@ -90,9 +99,9 @@ public class FilteredStatementWorkbookService {
                     outputStream.toByteArray(),
                     filename,
                     remainingSheets,
-                    remainingSheets,
-                    0,
-                    0
+                    Math.min(base.sheetWithSalesCount(), remainingSheets),
+                    base.removedEmptySheetCount(),
+                    base.warningCount()
             );
         } catch (IOException exception) {
             throw new IllegalArgumentException(
