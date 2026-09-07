@@ -30,6 +30,8 @@ public class InputWorkbookSnapshotService {
     /**
      * DB 저장까지 성공한 input_data.xlsx를 수정하지 않고 그대로 보관합니다.
      * 같은 월을 다시 업로드하면 그 월의 '최근 성공 원본'만 교체합니다.
+     * 새 저장은 Base64 변환 없이 원본 바이트를 LONGBLOB에 바로 저장해
+     * 업로드 직후 메모리 사용량을 줄입니다.
      */
     @Transactional
     public void storeLatestUploadedWorkbook(
@@ -68,7 +70,6 @@ public class InputWorkbookSnapshotService {
         }
 
         String fileName = safeFilename(originalFilename);
-        String base64 = Base64.getEncoder().encodeToString(bytes);
 
         for (YearMonth month : months) {
             String monthKey = month.toString();
@@ -77,11 +78,11 @@ public class InputWorkbookSnapshotService {
                             monthKey,
                             fileName,
                             bytes.length,
-                            base64
+                            bytes
                     ));
 
             if (entity.getId() != null) {
-                entity.replace(fileName, bytes.length, base64);
+                entity.replace(fileName, bytes.length, bytes);
             }
             repository.save(entity);
         }
@@ -98,8 +99,21 @@ public class InputWorkbookSnapshotService {
                         entity.getFileName(),
                         entity.getUploadedAt(),
                         entity.getFileSize(),
-                        Base64.getDecoder().decode(entity.getFileBase64())
+                        storedBytes(entity)
                 ));
+    }
+
+    private byte[] storedBytes(InputWorkbookSnapshotEntity entity) {
+        byte[] data = entity.getFileData();
+        if (data != null && data.length > 0) {
+            return data;
+        }
+
+        String legacyBase64 = entity.getFileBase64();
+        if (legacyBase64 == null || legacyBase64.isBlank()) {
+            return new byte[0];
+        }
+        return Base64.getDecoder().decode(legacyBase64);
     }
 
     private String safeFilename(String filename) {
