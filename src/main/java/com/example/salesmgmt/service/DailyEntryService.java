@@ -130,15 +130,31 @@ public class DailyEntryService {
 
     /**
      * 납품 입력에서 사용할 실제 거래처 목록.
-     * 기존 76개는 고정 순서를 유지하고, 새 거래처만 DB id 오름차순으로 뒤에 붙인다.
-     * 따라서 새 거래처를 추가해도 기존 거래처의 주문번호 순번은 변하지 않는다.
+     * 기존 76개는 최초 이름(originalInputName)을 기준으로 고정 순서를 유지한다.
+     * 거래처 이름을 바꿔도 현재 이름만 화면에 표시되고 주문번호 순번은 그대로다.
+     * 새 거래처만 DB id 오름차순으로 뒤에 붙인다.
      */
     @Transactional(readOnly = true)
     public List<String> vendorOrder() {
-        Set<String> ordered = new LinkedHashSet<>(VENDOR_ORDER);
-
-        vendorRepository.findAll().stream()
+        List<VendorEntity> allVendors = vendorRepository.findAll().stream()
                 .sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+                .toList();
+
+        Set<String> ordered = new LinkedHashSet<>();
+
+        for (String legacyName : VENDOR_ORDER) {
+            VendorEntity matched = allVendors.stream()
+                    .filter(vendor -> legacyName.equals(clean(vendor.getInputName()))
+                            || legacyName.equals(clean(vendor.getOriginalInputName())))
+                    .findFirst()
+                    .orElse(null);
+
+            ordered.add(matched == null
+                    ? legacyName
+                    : clean(matched.getInputName()));
+        }
+
+        allVendors.stream()
                 .map(VendorEntity::getInputName)
                 .map(this::clean)
                 .filter(name -> !name.isBlank())
