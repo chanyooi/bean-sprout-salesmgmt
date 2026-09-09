@@ -28,6 +28,9 @@ public class VendorEntity {
     @Column(name = "input_name", nullable = false, length = 100)
     private String inputName;
 
+    @Column(name = "original_input_name", length = 100)
+    private String originalInputName;
+
     @Column(name = "statement_name", nullable = false, length = 100)
     private String statementName;
 
@@ -47,6 +50,7 @@ public class VendorEntity {
             boolean statementTemplateAvailable
     ) {
         this.inputName = inputName;
+        this.originalInputName = inputName;
         this.statementName = statementName;
         this.statementTemplateAvailable = statementTemplateAvailable;
         this.statementDeliveryMethod = StatementDeliveryMethod.UNASSIGNED;
@@ -58,6 +62,10 @@ public class VendorEntity {
 
     public String getInputName() {
         return inputName;
+    }
+
+    public String getOriginalInputName() {
+        return originalInputName;
     }
 
     public String getStatementName() {
@@ -72,6 +80,14 @@ public class VendorEntity {
         return statementDeliveryMethod == null
                 ? StatementDeliveryMethod.UNASSIGNED
                 : statementDeliveryMethod;
+    }
+
+    public void updateNames(String inputName, String statementName) {
+        if (this.originalInputName == null || this.originalInputName.isBlank()) {
+            this.originalInputName = this.inputName;
+        }
+        this.inputName = inputName;
+        this.statementName = statementName;
     }
 
     public void updateStatementSettings(
