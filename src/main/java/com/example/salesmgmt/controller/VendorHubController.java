@@ -169,6 +169,9 @@ public class VendorHubController {
 
         model.addAttribute("detail", detail);
         model.addAttribute("profile", profile);
+        model.addAttribute("vendor", vendor);
+        model.addAttribute("routeCodes", RouteCode.values());
+        model.addAttribute("paymentCycles", PaymentCycle.values());
         model.addAttribute("statementDeliveryMethods", StatementDeliveryMethod.values());
         model.addAttribute("statementDeliveryMethod", vendor.getStatementDeliveryMethod());
         model.addAttribute("prices", priceManagementService.findPrices(vendorId));
@@ -187,6 +190,63 @@ public class VendorHubController {
         );
 
         return "vendor-detail";
+    }
+
+    @PostMapping("/vendor-management/{vendorId}/info")
+    public String updateVendorInfo(
+            @PathVariable Long vendorId,
+            @RequestParam String inputName,
+            @RequestParam(required = false) String statementName,
+            @RequestParam(defaultValue = "false") boolean active,
+            @RequestParam RouteCode routeCode,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String phone,
+            @RequestParam PaymentCycle paymentCycle,
+            @RequestParam(required = false) String memo,
+            @RequestParam String month,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            var vendor = vendorRepository.findById(vendorId)
+                    .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
+
+            String normalizedInputName = normalizeRequiredName(inputName, "거래처명");
+            String normalizedStatementName = statementName == null || statementName.isBlank()
+                    ? normalizedInputName
+                    : normalizeRequiredName(statementName, "명세서명");
+
+            boolean duplicated = vendorRepository.findAll().stream()
+                    .filter(other -> !other.getId().equals(vendorId))
+                    .anyMatch(other -> normalizedInputName.equals(other.getInputName())
+                            || normalizedInputName.equals(other.getOriginalInputName()));
+            if (duplicated) {
+                throw new IllegalArgumentException("이미 사용 중인 거래처명입니다.");
+            }
+
+            vendor.updateNames(normalizedInputName, normalizedStatementName);
+            vendorRepository.save(vendor);
+
+            vendorManagementService.updateProfile(
+                    vendorId,
+                    active,
+                    routeCode,
+                    null,
+                    address,
+                    phone,
+                    paymentCycle,
+                    memo,
+                    null,
+                    null
+            );
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "거래처 정보를 수정했습니다. 기존 주문·단가·입금 내역은 같은 거래처에 그대로 유지됩니다."
+            );
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return redirectDetail(vendorId, month);
     }
 
     @PostMapping("/vendor-management/{vendorId}/historical-spend")
@@ -307,6 +367,17 @@ public class VendorHubController {
             redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
         }
         return redirectDetail(vendorId, month);
+    }
+
+    private String normalizeRequiredName(String value, String label) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException(label + "은 비워둘 수 없습니다.");
+        }
+        if (normalized.length() > 100) {
+            throw new IllegalArgumentException(label + "은 100자 이하로 입력해주세요.");
+        }
+        return normalized;
     }
 
     private YearMonth resolveMonthAndYear(String month, Integer year) {
