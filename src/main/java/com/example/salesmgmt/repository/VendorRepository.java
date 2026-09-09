@@ -10,5 +10,7 @@ public interface VendorRepository extends JpaRepository<VendorEntity, Long> {
 
     Optional<VendorEntity> findByInputName(String inputName);
 
+    Optional<VendorEntity> findByOriginalInputName(String originalInputName);
+
     List<VendorEntity> findAllByOrderByInputNameAsc();
 }
