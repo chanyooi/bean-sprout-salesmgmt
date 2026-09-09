@@ -28,48 +28,67 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
             <a class="secondary-link"
                th:href="@{/statements/vendor-download(vendorId=${detail.vendorId},month=${selectedMonth})}">명세서 다운로드</a>
-            <a class="secondary-link" th:href="@{/vendor-management}">거래처 정보</a>
+            <a class="secondary-link" href="#vendor-info">거래처 정보 수정</a>
         </div>
     </section>
 
     <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
     <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
-    <section class="v2-panel vendor-detail-basic-info" th:if="${profile != null}">
+    <section id="vendor-info" class="v2-panel vendor-detail-basic-info" th:if="${profile != null}">
         <div class="vendor-basic-head">
-            <h2>거래처 기본정보</h2>
-            <a class="vendor-basic-edit-link" th:href="@{/vendor-management}">전체 정보에서 수정</a>
-        </div>
-        <div class="vendor-basic-grid">
-            <div class="vendor-basic-item">
-                <span>사용 상태</span>
-                <strong th:text="${profile.active ? '활성' : '비활성'}">활성</strong>
-            </div>
-            <div class="vendor-basic-item">
-                <span>배송코스</span>
-                <strong th:text="${profile.routeCode.name() == 'NONE' ? '미지정' : profile.routeCode.label}">A코스</strong>
-            </div>
-            <div class="vendor-basic-item">
-                <span>배송순서</span>
-                <strong th:text="${profile.routeOrder == null ? '-' : profile.routeOrder + '번'}">1번</strong>
-            </div>
-            <div class="vendor-basic-item">
-                <span>정산방식</span>
-                <strong th:text="${profile.paymentCycle.label}">월 단위</strong>
-            </div>
-            <div class="vendor-basic-item">
-                <span>전화번호</span>
-                <strong th:text="${profile.phone == null or #strings.isEmpty(profile.phone) ? '-' : profile.phone}">-</strong>
-            </div>
-            <div class="vendor-basic-item" style="grid-column:span 3">
-                <span>주소</span>
-                <strong th:text="${profile.address == null or #strings.isEmpty(profile.address) ? '-' : profile.address}">-</strong>
-            </div>
-            <div class="vendor-basic-item vendor-basic-memo">
-                <span>메모</span>
-                <strong th:text="${profile.memo == null or #strings.isEmpty(profile.memo) ? '-' : profile.memo}">-</strong>
+            <div>
+                <h2>거래처 정보 수정</h2>
+                <p style="margin:4px 0 0;color:#8b95a1;font-size:13px">마트 상호가 바뀌어도 여기서 이름만 수정하면 기존 주문·단가·입금 내역은 그대로 이어집니다.</p>
             </div>
         </div>
+        <form th:action="@{/vendor-management/{vendorId}/info(vendorId=${detail.vendorId})}" method="post" style="margin-top:18px">
+            <input type="hidden" name="month" th:value="${selectedMonth}">
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+                <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b">
+                    거래처명
+                    <input type="text" name="inputName" maxlength="100" th:value="${vendor.inputName}" required>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b">
+                    명세서 표시명
+                    <input type="text" name="statementName" maxlength="100" th:value="${vendor.statementName}" required>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b">
+                    배송코스
+                    <select name="routeCode" required>
+                        <option th:each="route : ${routeCodes}" th:value="${route.name()}" th:selected="${route == profile.routeCode}" th:text="${route.label}"></option>
+                    </select>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b">
+                    정산방식
+                    <select name="paymentCycle" required>
+                        <option th:each="cycle : ${paymentCycles}" th:value="${cycle.name()}" th:selected="${cycle == profile.paymentCycle}" th:text="${cycle.label}"></option>
+                    </select>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b">
+                    전화번호
+                    <input type="text" name="phone" th:value="${profile.phone}" placeholder="전화번호">
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b">
+                    사용 상태
+                    <span style="display:flex;align-items:center;gap:8px;min-height:44px">
+                        <input type="checkbox" name="active" value="true" th:checked="${profile.active}">
+                        <span>활성 거래처로 사용</span>
+                    </span>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b;grid-column:1/-1">
+                    주소
+                    <input type="text" name="address" th:value="${profile.address}" placeholder="주소">
+                </label>
+                <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b;grid-column:1/-1">
+                    메모
+                    <input type="text" name="memo" th:value="${profile.memo}" placeholder="거래처 메모">
+                </label>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:16px">
+                <button type="submit" style="min-width:130px">거래처 정보 저장</button>
+            </div>
+        </form>
     </section>
 
     <section class="v2-panel">
