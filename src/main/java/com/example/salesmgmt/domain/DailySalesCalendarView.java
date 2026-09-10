@@ -19,7 +19,8 @@ public record DailySalesCalendarView(
         List<List<DayCell>> weeks,
         LocalDate selectedDate,
         DaySummary selectedDay,
-        List<EditableSaleRow> selectedRows
+        List<EditableSaleRow> selectedRows,
+        List<VendorDaySummary> selectedVendors
 ) {
     public record DayCell(
             LocalDate date,
@@ -48,7 +49,37 @@ public record DailySalesCalendarView(
             long orderCount,
             long vendorCount,
             long itemCount,
-            long missingPriceCount
+            long missingPriceCount,
+            String dayTypeLabel,
+            BigDecimal comparableAverageSales,
+            long comparableDayCount,
+            BigDecimal deviationPercent,
+            String anomalyLevel
+    ) {
+        public boolean hasComparableAverage() {
+            return comparableDayCount > 0 && comparableAverageSales != null;
+        }
+
+        public boolean isAnomaly() {
+            return "HIGH".equals(anomalyLevel) || "LOW".equals(anomalyLevel);
+        }
+    }
+
+    public record VendorDaySummary(
+            Long vendorId,
+            String vendorName,
+            BigDecimal salesAmount,
+            long orderCount,
+            long missingPriceCount,
+            List<VendorItemSummary> items
+    ) {
+    }
+
+    public record VendorItemSummary(
+            String itemName,
+            BigDecimal quantity,
+            BigDecimal unitPrice,
+            BigDecimal lineAmount
     ) {
     }
 }
