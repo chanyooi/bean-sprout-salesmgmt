@@ -22,6 +22,12 @@ public record DailySalesCalendarView(
         List<EditableSaleRow> selectedRows,
         List<VendorDaySummary> selectedVendors
 ) {
+    public long selectedVendorAnomalyCount() {
+        return selectedVendors == null
+                ? 0
+                : selectedVendors.stream().filter(VendorDaySummary::isAnomaly).count();
+    }
+
     public record DayCell(
             LocalDate date,
             boolean inCurrentMonth,
@@ -71,8 +77,20 @@ public record DailySalesCalendarView(
             BigDecimal salesAmount,
             long orderCount,
             long missingPriceCount,
-            List<VendorItemSummary> items
+            List<VendorItemSummary> items,
+            BigDecimal comparableAverageSales,
+            long comparableDayCount,
+            BigDecimal deviationPercent,
+            String anomalyLevel,
+            String dayTypeLabel
     ) {
+        public boolean hasComparableAverage() {
+            return comparableDayCount > 0 && comparableAverageSales != null;
+        }
+
+        public boolean isAnomaly() {
+            return "HIGH".equals(anomalyLevel) || "LOW".equals(anomalyLevel);
+        }
     }
 
     public record VendorItemSummary(
