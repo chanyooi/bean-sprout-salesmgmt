@@ -35,6 +35,7 @@ class LedgerIntegrityTest {
     @Autowired PaymentService payments;
     @Autowired StatementFinalBillingPatchService statements;
     @Autowired VendorRepository vendors;
+    @Autowired VendorProfileRepository profiles;
     @Autowired VendorPriceRepository vendorPrices;
     @Autowired SalesOrderRepository orders;
     @Autowired SalesItemRepository items;
@@ -180,6 +181,29 @@ class LedgerIntegrityTest {
                 items.deleteAllInBatch(); orders.deleteAllInBatch(); vendors.deleteAllInBatch();
             });
         }
+    }
+
+    @Test void roundingRemainderIsAssignedOnlyOnce() {
+        var v = vendors.save(new VendorEntity("rounding", "rounding", true));
+        var a = item(v, "20260831-995", "2026-08-31", "일반콩나물", "1", "1000");
+        var b = item(v, "20260901-995", "2026-09-01", "일반콩나물", "2", "1000");
+        var payment = new WeeklyPaymentEntity(v, LocalDate.parse("2026-08-30"), LocalDate.parse("2026-09-05"), bd("0.01"), "rounding");
+        var aug = WeeklyPaymentAllocation.forMonth(payment, AUG, List.of(a, b));
+        var sep = WeeklyPaymentAllocation.forMonth(payment, AUG.plusMonths(1), List.of(a, b));
+        assertThat(aug.add(sep)).isEqualByComparingTo("0.01");
+        assertThat(WeeklyPaymentAllocation.forMonth(payment, AUG.minusMonths(1), List.of(a, b))).isZero();
+    }
+
+    @Test void weeklyVendorCannotBeCompletedAgainThroughMonthlyPage() {
+        var v = vendors.save(new VendorEntity("weekly-only", "weekly-only", true));
+        var profile = new VendorProfileEntity(v);
+        profile.update(true, null, null, null, null, PaymentCycle.WEEKLY, null, null, null);
+        profiles.save(profile);
+        item(v, "20260803-995", "2026-08-03", "일반콩나물", "10", "1000");
+        assertThatThrownBy(() -> payments.completeOutstandingPayment(AUG, v.getId(), LocalDate.parse("2026-08-08")))
+            .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("주별");
+        assertThat(paymentRepository.count()).isZero();
+        assertThat(payments.createMonthlyReport(AUG).monthlyOutstandingVendorCount()).isZero();
     }
 
     private Long recordBackup() {

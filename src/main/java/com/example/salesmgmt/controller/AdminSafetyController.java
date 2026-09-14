@@ -57,7 +57,7 @@ public class AdminSafetyController {
             uploadHistoryService.restoreLatest(id);
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "가장 최근 장부 업로드 직전 상태로 판매 데이터를 복구했습니다."
+                    "가장 최근 장부 업로드 직전 상태로 판매 데이터를 복구했습니다. 해당 월의 업로드 원본 다운로드는 무효화했습니다."
             );
         } catch (RuntimeException exception) {
             redirectAttributes.addFlashAttribute(
