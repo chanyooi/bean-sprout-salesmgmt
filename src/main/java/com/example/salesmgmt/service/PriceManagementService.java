@@ -27,15 +27,18 @@ public class PriceManagementService {
     private final VendorRepository vendorRepository;
     private final VendorPriceRepository vendorPriceRepository;
     private final SalesItemRepository salesItemRepository;
+    private final MonthlyCloseService monthlyCloseService;
 
     public PriceManagementService(
             VendorRepository vendorRepository,
             VendorPriceRepository vendorPriceRepository,
-            SalesItemRepository salesItemRepository
+            SalesItemRepository salesItemRepository,
+            MonthlyCloseService monthlyCloseService
     ) {
         this.vendorRepository = vendorRepository;
         this.vendorPriceRepository = vendorPriceRepository;
         this.salesItemRepository = salesItemRepository;
+        this.monthlyCloseService = monthlyCloseService;
     }
 
     @Transactional
@@ -143,6 +146,7 @@ public class PriceManagementService {
             BigDecimal unitPrice,
             YearMonth month
     ) {
+        monthlyCloseService.assertOpen(month);
         validateUnitPrice(unitPrice);
         VendorPriceEntity entity = findPrice(priceId);
         BigDecimal oldConfiguredPrice = entity.getUnitPrice();
@@ -176,6 +180,7 @@ public class PriceManagementService {
             BigDecimal unitPrice,
             YearMonth month
     ) {
+        monthlyCloseService.assertOpen(month);
         return createOrUpdatePriceInternal(vendorId, itemName, unitPrice, month);
     }
 
@@ -269,6 +274,7 @@ public class PriceManagementService {
 
         int applied = 0;
         for (SalesItemEntity salesItem : salesItemRepository.findAllWithoutUnitPrice()) {
+            if (monthlyCloseService.isClosed(YearMonth.from(salesItem.getSalesOrder().getDeliveryDate()))) continue;
             BigDecimal unitPrice = resolveUnitPrice(salesItem, priceMap);
             if (unitPrice != null) {
                 salesItem.applyUnitPrice(unitPrice);

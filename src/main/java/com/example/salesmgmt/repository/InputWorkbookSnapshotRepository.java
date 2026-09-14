@@ -9,4 +9,6 @@ public interface InputWorkbookSnapshotRepository
         extends JpaRepository<InputWorkbookSnapshotEntity, Long> {
 
     Optional<InputWorkbookSnapshotEntity> findByMonthKey(String monthKey);
+
+    void deleteByMonthKey(String monthKey);
 }

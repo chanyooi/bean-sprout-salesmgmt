@@ -127,12 +127,12 @@ public class WebStatementService {
                     .merge(itemName, item.getQuantity(), BigDecimal::add);
             monthlyQuantities.merge(itemName, item.getQuantity(), BigDecimal::add);
 
-            if (item.getLineAmount() == null) {
+            if (item.getLineAmount() == null && !BillingAmountPolicy.hasFixedAmount(item)) {
                 missing++;
                 continue;
             }
 
-            BigDecimal lineAmount = item.getLineAmount();
+            BigDecimal lineAmount = BillingAmountPolicy.amount(item);
             amounts.merge(date, lineAmount, BigDecimal::add);
             monthlyAmounts.merge(itemName, lineAmount, BigDecimal::add);
             total = total.add(lineAmount);

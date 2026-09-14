@@ -172,9 +172,7 @@ public class StatementFinalBillingPatchService {
     private BigDecimal sumLineAmounts(List<SalesItemEntity> items) {
         BigDecimal total = BigDecimal.ZERO;
         for (SalesItemEntity item : items) {
-            if (item.getLineAmount() != null) {
-                total = total.add(item.getLineAmount());
-            }
+            total = total.add(BillingAmountPolicy.amount(item));
         }
         return total;
     }

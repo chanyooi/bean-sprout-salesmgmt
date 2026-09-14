@@ -27,19 +27,25 @@ public class UploadHistoryService {
     private final SalesItemRepository itemRepository;
     private final VendorRepository vendorRepository;
     private final ObjectMapper objectMapper;
+    private final MonthlyCloseService monthlyCloseService;
+    private final InputWorkbookSnapshotRepository snapshotRepository;
 
     public UploadHistoryService(
             UploadHistoryRepository historyRepository,
             SalesOrderRepository orderRepository,
             SalesItemRepository itemRepository,
             VendorRepository vendorRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            MonthlyCloseService monthlyCloseService,
+            InputWorkbookSnapshotRepository snapshotRepository
     ) {
         this.historyRepository = historyRepository;
         this.orderRepository = orderRepository;
         this.itemRepository = itemRepository;
         this.vendorRepository = vendorRepository;
         this.objectMapper = objectMapper;
+        this.monthlyCloseService = monthlyCloseService;
+        this.snapshotRepository = snapshotRepository;
     }
 
     /**
@@ -195,12 +201,36 @@ public class UploadHistoryService {
             );
         }
 
+        // Validate both the uploaded state and the state being restored before deleting anything.
+        var affectedMonths = new LinkedHashSet<java.time.YearMonth>();
+        var currentOrders = Boolean.TRUE.equals(backup.scoped())
+                ? (backup.orderNumbers() == null || backup.orderNumbers().isEmpty()
+                    ? List.<SalesOrderEntity>of()
+                    : orderRepository.findForBackupByOrderNumbers(backup.orderNumbers()))
+                : orderRepository.findAllForBackup();
+        currentOrders.forEach(order -> affectedMonths.add(java.time.YearMonth.from(order.getDeliveryDate())));
+        if (backup.orders() != null) {
+            backup.orders().forEach(order -> affectedMonths.add(java.time.YearMonth.from(order.deliveryDate())));
+        }
+        // A deleted/empty upload can have no surviving orders. Its scoped order IDs retain the date.
+        if (backup.orderNumbers() != null) {
+            for (String number : backup.orderNumbers()) {
+                if (number != null && number.matches("[0-9]{8}-[0-9]+")) {
+                    affectedMonths.add(java.time.YearMonth.from(LocalDate.parse(
+                            number.substring(0, 8), java.time.format.DateTimeFormatter.BASIC_ISO_DATE)));
+                }
+            }
+        }
+        affectedMonths.forEach(monthlyCloseService::assertOpen);
+
         if (Boolean.TRUE.equals(backup.scoped())) {
             restoreScopedBackup(backup);
         } else {
             restoreLegacyFullBackup(backup);
         }
 
+        // The last uploaded workbook no longer represents the restored sales state.
+        affectedMonths.forEach(month -> snapshotRepository.deleteByMonthKey(month.toString()));
         latest.markRestored();
     }
 

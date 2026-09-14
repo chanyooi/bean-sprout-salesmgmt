@@ -79,14 +79,14 @@ public class WeeklyPaymentService {
                 continue;
             }
 
-            if (item.getLineAmount() == null) {
+            if (item.getLineAmount() == null && !BillingAmountPolicy.hasFixedAmount(item)) {
                 missingPriceCount++;
                 continue;
             }
 
             LocalDate date = item.getSalesOrder().getDeliveryDate();
             int dayIndex = sundayFirstIndex(date.getDayOfWeek());
-            BigDecimal amount = safe(item.getLineAmount());
+            BigDecimal amount = BillingAmountPolicy.amount(item);
 
             BigDecimal[] daily = dailyByVendor.computeIfAbsent(vendorId, ignored -> zeroWeek());
             daily[dayIndex] = daily[dayIndex].add(amount);
@@ -214,6 +214,7 @@ public class WeeklyPaymentService {
 
     @Transactional
     public void deletePayment(Long paymentId) {
+        vendorRepository.lockAllForPaymentUpdate();
         if (!weeklyPaymentRepository.existsById(paymentId)) {
             throw new IllegalArgumentException("삭제할 주별 입금 기록을 찾을 수 없습니다.");
         }
@@ -225,7 +226,7 @@ public class WeeklyPaymentService {
             throw new IllegalArgumentException("거래처가 필요합니다.");
         }
 
-        VendorEntity vendor = vendorRepository.findById(vendorId)
+        VendorEntity vendor = vendorRepository.findForPaymentUpdate(vendorId)
                 .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
 
         VendorProfileEntity profile = vendorProfileRepository.findByVendor_Id(vendorId)

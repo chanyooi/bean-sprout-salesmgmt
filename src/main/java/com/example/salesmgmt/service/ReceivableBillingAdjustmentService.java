@@ -14,9 +14,6 @@ import java.util.Map;
 @Service
 public class ReceivableBillingAdjustmentService {
 
-    private static final BigDecimal TOFU_TRAY_RETURN_REVENUE_PER_UNIT =
-            new BigDecimal("2000");
-
     private final SalesItemRepository salesItemRepository;
 
     public ReceivableBillingAdjustmentService(
@@ -40,27 +37,8 @@ public class ReceivableBillingAdjustmentService {
         Map<Long, BigDecimal> corrections = new HashMap<>();
 
         for (SalesItemEntity item : items) {
-            String itemName = normalize(item.getItemName());
             Long vendorId = item.getSalesOrder().getVendor().getId();
-            BigDecimal recordedAmount = nz(item.getLineAmount());
-            BigDecimal correction;
-
-            if ("손두부".equals(itemName)) {
-                String statementName = normalize(
-                        item.getSalesOrder().getVendor().getStatementName()
-                );
-
-                correction = statementName.contains("아포농협")
-                        ? BigDecimal.ZERO
-                        : recordedAmount.negate();
-            } else if ("두부판".equals(itemName)) {
-                BigDecimal replacementRevenue = nz(item.getQuantity())
-                        .abs()
-                        .multiply(TOFU_TRAY_RETURN_REVENUE_PER_UNIT);
-                correction = replacementRevenue.subtract(recordedAmount);
-            } else {
-                continue;
-            }
+            BigDecimal correction = BillingAmountPolicy.amount(item).subtract(nz(item.getLineAmount()));
 
             if (correction.signum() != 0) {
                 corrections.merge(vendorId, correction, BigDecimal::add);
