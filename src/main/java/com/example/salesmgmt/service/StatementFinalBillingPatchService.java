@@ -217,6 +217,9 @@ public class StatementFinalBillingPatchService {
                     return false;
                 }
 
+                // setCellValue on a formula cell only changes its cached result.
+                // Remove the old formula so Excel recalculation cannot overwrite the bill.
+                target.setBlank();
                 target.setCellValue(safeTotal.doubleValue());
                 return true;
             }
