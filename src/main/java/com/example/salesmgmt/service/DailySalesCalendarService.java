@@ -22,6 +22,9 @@ import java.util.Set;
 @Service
 public class DailySalesCalendarService {
 
+    private static final BigDecimal ANOMALY_THRESHOLD_PERCENT = new BigDecimal("35");
+    private static final long MIN_COMPARISON_DAYS_FOR_ANOMALY = 2;
+
     private final SalesManagementService salesManagementService;
 
     public DailySalesCalendarService(SalesManagementService salesManagementService) {
@@ -118,7 +121,7 @@ public class DailySalesCalendarService {
 
         List<DailySalesCalendarView.VendorDaySummary> selectedVendors = selectedDate == null
                 ? List.of()
-                : createVendorSummaries(selectedRows);
+                : createVendorSummaries(selectedDate, selectedRows, rowsByDate);
 
         return new DailySalesCalendarView(
                 month,
@@ -195,15 +198,8 @@ public class DailySalesCalendarService {
         BigDecimal comparableAverage = comparableDayCount == 0
                 ? BigDecimal.ZERO
                 : comparableTotal.divide(BigDecimal.valueOf(comparableDayCount), 0, RoundingMode.HALF_UP);
-        BigDecimal deviationPercent = BigDecimal.ZERO;
-        String anomalyLevel = "NORMAL";
-        if (comparableDayCount > 0 && comparableAverage.signum() > 0) {
-            deviationPercent = sales.subtract(comparableAverage)
-                    .multiply(BigDecimal.valueOf(100))
-                    .divide(comparableAverage, 1, RoundingMode.HALF_UP);
-            if (deviationPercent.compareTo(new BigDecimal("35")) >= 0) anomalyLevel = "HIGH";
-            else if (deviationPercent.compareTo(new BigDecimal("-35")) <= 0) anomalyLevel = "LOW";
-        }
+        BigDecimal deviationPercent = calculateDeviationPercent(sales, comparableAverage);
+        String anomalyLevel = classifyAnomaly(deviationPercent, comparableDayCount);
 
         return new DailySalesCalendarView.DaySummary(
                 date,
@@ -222,14 +218,21 @@ public class DailySalesCalendarService {
         );
     }
 
-    private List<DailySalesCalendarView.VendorDaySummary> createVendorSummaries(List<EditableSaleRow> rows) {
+    private List<DailySalesCalendarView.VendorDaySummary> createVendorSummaries(
+            LocalDate selectedDate,
+            List<EditableSaleRow> selectedRows,
+            Map<LocalDate, List<EditableSaleRow>> rowsByDate
+    ) {
         Map<Long, List<EditableSaleRow>> byVendor = new LinkedHashMap<>();
-        rows.stream()
+        selectedRows.stream()
                 .sorted(Comparator.comparing(EditableSaleRow::inputVendor))
                 .forEach(row -> byVendor.computeIfAbsent(row.vendorId(), ignored -> new ArrayList<>()).add(row));
 
+        boolean selectedWeekend = isWeekend(selectedDate);
         List<DailySalesCalendarView.VendorDaySummary> result = new ArrayList<>();
+
         for (Map.Entry<Long, List<EditableSaleRow>> entry : byVendor.entrySet()) {
+            Long vendorId = entry.getKey();
             List<EditableSaleRow> vendorRows = entry.getValue();
             BigDecimal total = BigDecimal.ZERO;
             Set<Long> orderIds = new HashSet<>();
@@ -248,19 +251,82 @@ public class DailySalesCalendarService {
                 ));
             }
 
+            BigDecimal comparableTotal = BigDecimal.ZERO;
+            long comparableDayCount = 0;
+            for (Map.Entry<LocalDate, List<EditableSaleRow>> dayEntry : rowsByDate.entrySet()) {
+                LocalDate comparisonDate = dayEntry.getKey();
+                if (comparisonDate.equals(selectedDate) || isWeekend(comparisonDate) != selectedWeekend) {
+                    continue;
+                }
+
+                BigDecimal vendorDayTotal = BigDecimal.ZERO;
+                boolean vendorHadSales = false;
+                for (EditableSaleRow row : dayEntry.getValue()) {
+                    if (!vendorId.equals(row.vendorId())) continue;
+                    vendorHadSales = true;
+                    if (row.lineAmount() != null) vendorDayTotal = vendorDayTotal.add(row.lineAmount());
+                }
+
+                if (vendorHadSales) {
+                    comparableTotal = comparableTotal.add(vendorDayTotal);
+                    comparableDayCount++;
+                }
+            }
+
+            BigDecimal comparableAverage = comparableDayCount == 0
+                    ? BigDecimal.ZERO
+                    : comparableTotal.divide(BigDecimal.valueOf(comparableDayCount), 0, RoundingMode.HALF_UP);
+            BigDecimal deviationPercent = calculateDeviationPercent(total, comparableAverage);
+            String anomalyLevel = classifyAnomaly(deviationPercent, comparableDayCount);
+
             result.add(new DailySalesCalendarView.VendorDaySummary(
-                    entry.getKey(),
+                    vendorId,
                     vendorRows.getFirst().inputVendor(),
                     total,
                     orderIds.size(),
                     missing,
-                    List.copyOf(items)
+                    List.copyOf(items),
+                    comparableAverage,
+                    comparableDayCount,
+                    deviationPercent,
+                    anomalyLevel,
+                    selectedWeekend ? "주말" : "평일"
             ));
         }
 
-        result.sort(Comparator.comparing(DailySalesCalendarView.VendorDaySummary::salesAmount).reversed()
-                .thenComparing(DailySalesCalendarView.VendorDaySummary::vendorName));
+        result.sort((left, right) -> {
+            int leftRank = anomalyRank(left.anomalyLevel());
+            int rightRank = anomalyRank(right.anomalyLevel());
+            if (leftRank != rightRank) return Integer.compare(leftRank, rightRank);
+
+            int deviationCompare = right.deviationPercent().abs().compareTo(left.deviationPercent().abs());
+            if (deviationCompare != 0) return deviationCompare;
+
+            int salesCompare = right.salesAmount().compareTo(left.salesAmount());
+            if (salesCompare != 0) return salesCompare;
+
+            return left.vendorName().compareTo(right.vendorName());
+        });
+
         return List.copyOf(result);
+    }
+
+    private int anomalyRank(String anomalyLevel) {
+        return ("HIGH".equals(anomalyLevel) || "LOW".equals(anomalyLevel)) ? 0 : 1;
+    }
+
+    private BigDecimal calculateDeviationPercent(BigDecimal current, BigDecimal average) {
+        if (average == null || average.signum() == 0) return BigDecimal.ZERO;
+        return current.subtract(average)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(average, 1, RoundingMode.HALF_UP);
+    }
+
+    private String classifyAnomaly(BigDecimal deviationPercent, long comparableDayCount) {
+        if (comparableDayCount < MIN_COMPARISON_DAYS_FOR_ANOMALY) return "INSUFFICIENT";
+        if (deviationPercent.compareTo(ANOMALY_THRESHOLD_PERCENT) >= 0) return "HIGH";
+        if (deviationPercent.compareTo(ANOMALY_THRESHOLD_PERCENT.negate()) <= 0) return "LOW";
+        return "NORMAL";
     }
 
     private BigDecimal sumSales(List<EditableSaleRow> rows) {
