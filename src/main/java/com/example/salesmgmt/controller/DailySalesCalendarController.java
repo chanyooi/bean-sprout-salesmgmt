@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 public class DailySalesCalendarController {
@@ -24,14 +25,17 @@ public class DailySalesCalendarController {
             @RequestParam(required = false) String date,
             Model model
     ) {
-        DailySalesCalendarView calendar =
-                service.create(month, date);
-
-        model.addAttribute(
-                "calendar",
-                calendar
-        );
-
+        DailySalesCalendarView calendar = service.create(month, date);
+        model.addAttribute("calendar", calendar);
         return "sales-calendar";
+    }
+
+    @GetMapping("/sales-calendar/audit-data")
+    @ResponseBody
+    public DailySalesCalendarView auditData(
+            @RequestParam(required = false) String month,
+            @RequestParam(required = false) String date
+    ) {
+        return service.create(month, date);
     }
 }
