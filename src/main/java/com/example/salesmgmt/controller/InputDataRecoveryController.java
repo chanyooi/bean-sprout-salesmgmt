@@ -57,8 +57,8 @@ public class InputDataRecoveryController {
                     .contentType(new MediaType("text", "plain", StandardCharsets.UTF_8))
                     .body(
                             selectedMonth
-                                    + "에 저장된 업로드 원본이 아직 없습니다. "
-                                    + "이 기능 적용 후 input_data.xlsx를 한 번 정상 업로드하면 "
+                                    + "에 다운로드할 수 있는 업로드 원본이 없습니다. "
+                                    + "처음 사용하는 달이거나 업로드 복구로 원본이 무효화된 경우입니다. 확인한 input_data.xlsx를 정상 업로드하면 "
                                     + "그 다음부터는 업로드했던 파일 그대로 즉시 다운로드할 수 있습니다."
                     );
         }

@@ -10,6 +10,9 @@ import java.util.List;
 
 public interface WeeklyPaymentRepository extends JpaRepository<WeeklyPaymentEntity, Long> {
 
+    @Query("select p from WeeklyPaymentEntity p join fetch p.vendor where p.weekStart between :start and :end order by p.paymentDate, p.id")
+    List<WeeklyPaymentEntity> findOverlappingMonth(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
     @Query("""
             select payment
             from WeeklyPaymentEntity payment

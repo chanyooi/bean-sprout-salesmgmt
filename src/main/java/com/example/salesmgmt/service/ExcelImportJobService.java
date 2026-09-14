@@ -29,22 +29,19 @@ public class ExcelImportJobService {
     private static final Duration JOB_RETENTION = Duration.ofMinutes(30);
 
     private final ExcelImportService excelImportService;
-    private final SalesPersistenceService salesPersistenceService;
-    private final UploadHistoryService uploadHistoryService;
+    private final SalesUploadTransactionService uploadTransactionService;
     private final InputWorkbookSnapshotService inputWorkbookSnapshotService;
     private final HeavyFileTaskExecutor heavyFileTaskExecutor;
     private final Map<String, JobView> jobs = new ConcurrentHashMap<>();
 
     public ExcelImportJobService(
             ExcelImportService excelImportService,
-            SalesPersistenceService salesPersistenceService,
-            UploadHistoryService uploadHistoryService,
+            SalesUploadTransactionService uploadTransactionService,
             InputWorkbookSnapshotService inputWorkbookSnapshotService,
             HeavyFileTaskExecutor heavyFileTaskExecutor
     ) {
         this.excelImportService = excelImportService;
-        this.salesPersistenceService = salesPersistenceService;
-        this.uploadHistoryService = uploadHistoryService;
+        this.uploadTransactionService = uploadTransactionService;
         this.inputWorkbookSnapshotService = inputWorkbookSnapshotService;
         this.heavyFileTaskExecutor = heavyFileTaskExecutor;
     }
@@ -136,18 +133,7 @@ public class ExcelImportJobService {
                 return;
             }
 
-            String beforeSnapshot = uploadHistoryService.captureSalesSnapshot(
-                    result.orderSnapshots()
-            );
-            SaveResult saveResult = salesPersistenceService.save(
-                    result.records(),
-                    result.orderSnapshots()
-            );
-            uploadHistoryService.recordSuccess(
-                    originalFilename,
-                    beforeSnapshot,
-                    saveResult
-            );
+            SaveResult saveResult = uploadTransactionService.save(originalFilename, result);
 
             String originalFileWarning = null;
             try {

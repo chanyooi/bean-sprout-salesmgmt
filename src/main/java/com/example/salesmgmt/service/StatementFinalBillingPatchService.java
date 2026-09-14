@@ -172,9 +172,7 @@ public class StatementFinalBillingPatchService {
     private BigDecimal sumLineAmounts(List<SalesItemEntity> items) {
         BigDecimal total = BigDecimal.ZERO;
         for (SalesItemEntity item : items) {
-            if (item.getLineAmount() != null) {
-                total = total.add(item.getLineAmount());
-            }
+            total = total.add(BillingAmountPolicy.amount(item));
         }
         return total;
     }
@@ -219,6 +217,9 @@ public class StatementFinalBillingPatchService {
                     return false;
                 }
 
+                // setCellValue on a formula cell only changes its cached result.
+                // Remove the old formula so Excel recalculation cannot overwrite the bill.
+                target.setBlank();
                 target.setCellValue(safeTotal.doubleValue());
                 return true;
             }

@@ -30,6 +30,8 @@ public class PaymentService {
     private static final String INDIVIDUAL_COMPLETE_NOTE = "입금 완료 자동 처리";
     private static final String BULK_COMPLETE_NOTE = "전체 입금 완료 자동 처리";
 
+    private final com.example.salesmgmt.repository.WeeklyPaymentRepository weeklyPaymentRepository;
+    private final com.example.salesmgmt.repository.SalesItemRepository salesItemRepository;
     private final PaymentRepository paymentRepository;
     private final VendorRepository vendorRepository;
     private final VendorProfileRepository vendorProfileRepository;
@@ -41,8 +43,12 @@ public class PaymentService {
             VendorRepository vendorRepository,
             VendorProfileRepository vendorProfileRepository,
             MonthlySalesReportService monthlySalesReportService,
-            ReceivableBillingAdjustmentService receivableBillingAdjustmentService
+            ReceivableBillingAdjustmentService receivableBillingAdjustmentService,
+            com.example.salesmgmt.repository.WeeklyPaymentRepository weeklyPaymentRepository,
+            com.example.salesmgmt.repository.SalesItemRepository salesItemRepository
     ) {
+        this.weeklyPaymentRepository = weeklyPaymentRepository;
+        this.salesItemRepository = salesItemRepository;
         this.paymentRepository = paymentRepository;
         this.vendorRepository = vendorRepository;
         this.vendorProfileRepository = vendorProfileRepository;
@@ -72,9 +78,10 @@ public class PaymentService {
             BigDecimal amount,
             String note
     ) {
-        VendorEntity vendor = vendorRepository.findById(vendorId)
+        VendorEntity vendor = vendorRepository.findForPaymentUpdate(vendorId)
                 .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
 
+        assertMonthlyEntry(vendorId);
         paymentRepository.save(new PaymentEntity(
                 vendor,
                 settlementMonth.toString(),
@@ -90,9 +97,10 @@ public class PaymentService {
             Long vendorId,
             LocalDate paymentDate
     ) {
-        VendorEntity vendor = vendorRepository.findById(vendorId)
+        VendorEntity vendor = vendorRepository.findForPaymentUpdate(vendorId)
                 .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
 
+        assertMonthlyEntry(vendorId);
         MonthlyReceivableReport report = createMonthlyReport(settlementMonth);
 
         MonthlyReceivableReport.VendorRow targetRow = report.vendorRows()
@@ -124,6 +132,7 @@ public class PaymentService {
             YearMonth settlementMonth,
             LocalDate paymentDate
     ) {
+        vendorRepository.lockAllForPaymentUpdate();
         MonthlyReceivableReport report = createMonthlyReport(settlementMonth);
         LocalDate actualPaymentDate = paymentDate == null ? LocalDate.now() : paymentDate;
 
@@ -141,6 +150,7 @@ public class PaymentService {
         List<PaymentEntity> newPayments = new ArrayList<>();
 
         for (MonthlyReceivableReport.VendorRow row : report.vendorRows()) {
+            if (row.paymentCycle() == PaymentCycle.WEEKLY) continue;
             BigDecimal outstanding = safe(row.outstandingAmount());
             if (outstanding.signum() <= 0) {
                 continue;
@@ -191,6 +201,7 @@ public class PaymentService {
 
     @Transactional
     public BulkDeleteResult deleteAllAutoCompletionPayments(YearMonth settlementMonth) {
+        vendorRepository.lockAllForPaymentUpdate();
         List<PaymentEntity> payments = paymentRepository.findForSettlementMonth(
                 settlementMonth.toString()
         );
@@ -224,6 +235,7 @@ public class PaymentService {
 
     @Transactional
     public void deletePayment(Long paymentId) {
+        vendorRepository.lockAllForPaymentUpdate();
         if (!paymentRepository.existsById(paymentId)) {
             throw new IllegalArgumentException("삭제할 입금 기록을 찾을 수 없습니다.");
         }
@@ -282,6 +294,19 @@ public class PaymentService {
             );
         }
 
+        List<MonthlyReceivableReport.PaymentRow> weeklyRows = new ArrayList<>();
+        for (var payment : weeklyPaymentRepository.findOverlappingMonth(month.atDay(1).minusDays(6), month.atEndOfMonth())) {
+            var weekItems = salesItemRepository.findForVendorPeriod(payment.getVendor().getId(),
+                    payment.getWeekStart(), payment.getWeekStart().plusDays(6));
+            BigDecimal allocated = WeeklyPaymentAllocation.forMonth(payment, month, weekItems);
+            if (allocated.signum() == 0) continue;
+            paidByVendor.merge(payment.getVendor().getId(), allocated, BigDecimal::add);
+            // A null monthly id prevents this row being deleted through the monthly-payment endpoint.
+            weeklyRows.add(new MonthlyReceivableReport.PaymentRow(null, payment.getPaymentDate(),
+                    payment.getVendor().getId(), payment.getVendor().getInputName(), allocated,
+                    "주별 입금 · " + payment.getWeekStart() + " 주 · 월 매출 비율 배분"));
+        }
+
         Map<Long, Boolean> relevantVendorIds = new LinkedHashMap<>();
         billedByVendor.keySet().forEach(id -> relevantVendorIds.put(id, true));
         paidByVendor.keySet().forEach(id -> relevantVendorIds.put(id, true));
@@ -325,7 +350,7 @@ public class PaymentService {
                         .thenComparing(MonthlyReceivableReport.VendorRow::vendorName)
         );
 
-        List<MonthlyReceivableReport.PaymentRow> paymentRows = payments.stream()
+        List<MonthlyReceivableReport.PaymentRow> paymentRows = new ArrayList<>(payments.stream()
                 .map(payment -> new MonthlyReceivableReport.PaymentRow(
                         payment.getId(),
                         payment.getPaymentDate(),
@@ -334,7 +359,9 @@ public class PaymentService {
                         money(payment.getAmount()),
                         payment.getNote()
                 ))
-                .toList();
+                .toList());
+        paymentRows.addAll(weeklyRows);
+        paymentRows.sort(Comparator.comparing(MonthlyReceivableReport.PaymentRow::paymentDate).reversed());
 
         return new MonthlyReceivableReport(
                 month,
@@ -346,6 +373,13 @@ public class PaymentService {
                 List.copyOf(vendorRows),
                 List.copyOf(paymentRows)
         );
+    }
+
+    private void assertMonthlyEntry(Long vendorId) {
+        if (vendorProfileRepository.findByVendor_Id(vendorId)
+                .map(profile -> profile.getPaymentCycle() == PaymentCycle.WEEKLY).orElse(false)) {
+            throw new IllegalArgumentException("주별 거래처의 입금은 주별 입금확인에서 등록해주세요. 월별 집계에는 자동 반영됩니다.");
+        }
     }
 
     private BigDecimal safe(BigDecimal value) {

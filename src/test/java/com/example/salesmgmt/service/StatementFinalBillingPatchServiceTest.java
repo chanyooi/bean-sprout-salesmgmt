@@ -12,6 +12,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class StatementFinalBillingPatchServiceTest {
 
     @Test
+    void finalBillingReplacesFormulaInsteadOfOnlyItsCachedValue() throws Exception {
+        try (var workbook = new XSSFWorkbook()) {
+            var sheet = workbook.createSheet("test");
+            var row = sheet.createRow(0);
+            row.createCell(0).setCellValue("최종 청구금액");
+            var total = row.createCell(1);
+            total.setCellFormula("1+1");
+            assertTrue(StatementFinalBillingPatchService.writeFinalBillingAmount(sheet, new BigDecimal("20000")));
+            org.junit.jupiter.api.Assertions.assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, total.getCellType());
+            workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+            org.junit.jupiter.api.Assertions.assertEquals(20000, total.getNumericCellValue());
+        }
+    }
+
+    @Test
     void templateContainsDetectableFinalBillingCell() throws Exception {
         ClassPathResource resource = new ClassPathResource("template.xlsx");
 
