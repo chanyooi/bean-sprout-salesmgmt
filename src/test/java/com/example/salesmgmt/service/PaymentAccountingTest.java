@@ -109,6 +109,26 @@ class PaymentAccountingTest {
         assertThat(open.getLineAmount()).isEqualByComparingTo("100");
     }
 
+    @Test void closedMonthRejectsCreatingOrUpdatingPriceFromVendorScreen() {
+        var vendor = vendor("closed-create", PaymentCycle.MONTHLY);
+        closing.close(september);
+        assertThatThrownBy(() -> prices.createOrUpdatePriceForMonth(vendor.getId(), "일반콩나물",
+                new BigDecimal("200"), september)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(priceRepository.findByVendor_IdAndItemName(vendor.getId(), "일반콩나물")).isEmpty();
+    }
+
+    @Test void specialItemBillingMatchesBetweenWeeklyAndMonthlyViews() {
+        var vendor = vendor("special", PaymentCycle.WEEKLY);
+        var normal = sale(vendor, "2026-09-07", "10000");
+        items.save(new SalesItemEntity(normal.getSalesOrder(), "두부판", BigDecimal.ONE, null));
+        items.save(new SalesItemEntity(normal.getSalesOrder(), "손두부", BigDecimal.ONE, new BigDecimal("5000")));
+        weekly.completeOutstanding(LocalDate.of(2026,9,6), vendor.getId(), LocalDate.of(2026,9,12));
+        var report = monthly.createMonthlyReport(september);
+        assertThat(report.billedAmount()).isEqualByComparingTo("12000");
+        assertThat(report.paidAmount()).isEqualByComparingTo("12000");
+        assertThat(report.outstandingAmount()).isEqualByComparingTo("0");
+    }
+
     @Test void openMonthStillRepricesExistingSales() {
         var vendor = vendor("open", PaymentCycle.MONTHLY);
         var item = sale(vendor, "2026-09-07", "100");

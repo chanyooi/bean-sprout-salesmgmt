@@ -79,14 +79,14 @@ public class WeeklyPaymentService {
                 continue;
             }
 
-            if (item.getLineAmount() == null) {
+            BigDecimal amount = ReceivableBillingAdjustmentService.billingAmount(item);
+            if (item.getLineAmount() == null && amount.signum() == 0) {
                 missingPriceCount++;
                 continue;
             }
 
             LocalDate date = item.getSalesOrder().getDeliveryDate();
             int dayIndex = sundayFirstIndex(date.getDayOfWeek());
-            BigDecimal amount = ReceivableBillingAdjustmentService.billingAmount(item);
 
             BigDecimal[] daily = dailyByVendor.computeIfAbsent(vendorId, ignored -> zeroWeek());
             daily[dayIndex] = daily[dayIndex].add(amount);

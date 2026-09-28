@@ -41,7 +41,6 @@ public class WeeklyPaymentAllocationService {
                     BigDecimal firstSales = BigDecimal.ZERO;
                     BigDecimal lastSales = BigDecimal.ZERO;
                     for (var item : sales.findForVendorPeriod(payment.getVendor().getId(), start, start.plusDays(6))) {
-                        if (item.getLineAmount() == null) continue;
                         if (YearMonth.from(item.getSalesOrder().getDeliveryDate()).equals(first)) {
                             firstSales = firstSales.add(ReceivableBillingAdjustmentService.billingAmount(item));
                         } else {
