@@ -24,6 +24,7 @@ import java.util.Map;
 @Service
 public class PriceManagementService {
 
+    private final MonthlyCloseService monthlyCloseService;
     private final VendorRepository vendorRepository;
     private final VendorPriceRepository vendorPriceRepository;
     private final SalesItemRepository salesItemRepository;
@@ -31,8 +32,10 @@ public class PriceManagementService {
     public PriceManagementService(
             VendorRepository vendorRepository,
             VendorPriceRepository vendorPriceRepository,
-            SalesItemRepository salesItemRepository
+            SalesItemRepository salesItemRepository,
+            MonthlyCloseService monthlyCloseService
     ) {
+        this.monthlyCloseService = monthlyCloseService;
         this.vendorRepository = vendorRepository;
         this.vendorPriceRepository = vendorPriceRepository;
         this.salesItemRepository = salesItemRepository;
@@ -143,6 +146,7 @@ public class PriceManagementService {
             BigDecimal unitPrice,
             YearMonth month
     ) {
+        monthlyCloseService.assertOpen(month);
         validateUnitPrice(unitPrice);
         VendorPriceEntity entity = findPrice(priceId);
         BigDecimal oldConfiguredPrice = entity.getUnitPrice();
@@ -185,6 +189,7 @@ public class PriceManagementService {
             BigDecimal unitPrice,
             YearMonth month
     ) {
+        if (month != null) monthlyCloseService.assertOpen(month);
         validateUnitPrice(unitPrice);
         if (!ItemCatalog.ALL_ITEMS.contains(itemName)) {
             throw new IllegalArgumentException("지원하지 않는 품목입니다: " + itemName);
@@ -269,6 +274,7 @@ public class PriceManagementService {
 
         int applied = 0;
         for (SalesItemEntity salesItem : salesItemRepository.findAllWithoutUnitPrice()) {
+            if (monthlyCloseService.isClosed(YearMonth.from(salesItem.getSalesOrder().getDeliveryDate()))) continue;
             BigDecimal unitPrice = resolveUnitPrice(salesItem, priceMap);
             if (unitPrice != null) {
                 salesItem.applyUnitPrice(unitPrice);

@@ -15,6 +15,17 @@ public record MonthlyReceivableReport(
         List<VendorRow> vendorRows,
         List<PaymentRow> paymentRows
 ) {
+    public long monthlyOutstandingVendorCount() {
+        return vendorRows.stream().filter(row -> row.paymentCycle() != PaymentCycle.WEEKLY
+                && row.outstandingAmount().signum() > 0).count();
+    }
+
+    public BigDecimal monthlyOutstandingAmount() {
+        return vendorRows.stream().filter(row -> row.paymentCycle() != PaymentCycle.WEEKLY)
+                .map(VendorRow::outstandingAmount).filter(amount -> amount.signum() > 0)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     public record VendorRow(
             Long vendorId,
             String vendorName,
@@ -40,7 +51,8 @@ public record MonthlyReceivableReport(
             Long vendorId,
             String vendorName,
             BigDecimal amount,
-            String note
+            String note,
+            LocalDate weekStart
     ) {
     }
 }
