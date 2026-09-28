@@ -86,7 +86,7 @@ public class WeeklyPaymentService {
 
             LocalDate date = item.getSalesOrder().getDeliveryDate();
             int dayIndex = sundayFirstIndex(date.getDayOfWeek());
-            BigDecimal amount = safe(item.getLineAmount());
+            BigDecimal amount = ReceivableBillingAdjustmentService.billingAmount(item);
 
             BigDecimal[] daily = dailyByVendor.computeIfAbsent(vendorId, ignored -> zeroWeek());
             daily[dayIndex] = daily[dayIndex].add(amount);
@@ -165,7 +165,7 @@ public class WeeklyPaymentService {
         );
     }
 
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void addPayment(
             LocalDate requestedWeekStart,
             Long vendorId,
@@ -184,7 +184,7 @@ public class WeeklyPaymentService {
         ));
     }
 
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public BigDecimal completeOutstanding(
             LocalDate requestedWeekStart,
             Long vendorId,
@@ -212,7 +212,7 @@ public class WeeklyPaymentService {
         return money(row.outstandingAmount());
     }
 
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void deletePayment(Long paymentId) {
         if (!weeklyPaymentRepository.existsById(paymentId)) {
             throw new IllegalArgumentException("삭제할 주별 입금 기록을 찾을 수 없습니다.");
@@ -225,7 +225,7 @@ public class WeeklyPaymentService {
             throw new IllegalArgumentException("거래처가 필요합니다.");
         }
 
-        VendorEntity vendor = vendorRepository.findById(vendorId)
+        VendorEntity vendor = vendorRepository.findByIdForUpdate(vendorId)
                 .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
 
         VendorProfileEntity profile = vendorProfileRepository.findByVendor_Id(vendorId)

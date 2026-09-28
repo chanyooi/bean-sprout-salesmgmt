@@ -154,7 +154,7 @@
                 <select name="vendorId" required>
                     <option value="">선택</option>
                     <option th:each="vendor : ${vendors}"
-                            th:if="${vendor.active}"
+                            th:if="${vendor.active and vendor.paymentCycle.name() != 'WEEKLY'}"
                             th:value="${vendor.vendorId}"
                             th:text="|${vendor.vendorName} · ${vendor.paymentCycle.label}|">
                     </option>
@@ -217,11 +217,11 @@
                     </button>
                 </form>
 
-                <form th:if="${report.outstandingVendorCount > 0}"
+                <form th:if="${report.monthlyOutstandingVendorCount() > 0}"
                       th:action="@{/payments/complete-all}"
                       method="post"
-                      th:attr="data-count=${report.outstandingVendorCount},
-                               data-total=${report.outstandingAmount.stripTrailingZeros().toPlainString()}"
+                      th:attr="data-count=${report.monthlyOutstandingVendorCount()},
+                               data-total=${report.monthlyOutstandingAmount().stripTrailingZeros().toPlainString()}"
                       onsubmit="return confirmCompleteAll(this);">
 
                     <input type="hidden"
@@ -230,7 +230,7 @@
 
                     <button type="submit"
                             class="payment-complete-all-button">
-                        전체 입금 완료
+                        월별 거래처 전체 입금 완료
                     </button>
                 </form>
             </div>
@@ -287,7 +287,9 @@
                     </td>
 
                     <td class="action-column">
-                        <form th:if="${row.outstandingAmount.signum() > 0}"
+                        <a th:if="${row.paymentCycle.name() == 'WEEKLY'}"
+                           th:href="@{/weekly-payments(week=${selectedMonth + '-01'})}">주별 입금확인</a>
+                        <form th:if="${row.outstandingAmount.signum() > 0 and row.paymentCycle.name() != 'WEEKLY'}"
                               th:action="@{/payments/{vendorId}/complete(vendorId=${row.vendorId})}"
                               method="post"
                               th:attr="data-vendor=${row.vendorName},
@@ -349,7 +351,9 @@
                         th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT') + '원'}"></td>
                     <td th:text="${payment.note}"></td>
                     <td>
-                        <form th:action="@{/payments/{id}/delete(id=${payment.paymentId})}"
+                        <a th:if="${payment.weekStart != null}"
+                           th:href="@{/weekly-payments(week=${payment.weekStart})}">주별 내역에서 관리</a>
+                        <form th:if="${payment.weekStart == null}" th:action="@{/payments/{id}/delete(id=${payment.paymentId})}"
                               method="post"
                               onsubmit="return confirm('이 입금 기록을 삭제할까요?');">
                             <input type="hidden"

@@ -40,27 +40,8 @@ public class ReceivableBillingAdjustmentService {
         Map<Long, BigDecimal> corrections = new HashMap<>();
 
         for (SalesItemEntity item : items) {
-            String itemName = normalize(item.getItemName());
             Long vendorId = item.getSalesOrder().getVendor().getId();
-            BigDecimal recordedAmount = nz(item.getLineAmount());
-            BigDecimal correction;
-
-            if ("손두부".equals(itemName)) {
-                String statementName = normalize(
-                        item.getSalesOrder().getVendor().getStatementName()
-                );
-
-                correction = statementName.contains("아포농협")
-                        ? BigDecimal.ZERO
-                        : recordedAmount.negate();
-            } else if ("두부판".equals(itemName)) {
-                BigDecimal replacementRevenue = nz(item.getQuantity())
-                        .abs()
-                        .multiply(TOFU_TRAY_RETURN_REVENUE_PER_UNIT);
-                correction = replacementRevenue.subtract(recordedAmount);
-            } else {
-                continue;
-            }
+            BigDecimal correction = billingAmount(item).subtract(nz(item.getLineAmount()));
 
             if (correction.signum() != 0) {
                 corrections.merge(vendorId, correction, BigDecimal::add);
@@ -68,6 +49,18 @@ public class ReceivableBillingAdjustmentService {
         }
 
         return Map.copyOf(corrections);
+    }
+
+    public static BigDecimal billingAmount(SalesItemEntity item) {
+        String name = normalize(item.getItemName());
+        if ("손두부".equals(name)
+                && !normalize(item.getSalesOrder().getVendor().getStatementName()).contains("아포농협")) {
+            return BigDecimal.ZERO;
+        }
+        if ("두부판".equals(name)) {
+            return nz(item.getQuantity()).abs().multiply(TOFU_TRAY_RETURN_REVENUE_PER_UNIT);
+        }
+        return nz(item.getLineAmount());
     }
 
     private static String normalize(String value) {
