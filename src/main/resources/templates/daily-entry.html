@@ -2,6 +2,8 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>납품 입력</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
@@ -12,7 +14,7 @@
     <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20260814_2)}">
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
-    <link rel="stylesheet" th:href="@{/css/daily-entry.css(v=20260828_4)}">
+    <link rel="stylesheet" th:href="@{/css/daily-entry.css(v=20261002_1)}">
 </head>
 <body class="daily-entry-page">
 <main class="container">
@@ -78,13 +80,29 @@
                     수량은 정수 단위로 입력하세요. 기존 숫자를 지우고 저장하면 해당 품목이 삭제됩니다.
                 </p>
             </div>
+            <div class="button-row">
+            <button type="button" class="secondary-button" data-layout-edit>표 수정</button>
             <button type="button"
                     class="secondary-button"
                     data-entry-filter>
                 입력 있는 거래처만
             </button>
+            </div>
         </div>
 
+        <section class="entry-layout-editor" data-layout-editor hidden aria-label="입력 표 수정">
+            <p>순서를 이동하거나 표에서 삭제할 수 있습니다. 기존 납품 기록은 유지됩니다.</p>
+            <div class="entry-layout-lists">
+                <div><h3>거래처 순서</h3><div data-layout-vendors class="entry-layout-list"></div></div>
+                <div><h3>품목 순서</h3><div data-layout-products class="entry-layout-list"></div></div>
+            </div>
+            <div class="button-row">
+                <button type="button" data-layout-save>표 설정 저장</button>
+                <button type="button" class="secondary-button" data-layout-cancel>취소</button>
+                <button type="button" class="secondary-button" data-layout-reset>기본 표로 복원</button>
+            </div>
+            <p data-layout-status role="status" aria-live="polite"></p>
+        </section>
         <form th:action="@{/daily-entry}"
               method="post"
               data-daily-entry-form>
@@ -113,7 +131,7 @@
                     </thead>
                     <tbody>
                     <tr th:each="row : ${page.rows}"
-                        data-entry-row
+                        data-entry-row th:attr="data-entry-sequence=${row.sequence}"
                         th:classappend="${row.saved} ? ' has-saved-data' : ''">
                         <td class="vendor-cell" th:title="${row.vendorName}" data-label="거래처">
                             <span th:text="${row.vendorName}">산동빅</span>
@@ -206,6 +224,8 @@
 <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
 <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260828_1)}"></script>
 <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
-<script defer th:src="@{/js/daily-entry.js(v=20260828_2)}"></script>
+<script th:inline="javascript">window.dailyEntryLayout = /*[[${entryLayout}]]*/ {};</script>
+<script defer th:src="@{/js/daily-entry-layout.js(v=20261002_1)}"></script>
+<script defer th:src="@{/js/daily-entry.js(v=20261002_1)}"></script>
 </body>
 </html>

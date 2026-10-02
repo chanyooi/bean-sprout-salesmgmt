@@ -492,3 +492,15 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+.daily-entry-page .entry-layout-hidden { display: none !important; }
+.entry-layout-editor[hidden] { display: none; }
+.entry-layout-editor { padding: 16px; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 10px; }
+.entry-layout-editor p { font-size: 14px; }
+.entry-layout-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.entry-layout-list { max-height: 360px; overflow-y: auto; }
+.entry-layout-item { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+.entry-layout-item span { flex: 1; min-width: 90px; font-size: 14px; overflow-wrap: anywhere; }
+.entry-layout-item button { font-size: 14px; min-height: 36px; padding: 6px 9px; }
+.entry-layout-deleted span { color: #64748b; text-decoration: line-through; }
+@media (max-width: 720px) { .entry-layout-lists { grid-template-columns: 1fr; } }

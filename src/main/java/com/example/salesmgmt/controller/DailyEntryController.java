@@ -3,6 +3,10 @@ package com.example.salesmgmt.controller;
 import com.example.salesmgmt.domain.SaveResult;
 import com.example.salesmgmt.exception.SalesDataConflictException;
 import com.example.salesmgmt.service.DailyEntryService;
+import com.example.salesmgmt.service.DailyEntryLayoutService;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.http.ResponseEntity;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,7 +31,10 @@ public class DailyEntryController {
 
     private final DailyEntryService dailyEntryService;
 
-    public DailyEntryController(DailyEntryService dailyEntryService) {
+    private final DailyEntryLayoutService layoutService;
+
+    public DailyEntryController(DailyEntryService dailyEntryService, DailyEntryLayoutService layoutService) {
+        this.layoutService = layoutService;
         this.dailyEntryService = dailyEntryService;
     }
 
@@ -44,6 +51,7 @@ public class DailyEntryController {
 
         var page = dailyEntryService.load(selectedDate);
         model.addAttribute("page", page);
+        model.addAttribute("entryLayout", layoutService.load());
         model.addAttribute("selectedDate", selectedDate.toString());
         model.addAttribute("dateLabel", selectedDate.format(DATE_LABEL));
         model.addAttribute("previousDate", selectedDate.minusDays(1).toString());
@@ -51,6 +59,17 @@ public class DailyEntryController {
         model.addAttribute("today", LocalDate.now(KOREA_ZONE).toString());
         model.addAttribute("vendorCount", page.rows().size());
         return "daily-entry";
+    }
+
+    @PostMapping("/daily-entry/layout")
+    @ResponseBody
+    public ResponseEntity<String> saveLayout(@RequestBody DailyEntryLayoutService.Layout layout) {
+        try {
+            layoutService.save(layout);
+            return ResponseEntity.ok("표 설정을 저장했습니다.");
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(exception.getMessage());
+        }
     }
 
     @PostMapping("/daily-entry")
