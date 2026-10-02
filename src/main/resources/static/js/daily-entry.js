@@ -89,7 +89,8 @@
 
             const sameColumn = Array.from(
                     form.querySelectorAll(`input[data-entry-col="${column}"]`)
-            ).filter(candidate => !candidate.closest('tr').classList.contains('entry-hidden-row'));
+            ).filter(candidate => !candidate.closest('tr').classList.contains('entry-hidden-row')
+                    && !candidate.closest('tr').classList.contains('entry-layout-hidden'));
 
             const currentIndex = sameColumn.indexOf(input);
             if (currentIndex < 0) return;
