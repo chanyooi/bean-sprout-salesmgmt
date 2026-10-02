@@ -159,6 +159,12 @@
 
         const hiddenKey = type === 'vendor' ? 'hiddenVendors' : 'hiddenProducts';
         const hidden = draft[hiddenKey].includes(key);
+        const itemCount = type === 'vendor' ? vendors.length : products.length;
+
+        if (!hidden && draft[hiddenKey].length >= itemCount - 1) {
+            setStatus('표에는 거래처와 품목이 각각 하나 이상 남아 있어야 합니다.');
+            return;
+        }
 
         draft[hiddenKey] = hidden
                 ? draft[hiddenKey].filter(value => value !== key)
@@ -173,12 +179,25 @@
         const wrap = table.closest('.daily-entry-table-wrap');
         if (!wrap) return;
 
-        const rect = wrap.getBoundingClientRect();
-        const edge = 64;
-        if (clientY < rect.top + edge) {
-            wrap.scrollTop -= 20;
-        } else if (clientY > rect.bottom - edge) {
-            wrap.scrollTop += 20;
+        const mobileLayout = window.matchMedia('(max-width: 720px)').matches;
+        const canScrollWrap = !mobileLayout && wrap.scrollHeight > wrap.clientHeight + 4;
+
+        if (canScrollWrap) {
+            const rect = wrap.getBoundingClientRect();
+            const edge = 64;
+            if (clientY < rect.top + edge) {
+                wrap.scrollTop -= 20;
+            } else if (clientY > rect.bottom - edge) {
+                wrap.scrollTop += 20;
+            }
+            return;
+        }
+
+        const viewportEdge = 84;
+        if (clientY < viewportEdge) {
+            window.scrollBy(0, -22);
+        } else if (clientY > window.innerHeight - viewportEdge) {
+            window.scrollBy(0, 22);
         }
     }
 
