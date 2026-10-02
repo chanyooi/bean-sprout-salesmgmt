@@ -205,7 +205,7 @@
         if (type === 'vendor') {
             return rows.find(row => row.dataset.entrySequence === key) || null;
         }
-        return header.querySelector('[data-layout-product-key="' + CSS.escape(key) + '"]');
+        return headers.find(cell => cell.dataset.layoutProductKey === key) || null;
     }
 
     function clearDragVisual() {
@@ -364,7 +364,7 @@
         });
 
         products.forEach(product => {
-            const cell = header.querySelector('[data-layout-product-key="' + CSS.escape(product.key) + '"]');
+            const cell = headers.find(candidate => candidate.dataset.layoutProductKey === product.key);
             if (!cell) return;
 
             const hidden = draft.hiddenProducts.includes(product.key);
