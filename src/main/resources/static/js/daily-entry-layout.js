@@ -43,6 +43,8 @@
     let saving = false;
     let activeDrag = null;
     let pointerDrag = null;
+    let dragPoint = null;
+    let autoScrollFrame = null;
 
     function normalize(layout) {
         const result = {};
@@ -175,29 +177,113 @@
         refreshControlStates();
     }
 
-    function autoScroll(clientY) {
+    function getScrollContext() {
         const wrap = table.closest('.daily-entry-table-wrap');
-        if (!wrap) return;
-
         const mobileLayout = window.matchMedia('(max-width: 720px)').matches;
-        const canScrollWrap = !mobileLayout && wrap.scrollHeight > wrap.clientHeight + 4;
+        const canScrollWrap = wrap && !mobileLayout && wrap.scrollHeight > wrap.clientHeight + 4;
 
         if (canScrollWrap) {
-            const rect = wrap.getBoundingClientRect();
-            const edge = 64;
-            if (clientY < rect.top + edge) {
-                wrap.scrollTop -= 20;
-            } else if (clientY > rect.bottom - edge) {
-                wrap.scrollTop += 20;
-            }
-            return;
+            return {
+                element: wrap,
+                rect: wrap.getBoundingClientRect()
+            };
         }
 
-        const viewportEdge = 84;
-        if (clientY < viewportEdge) {
-            window.scrollBy(0, -22);
-        } else if (clientY > window.innerHeight - viewportEdge) {
-            window.scrollBy(0, 22);
+        return {
+            element: null,
+            rect: {
+                top: 0,
+                bottom: window.innerHeight
+            }
+        };
+    }
+
+    function autoScrollVelocity(clientY, rect) {
+        const edge = 96;
+        const minimum = 8;
+        const maximum = 34;
+
+        if (clientY < rect.top + edge) {
+            const strength = Math.min(1, Math.max(0, (rect.top + edge - clientY) / edge));
+            return -Math.round(minimum + (maximum - minimum) * strength);
+        }
+
+        if (clientY > rect.bottom - edge) {
+            const strength = Math.min(1, Math.max(0, (clientY - (rect.bottom - edge)) / edge));
+            return Math.round(minimum + (maximum - minimum) * strength);
+        }
+
+        return 0;
+    }
+
+    function moveVendorAtPoint(key, clientY) {
+        if (!editing) return;
+
+        const source = rows.find(row => row.dataset.entrySequence === key);
+        if (!source) return;
+
+        const candidates = Array.from(tbody.rows).filter(row => row !== source);
+        if (candidates.length === 0) return;
+
+        for (const row of candidates) {
+            const rect = row.getBoundingClientRect();
+            if (clientY < rect.top + rect.height / 2) {
+                moveVendor(key, row, false);
+                return;
+            }
+        }
+
+        moveVendor(key, candidates[candidates.length - 1], true);
+    }
+
+    function activeVendorDragKey() {
+        if (activeDrag && activeDrag.type === 'vendor') {
+            return activeDrag.key;
+        }
+        if (pointerDrag && pointerDrag.active && pointerDrag.type === 'vendor') {
+            return pointerDrag.key;
+        }
+        return null;
+    }
+
+    function stopAutoScroll() {
+        dragPoint = null;
+        if (autoScrollFrame !== null) {
+            window.cancelAnimationFrame(autoScrollFrame);
+            autoScrollFrame = null;
+        }
+    }
+
+    function continueAutoScroll() {
+        autoScrollFrame = null;
+
+        const vendorKey = activeVendorDragKey();
+        if (!dragPoint || !vendorKey || !editing || saving) return;
+
+        const context = getScrollContext();
+        const velocity = autoScrollVelocity(dragPoint.clientY, context.rect);
+        if (velocity === 0) return;
+
+        const before = context.element ? context.element.scrollTop : window.scrollY;
+
+        if (context.element) {
+            context.element.scrollTop += velocity;
+        } else {
+            window.scrollBy(0, velocity);
+        }
+
+        moveVendorAtPoint(vendorKey, dragPoint.clientY);
+
+        const after = context.element ? context.element.scrollTop : window.scrollY;
+        if (after !== before) {
+            autoScrollFrame = window.requestAnimationFrame(continueAutoScroll);
+        }
+    }
+
+    function trackAutoScroll(clientX, clientY) {
+        dragPoint = {clientX, clientY};
+        if (autoScrollFrame === null) {
+            autoScrollFrame = window.requestAnimationFrame(continueAutoScroll);
         }
     }
 
@@ -231,6 +317,7 @@
 
     function endNativeDrag() {
         activeDrag = null;
+        stopAutoScroll();
         clearDragVisual();
     }
 
@@ -270,17 +357,14 @@
             }
 
             event.preventDefault();
-            autoScroll(event.clientY);
-
-            const target = document.elementFromPoint(event.clientX, event.clientY);
-            if (!target) return;
 
             if (type === 'vendor') {
-                const targetRow = target.closest('tr[data-entry-row]');
-                if (!targetRow) return;
-                const rect = targetRow.getBoundingClientRect();
-                moveVendor(key, targetRow, event.clientY > rect.top + rect.height / 2);
+                trackAutoScroll(event.clientX, event.clientY);
+                moveVendorAtPoint(key, event.clientY);
             } else {
+                const target = document.elementFromPoint(event.clientX, event.clientY);
+                if (!target) return;
+
                 const targetHeader = target.closest('th[data-layout-product-key]');
                 if (!targetHeader) return;
                 const targetKey = targetHeader.dataset.layoutProductKey;
@@ -292,6 +376,7 @@
         const finishPointerDrag = event => {
             if (!pointerDrag || pointerDrag.pointerId !== event.pointerId) return;
             pointerDrag = null;
+            stopAutoScroll();
             clearDragVisual();
         };
         handle.addEventListener('pointerup', finishPointerDrag);
@@ -407,7 +492,7 @@
         changed = false;
         apply(draft);
         updateEditingUi();
-        setStatus('거래처는 ↕를 잡고 위·아래로, 품목은 ↔를 잡고 좌·우로 드래그하세요. ×는 표에서 숨깁니다.');
+        setStatus('거래처는 ↕를 잡고 위·아래로 드래그하세요. 화면 위·아래 끝으로 끌면 자동으로 스크롤됩니다. 품목은 ↔로 이동하고 ×는 표에서 숨깁니다.');
     }
 
     function cancelEditing() {
@@ -416,6 +501,9 @@
         draft = structuredClone(saved);
         editing = false;
         changed = false;
+        activeDrag = null;
+        pointerDrag = null;
+        stopAutoScroll();
         clearDragVisual();
         apply(saved);
         updateEditingUi();
@@ -471,16 +559,12 @@
         }
     });
 
-    tbody.addEventListener('dragover', event => {
+    document.addEventListener('dragover', event => {
         if (!activeDrag || activeDrag.type !== 'vendor' || !editing) return;
 
-        const targetRow = event.target.closest('tr[data-entry-row]');
-        if (!targetRow) return;
-
         event.preventDefault();
-        autoScroll(event.clientY);
-        const rect = targetRow.getBoundingClientRect();
-        moveVendor(activeDrag.key, targetRow, event.clientY > rect.top + rect.height / 2);
+        trackAutoScroll(event.clientX, event.clientY);
+        moveVendorAtPoint(activeDrag.key, event.clientY);
     });
 
     tbody.addEventListener('drop', event => {
