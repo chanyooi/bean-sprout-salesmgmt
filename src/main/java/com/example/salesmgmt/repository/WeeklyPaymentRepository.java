@@ -21,4 +21,11 @@ public interface WeeklyPaymentRepository extends JpaRepository<WeeklyPaymentEnti
             order by payment.paymentDate desc, payment.id desc
             """)
     List<WeeklyPaymentEntity> findForWeek(@Param("weekStart") LocalDate weekStart);
+
+    @Query("""
+            select payment
+            from WeeklyPaymentEntity payment
+            where payment.note = '주별 입금 완료 자동 처리'
+            """)
+    List<WeeklyPaymentEntity> findAutomaticCompletions();
 }
