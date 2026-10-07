@@ -79,6 +79,13 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
 
         assertMonthlyVendor(vendorId);
+        assertNoDuplicateMonthlyPayment(
+                settlementMonth,
+                vendorId,
+                paymentDate,
+                amount,
+                note
+        );
         paymentRepository.save(new PaymentEntity(
                 vendor,
                 settlementMonth.toString(),
@@ -279,8 +286,14 @@ public class PaymentService {
                         billedByVendor.merge(vendorId, correction, BigDecimal::add)
                 );
 
+        var weeklyRows = weeklyPaymentAllocationService.forMonth(month);
+        List<PaymentEntity> effectiveMonthlyPayments = payments.stream()
+                .filter(payment -> weeklyRows.stream()
+                        .noneMatch(weekly -> isCrossLedgerDuplicate(payment, weekly)))
+                .toList();
+
         Map<Long, BigDecimal> paidByVendor = new LinkedHashMap<>();
-        for (PaymentEntity payment : payments) {
+        for (PaymentEntity payment : effectiveMonthlyPayments) {
             paidByVendor.merge(
                     payment.getVendor().getId(),
                     safe(payment.getAmount()),
@@ -288,7 +301,6 @@ public class PaymentService {
             );
         }
 
-        var weeklyRows = weeklyPaymentAllocationService.forMonth(month);
         for (var payment : weeklyRows) {
             paidByVendor.merge(payment.vendorId(), payment.amount(), BigDecimal::add);
         }
@@ -336,7 +348,7 @@ public class PaymentService {
                         .thenComparing(MonthlyReceivableReport.VendorRow::vendorName)
         );
 
-        List<MonthlyReceivableReport.PaymentRow> paymentRows = new ArrayList<>(payments.stream()
+        List<MonthlyReceivableReport.PaymentRow> paymentRows = new ArrayList<>(effectiveMonthlyPayments.stream()
                 .map(payment -> new MonthlyReceivableReport.PaymentRow(
                         payment.getId(),
                         payment.getPaymentDate(),
@@ -367,6 +379,47 @@ public class PaymentService {
                 .map(profile -> profile.getPaymentCycle() == PaymentCycle.WEEKLY).orElse(false)) {
             throw new IllegalArgumentException("주별 거래처의 입금은 주별 입금확인 화면에서 처리해주세요.");
         }
+    }
+
+    private void assertNoDuplicateMonthlyPayment(
+            YearMonth settlementMonth,
+            Long vendorId,
+            LocalDate paymentDate,
+            BigDecimal amount,
+            String note
+    ) {
+        String normalizedNote = normalizeNote(note);
+        boolean duplicate = paymentRepository.findForSettlementMonth(settlementMonth.toString())
+                .stream()
+                .anyMatch(payment ->
+                        vendorId.equals(payment.getVendor().getId())
+                                && paymentDate.equals(payment.getPaymentDate())
+                                && amount.compareTo(payment.getAmount()) == 0
+                                && java.util.Objects.equals(
+                                        normalizedNote,
+                                        normalizeNote(payment.getNote())
+                                )
+                );
+
+        if (duplicate) {
+            throw new IllegalArgumentException(
+                    "같은 거래처·입금일·금액·메모의 입금 기록이 이미 있습니다."
+            );
+        }
+    }
+
+    private boolean isCrossLedgerDuplicate(
+            PaymentEntity monthlyPayment,
+            MonthlyReceivableReport.PaymentRow weeklyPayment
+    ) {
+        return weeklyPayment.weekStart() != null
+                && monthlyPayment.getVendor().getId().equals(weeklyPayment.vendorId())
+                && monthlyPayment.getPaymentDate().equals(weeklyPayment.paymentDate())
+                && monthlyPayment.getAmount().compareTo(weeklyPayment.amount()) == 0;
+    }
+
+    private String normalizeNote(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private BigDecimal safe(BigDecimal value) {
