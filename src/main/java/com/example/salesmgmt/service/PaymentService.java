@@ -287,9 +287,15 @@ public class PaymentService {
                 );
 
         var weeklyRows = weeklyPaymentAllocationService.forMonth(month);
+        var weeklyVendorIds = weeklyRows.stream()
+                .map(MonthlyReceivableReport.PaymentRow::vendorId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        // A weekly vendor must have exactly one accounting source in the monthly report.
+        // Once weekly ledger rows exist for that month, legacy monthly-ledger entries for
+        // the same vendor are ignored instead of being added on top of the weekly ledger.
         List<PaymentEntity> effectiveMonthlyPayments = payments.stream()
-                .filter(payment -> weeklyRows.stream()
-                        .noneMatch(weekly -> isCrossLedgerDuplicate(payment, weekly)))
+                .filter(payment -> !weeklyVendorIds.contains(payment.getVendor().getId()))
                 .toList();
 
         Map<Long, BigDecimal> paidByVendor = new LinkedHashMap<>();
@@ -322,7 +328,8 @@ public class PaymentService {
             }
 
             BigDecimal billed = safe(billedByVendor.get(vendorId));
-            BigDecimal paid = safe(paidByVendor.get(vendorId));
+            BigDecimal recordedPaid = safe(paidByVendor.get(vendorId));
+            BigDecimal paid = appliedPaymentAmount(billed, recordedPaid);
             BigDecimal outstanding = billed.subtract(paid);
 
             billedTotal = billedTotal.add(billed);
@@ -408,14 +415,17 @@ public class PaymentService {
         }
     }
 
-    private boolean isCrossLedgerDuplicate(
-            PaymentEntity monthlyPayment,
-            MonthlyReceivableReport.PaymentRow weeklyPayment
-    ) {
-        return weeklyPayment.weekStart() != null
-                && monthlyPayment.getVendor().getId().equals(weeklyPayment.vendorId())
-                && monthlyPayment.getPaymentDate().equals(weeklyPayment.paymentDate())
-                && monthlyPayment.getAmount().compareTo(weeklyPayment.amount()) == 0;
+    private BigDecimal appliedPaymentAmount(BigDecimal billed, BigDecimal recordedPaid) {
+        BigDecimal normalizedBilled = safe(billed);
+        BigDecimal normalizedPaid = safe(recordedPaid);
+
+        if (normalizedPaid.signum() <= 0) {
+            return ZERO;
+        }
+        if (normalizedBilled.signum() <= 0) {
+            return ZERO;
+        }
+        return normalizedPaid.min(normalizedBilled);
     }
 
     private String normalizeNote(String value) {

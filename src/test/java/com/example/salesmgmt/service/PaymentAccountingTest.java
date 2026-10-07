@@ -115,7 +115,7 @@ class PaymentAccountingTest {
         assertThat(report.paymentRows().getFirst().weekStart()).isEqualTo(LocalDate.of(2026, 9, 6));
     }
 
-    @Test void differentLegacyMonthlyAndWeeklyReceiptsBothRemainCounted() {
+    @Test void weeklyLedgerTakesPrecedenceOverLegacyMonthlyLedger() {
         var vendor = vendor("weekly-distinct", PaymentCycle.WEEKLY);
         sale(vendor, "2026-09-07", "100000");
         LocalDate paymentDate = LocalDate.of(2026, 9, 12);
@@ -125,7 +125,7 @@ class PaymentAccountingTest {
                 september.toString(),
                 paymentDate,
                 new BigDecimal("40000"),
-                "legacy partial"
+                "legacy monthly record"
         ));
         weekly.addPayment(
                 LocalDate.of(2026, 9, 6),
@@ -136,8 +136,36 @@ class PaymentAccountingTest {
         );
 
         var report = monthly.createMonthlyReport(september);
+        assertThat(report.paidAmount()).isEqualByComparingTo("60000");
+        assertThat(report.outstandingAmount()).isEqualByComparingTo("40000");
+        assertThat(report.paymentRows()).hasSize(1);
+        assertThat(report.paymentRows().getFirst().weekStart()).isEqualTo(LocalDate.of(2026, 9, 6));
+    }
+
+    @Test void receivableReportNeverAppliesMoreThanTheMonthlyBill() {
+        var vendor = vendor("weekly-overlap", PaymentCycle.WEEKLY);
+        sale(vendor, "2026-09-07", "100000");
+
+        weekly.addPayment(
+                LocalDate.of(2026, 9, 6),
+                vendor.getId(),
+                LocalDate.of(2026, 9, 10),
+                new BigDecimal("80000"),
+                "old overlapping week"
+        );
+        weekly.addPayment(
+                LocalDate.of(2026, 9, 6),
+                vendor.getId(),
+                LocalDate.of(2026, 9, 12),
+                new BigDecimal("80000"),
+                "replacement week"
+        );
+
+        var report = monthly.createMonthlyReport(september);
         assertThat(report.paidAmount()).isEqualByComparingTo("100000");
         assertThat(report.outstandingAmount()).isEqualByComparingTo("0");
+        assertThat(report.vendorRows().getFirst().paidAmount()).isEqualByComparingTo("100000");
+        assertThat(report.vendorRows().getFirst().outstandingAmount()).isEqualByComparingTo("0");
         assertThat(report.paymentRows()).hasSize(2);
     }
 
