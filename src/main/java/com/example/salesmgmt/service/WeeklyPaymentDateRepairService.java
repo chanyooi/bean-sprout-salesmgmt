@@ -22,7 +22,7 @@ public class WeeklyPaymentDateRepairService implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         for (WeeklyPaymentEntity payment : weeklyPaymentRepository.findAutomaticCompletions()) {
-            LocalDate correctedDate = settlementDateForWeek(payment.getWeekStart(), payment.getCreatedAt().toLocalDate());
+            LocalDate correctedDate = settlementDateForWeek(payment.getWeekStart(), payment.getPaymentDate());
             if (!correctedDate.equals(payment.getPaymentDate())) {
                 payment.correctPaymentDate(correctedDate);
             }
