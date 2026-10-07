@@ -14,11 +14,12 @@ import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
 @Import({PaymentService.class, WeeklyPaymentService.class, WeeklyPaymentAllocationService.class,
-        MonthlySalesReportService.class, ReceivableBillingAdjustmentService.class,
-        PriceManagementService.class, MonthlyCloseService.class})
+        WeeklyPaymentDateRepairService.class, MonthlySalesReportService.class,
+        ReceivableBillingAdjustmentService.class, PriceManagementService.class, MonthlyCloseService.class})
 class PaymentAccountingTest {
     @Autowired PaymentService monthly;
     @Autowired WeeklyPaymentService weekly;
+    @Autowired WeeklyPaymentDateRepairService weeklyDateRepair;
     @Autowired PriceManagementService prices;
     @Autowired MonthlyCloseService closing;
     @Autowired VendorRepository vendors;
@@ -43,6 +44,34 @@ class PaymentAccountingTest {
                 vendor, null, null, null, "test", 1));
         return items.save(new SalesItemEntity(order, "일반콩나물", BigDecimal.ONE,
                 amount == null ? null : new BigDecimal(amount)));
+    }
+
+    @Test void weeklyAutoCompletionUsesTheSelectedWeeksSettlementDate() {
+        var vendor = vendor("weekly-date", PaymentCycle.WEEKLY);
+        LocalDate weekStart = LocalDate.of(2026, 9, 6);
+        sale(vendor, "2026-09-07", "100000");
+
+        weekly.completeOutstanding(weekStart, vendor.getId(), null);
+
+        var saved = weeklyPayments.findForWeek(weekStart);
+        assertThat(saved).hasSize(1);
+        assertThat(saved.getFirst().getPaymentDate()).isEqualTo(LocalDate.of(2026, 9, 12));
+    }
+
+    @Test void historicalAutoCompletionDatesOutsideTheWeekAreRepaired() throws Exception {
+        var vendor = vendor("weekly-date-repair", PaymentCycle.WEEKLY);
+        LocalDate weekStart = LocalDate.of(2026, 9, 6);
+        var payment = weeklyPayments.save(new WeeklyPaymentEntity(
+                vendor,
+                weekStart,
+                LocalDate.of(2026, 10, 7),
+                new BigDecimal("100000"),
+                "주별 입금 완료 자동 처리"
+        ));
+
+        weeklyDateRepair.run(null);
+
+        assertThat(payment.getPaymentDate()).isEqualTo(LocalDate.of(2026, 9, 12));
     }
 
     @Test void weeklyReceiptsAppearInMonthlyTotalsAndDeletionIsReflected() {
