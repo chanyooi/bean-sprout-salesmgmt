@@ -81,6 +81,13 @@ public class WeeklyPaymentEntity {
     public String getNote() { return note; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
+    public void correctPaymentDate(LocalDate paymentDate) {
+        if (paymentDate == null) {
+            throw new IllegalArgumentException("입금일이 필요합니다.");
+        }
+        this.paymentDate = paymentDate;
+    }
+
     private String blankToNull(String value) {
         if (value == null || value.isBlank()) {
             return null;

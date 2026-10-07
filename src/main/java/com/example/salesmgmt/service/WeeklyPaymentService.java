@@ -210,10 +210,14 @@ public class WeeklyPaymentService {
             throw new IllegalArgumentException("이미 입금 완료된 거래처입니다.");
         }
 
+        LocalDate automaticPaymentDate = paymentDate == null
+                ? WeeklyPaymentDateRepairService.settlementDateForWeek(weekStart, LocalDate.now())
+                : paymentDate;
+
         weeklyPaymentRepository.save(new WeeklyPaymentEntity(
                 vendor,
                 weekStart,
-                paymentDate == null ? LocalDate.now() : paymentDate,
+                automaticPaymentDate,
                 row.outstandingAmount(),
                 COMPLETE_NOTE
         ));
