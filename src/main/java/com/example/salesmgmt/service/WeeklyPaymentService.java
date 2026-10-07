@@ -175,10 +175,18 @@ public class WeeklyPaymentService {
     ) {
         LocalDate weekStart = normalizeWeekStart(requestedWeekStart);
         VendorEntity vendor = targetVendorById(vendorId);
+        LocalDate actualPaymentDate = paymentDate == null ? LocalDate.now() : paymentDate;
+        assertNoDuplicateWeeklyPayment(
+                weekStart,
+                vendorId,
+                actualPaymentDate,
+                amount,
+                note
+        );
         weeklyPaymentRepository.save(new WeeklyPaymentEntity(
                 vendor,
                 weekStart,
-                paymentDate == null ? LocalDate.now() : paymentDate,
+                actualPaymentDate,
                 amount,
                 note
         ));
@@ -237,6 +245,37 @@ public class WeeklyPaymentService {
             throw new IllegalArgumentException("주별 입금확인 대상 거래처가 아닙니다.");
         }
         return vendor;
+    }
+
+    private void assertNoDuplicateWeeklyPayment(
+            LocalDate weekStart,
+            Long vendorId,
+            LocalDate paymentDate,
+            BigDecimal amount,
+            String note
+    ) {
+        String normalizedNote = normalizeNote(note);
+        boolean duplicate = weeklyPaymentRepository.findForWeek(weekStart)
+                .stream()
+                .anyMatch(payment ->
+                        vendorId.equals(payment.getVendor().getId())
+                                && paymentDate.equals(payment.getPaymentDate())
+                                && amount.compareTo(payment.getAmount()) == 0
+                                && java.util.Objects.equals(
+                                        normalizedNote,
+                                        normalizeNote(payment.getNote())
+                                )
+                );
+
+        if (duplicate) {
+            throw new IllegalArgumentException(
+                    "같은 거래처·입금일·금액·메모의 주별 입금 기록이 이미 있습니다."
+            );
+        }
+    }
+
+    private String normalizeNote(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private List<VendorProfileEntity> weeklyProfiles() {
