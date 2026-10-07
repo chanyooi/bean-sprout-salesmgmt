@@ -71,7 +71,7 @@ public class WeeklyPaymentController {
             BigDecimal amount = weeklyPaymentService.completeOutstanding(
                     weekStart,
                     vendorId,
-                    LocalDate.now()
+                    null
             );
             redirectAttributes.addFlashAttribute(
                     "successMessage",
