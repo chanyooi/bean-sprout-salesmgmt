@@ -288,7 +288,7 @@
 
                     <td class="action-column">
                         <a th:if="${row.paymentCycle.name() == 'WEEKLY'}"
-                           th:href="@{/weekly-payments(week=${selectedMonth + '-01'})}">주별 입금확인</a>
+                           th:href="@{/payments/weekly(week=${selectedMonth + '-01'})}">주별 입금확인</a>
                         <form th:if="${row.outstandingAmount.signum() > 0 and row.paymentCycle.name() != 'WEEKLY'}"
                               th:action="@{/payments/{vendorId}/complete(vendorId=${row.vendorId})}"
                               method="post"
@@ -352,7 +352,7 @@
                     <td th:text="${payment.note}"></td>
                     <td>
                         <a th:if="${payment.weekStart != null}"
-                           th:href="@{/weekly-payments(week=${payment.weekStart})}">주별 내역에서 관리</a>
+                           th:href="@{/payments/weekly(week=${payment.weekStart})}">주별 내역에서 관리</a>
                         <form th:if="${payment.weekStart == null}" th:action="@{/payments/{id}/delete(id=${payment.paymentId})}"
                               method="post"
                               onsubmit="return confirm('이 입금 기록을 삭제할까요?');">

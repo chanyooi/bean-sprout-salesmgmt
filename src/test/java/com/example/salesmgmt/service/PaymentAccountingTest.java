@@ -59,6 +59,84 @@ class PaymentAccountingTest {
         assertThat(monthly.createMonthlyReport(september).paidAmount()).isEqualByComparingTo("0");
     }
 
+    @Test void exactLegacyMonthlyAndWeeklyReceiptIsCountedOnce() {
+        var vendor = vendor("weekly-dedup", PaymentCycle.WEEKLY);
+        sale(vendor, "2026-09-07", "100000");
+        LocalDate paymentDate = LocalDate.of(2026, 9, 12);
+
+        payments.save(new PaymentEntity(
+                vendor,
+                september.toString(),
+                paymentDate,
+                new BigDecimal("100000"),
+                "legacy monthly record"
+        ));
+        weekly.addPayment(
+                LocalDate.of(2026, 9, 6),
+                vendor.getId(),
+                paymentDate,
+                new BigDecimal("100000"),
+                "weekly record"
+        );
+
+        var report = monthly.createMonthlyReport(september);
+        assertThat(report.paidAmount()).isEqualByComparingTo("100000");
+        assertThat(report.outstandingAmount()).isEqualByComparingTo("0");
+        assertThat(report.paymentRows()).hasSize(1);
+        assertThat(report.paymentRows().getFirst().weekStart()).isEqualTo(LocalDate.of(2026, 9, 6));
+    }
+
+    @Test void differentLegacyMonthlyAndWeeklyReceiptsBothRemainCounted() {
+        var vendor = vendor("weekly-distinct", PaymentCycle.WEEKLY);
+        sale(vendor, "2026-09-07", "100000");
+        LocalDate paymentDate = LocalDate.of(2026, 9, 12);
+
+        payments.save(new PaymentEntity(
+                vendor,
+                september.toString(),
+                paymentDate,
+                new BigDecimal("40000"),
+                "legacy partial"
+        ));
+        weekly.addPayment(
+                LocalDate.of(2026, 9, 6),
+                vendor.getId(),
+                paymentDate,
+                new BigDecimal("60000"),
+                "weekly partial"
+        );
+
+        var report = monthly.createMonthlyReport(september);
+        assertThat(report.paidAmount()).isEqualByComparingTo("100000");
+        assertThat(report.outstandingAmount()).isEqualByComparingTo("0");
+        assertThat(report.paymentRows()).hasSize(2);
+    }
+
+    @Test void exactDuplicateManualMonthlyReceiptIsRejected() {
+        var vendor = vendor("monthly-duplicate", PaymentCycle.MONTHLY);
+        LocalDate paymentDate = LocalDate.of(2026, 9, 15);
+
+        monthly.addPayment(september, vendor.getId(), paymentDate, new BigDecimal("50000"), "bank");
+        assertThatThrownBy(() ->
+                monthly.addPayment(september, vendor.getId(), paymentDate, new BigDecimal("50000"), " bank ")
+        ).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("이미 있습니다");
+
+        assertThat(payments.count()).isEqualTo(1);
+    }
+
+    @Test void exactDuplicateManualWeeklyReceiptIsRejected() {
+        var vendor = vendor("weekly-duplicate", PaymentCycle.WEEKLY);
+        LocalDate weekStart = LocalDate.of(2026, 9, 6);
+        LocalDate paymentDate = LocalDate.of(2026, 9, 12);
+
+        weekly.addPayment(weekStart, vendor.getId(), paymentDate, new BigDecimal("50000"), "bank");
+        assertThatThrownBy(() ->
+                weekly.addPayment(weekStart, vendor.getId(), paymentDate, new BigDecimal("50000"), " bank ")
+        ).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("이미 있습니다");
+
+        assertThat(weeklyPayments.count()).isEqualTo(1);
+    }
+
     @Test void crossingMonthReceiptsAreAllocatedAndPreserveEveryCent() {
         var vendor = vendor("boundary", PaymentCycle.WEEKLY);
         sale(vendor, "2026-08-31", "100");
