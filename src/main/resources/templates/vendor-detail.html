@@ -12,6 +12,7 @@
     <link rel="stylesheet" th:href="@{/css/vendor-order-calendar.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/vendor-order-calendar-readability.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/vendor-detail-mobile-polish.css(v=20260827_1)}">
+    <link rel="stylesheet" th:href="@{/css/sales-trend.css(v=20261021_1)}">
 </head>
 <body>
 <main class="vendor-v2-shell">
@@ -108,6 +109,17 @@
         <p style="margin:10px 0 0;color:#8b95a1;font-size:12px">여기서 분류한 전달 방식대로 거래명세서 화면에서 팩스·우편·문자 거래처 파일을 따로 다운로드할 수 있습니다.</p>
     </section>
 
+
+    <section class="v2-panel sales-trend-panel" aria-label="거래처 월별 매출 추이">
+        <div class="sales-trend-heading">
+            <div><h2 th:text="|${selectedYear}년 월별 매출 추이|">월별 매출 추이</h2><p>월별 금액의 증가와 감소를 확인하세요.</p></div>
+        </div>
+        <div class="sales-trend-chart" data-sales-trend="line">
+            <div class="sales-trend-data" th:each="point : ${detail.monthlySpend}"
+                 th:data-label="${point.month}" th:data-amount="${point.amount}"></div>
+        </div>
+        <p class="sales-trend-hint">2026년 6월 이전에 직접 등록한 금액도 포함됩니다. 진행 중인 달은 아직 집계 중입니다.</p>
+    </section>
     <section class="detail-grid">
         <div>
             <section class="v2-panel">
@@ -235,5 +247,6 @@
 <script defer th:src="@{/js/vendor-order-calendar.js(v=20260827_1)}"></script>
 <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260818_1)}"></script>
 <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
+<script defer th:src="@{/js/sales-trend.js(v=20261021_1)}"></script>
 </body>
 </html>
