@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 public class DashboardController {
@@ -69,6 +72,15 @@ public class DashboardController {
         model.addAttribute("previousMonth", selectedMonth.minusMonths(1).toString());
         model.addAttribute("nextMonth", selectedMonth.plusMonths(1).toString());
         model.addAttribute("sales", sales);
+        List<MonthlyTrendPoint> salesTrend = new ArrayList<>();
+        for (int monthsAgo = 11; monthsAgo >= 0; monthsAgo--) {
+            YearMonth target = selectedMonth.minusMonths(monthsAgo);
+            BigDecimal amount = target.equals(selectedMonth)
+                    ? sales.confirmedSales()
+                    : monthlySalesReportService.createReport(target).confirmedSales();
+            salesTrend.add(new MonthlyTrendPoint(target.toString(), amount));
+        }
+        model.addAttribute("salesTrend", salesTrend);
         model.addAttribute("profit", profit);
         model.addAttribute("receivables", receivables);
         model.addAttribute("inventory", inventory);
@@ -76,4 +88,5 @@ public class DashboardController {
 
         return "dashboard";
     }
+    public record MonthlyTrendPoint(String month, BigDecimal amount) {}
 }
