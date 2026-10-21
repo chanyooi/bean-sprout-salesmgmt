@@ -74,6 +74,14 @@
         </a>
     </div>
 
+    <div class="report-notice warning"
+         th:if="${sales.missingPriceCount > 0}">
+        ⚠️ 단가 미등록 판매가
+        <strong th:text="|${sales.missingPriceCount}건|">0건</strong>
+        있습니다. 잘못 입력된 판매가 없는지 확인해주세요.
+        <a th:href="@{/reports/monthly(month=${selectedMonth})}">확인하기</a>
+    </div>
+
     <section class="sc-mobile-kpi-section">
         <div class="sc-section-heading">
             <div>
@@ -345,6 +353,14 @@
         <a th:href="@{/(month=${previousMonth})}">← 이전 달</a>
         <strong th:text="|${selectedMonth} 현황|">월 현황</strong>
         <a th:href="@{/(month=${nextMonth})}">다음 달 →</a>
+    </div>
+
+    <div class="report-notice warning"
+         th:if="${sales.missingPriceCount > 0}">
+        ⚠️ 단가 미등록 판매가
+        <strong th:text="|${sales.missingPriceCount}건|">0건</strong>
+        있습니다. 잘못 입력된 판매가 없는지 확인해주세요.
+        <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출에서 확인하기</a>
     </div>
 
     <section class="dashboard-metrics final-dashboard-metrics">
