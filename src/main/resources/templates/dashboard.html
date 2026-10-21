@@ -25,6 +25,7 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
+    <link rel="stylesheet" th:href="@{/css/sales-trend.css(v=20261021_1)}">
 </head>
 <body>
 
@@ -82,6 +83,18 @@
         <a th:href="@{/reports/monthly(month=${selectedMonth})}">확인하기</a>
     </div>
 
+
+    <section class="sales-trend-panel" aria-label="송천 전체 월별 매출 추이">
+        <div class="sales-trend-heading">
+            <div><h2>송천 전체 매출 추이</h2><p>선택한 달까지 최근 12개월의 확정 매출</p></div>
+            <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a>
+        </div>
+        <div class="sales-trend-chart" data-sales-trend="bar">
+            <div class="sales-trend-data" th:each="point : ${salesTrend}"
+                 th:data-label="${point.month}" th:data-amount="${point.amount}"></div>
+        </div>
+        <p class="sales-trend-hint">단가 미등록 건은 제외됩니다. 이번 달은 아직 집계 중일 수 있습니다.</p>
+    </section>
     <section class="sc-mobile-kpi-section">
         <div class="sc-section-heading">
             <div>
@@ -363,6 +376,18 @@
         <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출에서 확인하기</a>
     </div>
 
+
+    <section class="sales-trend-panel" aria-label="송천 전체 월별 매출 추이">
+        <div class="sales-trend-heading">
+            <div><h2>송천 전체 매출 추이</h2><p>선택한 달까지 최근 12개월의 확정 매출</p></div>
+            <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a>
+        </div>
+        <div class="sales-trend-chart" data-sales-trend="bar">
+            <div class="sales-trend-data" th:each="point : ${salesTrend}"
+                 th:data-label="${point.month}" th:data-amount="${point.amount}"></div>
+        </div>
+        <p class="sales-trend-hint">단가 미등록 건은 제외됩니다. 이번 달은 아직 집계 중일 수 있습니다.</p>
+    </section>
     <section class="dashboard-metrics final-dashboard-metrics">
         <a class="metric-card"
            th:href="@{/reports/monthly(month=${selectedMonth})}">
@@ -668,5 +693,6 @@
     <script defer th:src="@{/js/sms-send-inline-v2.js(v=20260817_2)}"></script>
     <script defer th:src="@{/js/statement-send-premium-v2.js(v=20260817_2)}"></script>
     <script defer th:src="@{/js/statement-column-order.js(v=20260817_1)}"></script>
+<script defer th:src="@{/js/sales-trend.js(v=20261021_1)}"></script>
 </body>
 </html>
