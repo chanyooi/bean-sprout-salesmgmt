@@ -13,9 +13,6 @@ import java.util.List;
 @Service
 public class SpecialItemAccountingService {
 
-    private static final BigDecimal TOFU_TRAY_RETURN_REVENUE_PER_UNIT =
-            new BigDecimal("2000");
-
     private final SalesItemRepository salesItemRepository;
 
     public SpecialItemAccountingService(
@@ -47,6 +44,7 @@ public class SpecialItemAccountingService {
         BigDecimal tofuResaleQty = BigDecimal.ZERO;
 
         BigDecimal tofuTrayQty = BigDecimal.ZERO;
+        BigDecimal tofuTrayAdjustedAmount = BigDecimal.ZERO;
         BigDecimal tofuTrayRecordedAmount = BigDecimal.ZERO;
 
         for (SalesItemEntity item : items) {
@@ -113,6 +111,8 @@ public class SpecialItemAccountingService {
                         tofuTrayRecordedAmount.add(
                                 amount
                         );
+                tofuTrayAdjustedAmount = tofuTrayAdjustedAmount.add(
+                        ReceivableBillingAdjustmentService.billingAmount(item));
 
                 continue;
             }
@@ -129,15 +129,11 @@ public class SpecialItemAccountingService {
 
         /*
          * 최신 운영 기준:
-         * - 두부판을 팔공에 반납하면 1판당 +2,000원의 수익이 생김.
-         * - DB의 두부판 행 수량을 실제 반납 판 수로 사용.
-         * - DB에 기록되어 있던 기존 두부판 금액(예: 1,000원)은
-         *   일반매출에서 제외하고 2,000원 기준으로 다시 계산.
+         * - 팔공 두부판 반환은 1판당 -1,000원 보증금 차감.
+         * - 다른 거래처 두부판은 기존 2,000원 정책 유지.
+         * - 기존 저장 금액 대신 청구액 계산 규칙을 재사용.
          */
-        BigDecimal tofuTrayReturnRevenue =
-                tofuTrayQty.multiply(
-                        TOFU_TRAY_RETURN_REVENUE_PER_UNIT
-                );
+        BigDecimal tofuTrayReturnRevenue = tofuTrayAdjustedAmount;
 
         BigDecimal tofuTotalRevenue =
                 tofuResaleSales.add(
