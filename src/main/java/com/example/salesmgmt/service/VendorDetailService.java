@@ -67,7 +67,7 @@ public class VendorDetailService {
             if (item.getLineAmount() != null) {
                 totals.computeIfPresent(
                         itemMonth,
-                        (month, total) -> total.add(item.getLineAmount())
+                        (month, total) -> total.add(ReceivableBillingAdjustmentService.isPalgongTofuTray(item) ? ReceivableBillingAdjustmentService.billingAmount(item) : item.getLineAmount())
                 );
             }
         }
@@ -110,7 +110,7 @@ public class VendorDetailService {
                     item.getItemName(),
                     item.getQuantity(),
                     editablePrice,
-                    item.getLineAmount(),
+                    ReceivableBillingAdjustmentService.isPalgongTofuTray(item) ? ReceivableBillingAdjustmentService.billingAmount(item) : item.getLineAmount(),
                     item.getSalesOrder().getDeliveryMethod(),
                     item.getSalesOrder().getNote()
             ));

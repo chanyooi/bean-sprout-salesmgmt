@@ -62,8 +62,11 @@ public class MonthlySalesReportService {
             String vendorName = item.getSalesOrder().getVendor().getInputName();
             String itemName = item.getItemName();
             BigDecimal quantity = item.getQuantity();
-            BigDecimal lineAmount = item.getLineAmount();
-            boolean missingPrice = item.getUnitPrice() == null || lineAmount == null;
+            BigDecimal lineAmount = ReceivableBillingAdjustmentService.isPalgongTofuTray(item)
+                    ? ReceivableBillingAdjustmentService.billingAmount(item)
+                    : item.getLineAmount();
+            boolean missingPrice = !ReceivableBillingAdjustmentService.isPalgongTofuTray(item)
+                    && (item.getUnitPrice() == null || lineAmount == null);
 
             orderNumbers.add(orderNumber);
             vendorNames.add(vendorName);
