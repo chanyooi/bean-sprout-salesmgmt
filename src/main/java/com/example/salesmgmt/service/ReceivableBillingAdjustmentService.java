@@ -57,10 +57,20 @@ public class ReceivableBillingAdjustmentService {
                 && !normalize(item.getSalesOrder().getVendor().getStatementName()).contains("아포농협")) {
             return BigDecimal.ZERO;
         }
+        if (isPalgongTofuTray(item)) {
+            return nz(item.getQuantity()).abs().multiply(new BigDecimal("-1000"));
+        }
         if ("두부판".equals(name)) {
             return nz(item.getQuantity()).abs().multiply(TOFU_TRAY_RETURN_REVENUE_PER_UNIT);
         }
         return nz(item.getLineAmount());
+    }
+
+    public static boolean isPalgongTofuTray(SalesItemEntity item) {
+        if (!"두부판".equals(normalize(item.getItemName()))) return false;
+        var vendor = item.getSalesOrder().getVendor();
+        return normalize(vendor.getStatementName()).contains("팔공")
+                || normalize(vendor.getInputName()).contains("팔공");
     }
 
     private static String normalize(String value) {
