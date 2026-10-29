@@ -156,7 +156,7 @@ class PersonalLedgerControllerTest {
         mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-8888-99"))
                 .with(user("admin").roles("ADMIN")).with(csrf()))
                 .andExpect(status().is3xxRedirection());
-        mvc.perform(get("/personal-ledger").param("month","2026-10")
+        mvc.perform(get("/personal-ledger").param("month","2026-10").param("view","in")
                 .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
@@ -387,12 +387,14 @@ class PersonalLedgerControllerTest {
         assertThat(in.getCategory()).isEqualTo("계좌간 이체");
         assertThat(payments.count()).isEqualTo(businessBefore);
         assertThat(transfers.reconcile().newPairs()).isZero();
-        mvc.perform(get("/personal-ledger").param("month","2026-09").with(user("admin").roles("ADMIN")))
+        mvc.perform(get("/personal-ledger").param("month","2026-09")
+                    .param("account",bankSelector("351-0000-1111-22"))
+                    .with(user("admin").roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(model().attribute("transferExpense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("500000"))))
-            .andExpect(model().attribute("transferIncome",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("500000"))))
+            .andExpect(model().attribute("transferIncome",org.hamcrest.Matchers.comparesEqualTo(BigDecimal.ZERO)))
             .andExpect(model().attribute("personalExpense",org.hamcrest.Matchers.comparesEqualTo(BigDecimal.ZERO)))
-            .andExpect(model().attribute("autoTransferRows",2L));
+            .andExpect(model().attribute("autoTransferRows",1L));
     }
 
     @Test void transferMatchingRejectsSameAccountDifferentDateAndAmbiguousPairs() {
