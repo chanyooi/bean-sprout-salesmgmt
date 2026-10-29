@@ -287,6 +287,75 @@ class PersonalLedgerControllerTest {
         assertThat(transactions.count()).isEqualTo(before);
     }
 
+    @Test void separateBankAccountsShowIndividualTotalsAndAccountFilteredTransactions() throws Exception {
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-1212-13"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("302-0000-3434-35"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        mvc.perform(get("/personal-ledger").param("month","2026-10")
+                .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("accountCount",2))
+                .andExpect(model().attribute("rows",org.hamcrest.Matchers.hasSize(4)))
+                .andExpect(model().attribute("income",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("1700000"))))
+                .andExpect(model().attribute("expense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("120000"))));
+
+        var selection=org.apache.commons.codec.digest.DigestUtils.sha256Hex("351-0000-1212-13").substring(0,24);
+        mvc.perform(get("/personal-ledger").param("month","2026-10").param("account",selection)
+                .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("accountCount",2))
+                .andExpect(model().attribute("rows",org.hamcrest.Matchers.hasSize(2)))
+                .andExpect(model().attribute("selectedAccount",selection))
+                .andExpect(model().attribute("income",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("850000"))))
+                .andExpect(model().attribute("expense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("60000"))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("•••• 12-13")));
+    }
+
+    @Test void unclassifiedExpenseIsNotShownAsHouseholdSpending() throws Exception {
+        var unclassified=transactions.save(new PersonalBankTransactionEntity(
+            "unclassified-bank-spending","351-0000-1212-13",LocalDate.of(2026,9,16),
+            BigDecimal.ZERO,new BigDecimal("9000000"),"불명 거래","미확인 출금"));
+        // The entity defaults to an unclassified category.
+        mvc.perform(get("/personal-ledger").param("month","2026-09")
+                .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("pendingExpense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("9000000"))))
+                .andExpect(model().attribute("personalExpense",org.hamcrest.Matchers.comparesEqualTo(BigDecimal.ZERO)));
+    }
+
+    @Test void categoryEditKeepsSelectedBankViewAndDoesNotRequireRememberCheckbox() throws Exception {
+        var tx=transactions.save(new PersonalBankTransactionEntity(
+            "category-selected-account","351-0000-1212-13",LocalDate.of(2026,9,16),
+            BigDecimal.ZERO,new BigDecimal("40000"),"생활비","출금"));
+        var selection=org.apache.commons.codec.digest.DigestUtils.sha256Hex("351-0000-1212-13").substring(0,24);
+        mvc.perform(post("/personal-ledger/"+tx.getId()+"/classify")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("category","식비").param("month","2026-09").param("account",selection))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/personal-ledger?month=2026-09&account="+selection));
+        assertThat(transactions.findById(tx.getId()).orElseThrow().getCategory()).isEqualTo("식비");
+    }
+
+    @Test void removedSettlementMonthFieldDoesNotErasePreviousAllocation() throws Exception {
+        var tx=transactions.save(new PersonalBankTransactionEntity(
+            "linked-bank-month-persist","351-0000-1212-13",LocalDate.of(2026,9,16),
+            new BigDecimal("100000"),BigDecimal.ZERO,"다른입금자","입금"));
+        var a=vendors.save(new VendorEntity("기존정산처","기존정산처",true));
+        var b=vendors.save(new VendorEntity("변경정산처","변경정산처",true));
+        tx.link(a.getId(),"2026-08");
+        mvc.perform(post("/personal-ledger/"+tx.getId()+"/link-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("vendorId",b.getId().toString()).param("remember","false").param("month","2026-09"))
+                .andExpect(status().isOk());
+        var saved=transactions.findById(tx.getId()).orElseThrow();
+        assertThat(saved.getVendorId()).isEqualTo(b.getId());
+        assertThat(saved.getSettlementMonth()).isEqualTo("2026-08");
+    }
+
     @Test void nonAdminCannotReadOrUploadPrivateBankData() throws Exception {
         mvc.perform(get("/personal-ledger").with(user("work").roles("USER")))
                 .andExpect(status().isForbidden());
