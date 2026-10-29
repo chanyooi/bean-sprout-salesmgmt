@@ -268,8 +268,9 @@ public class PersonalLedgerController {
             throw new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.BAD_REQUEST,"정산월 형식이 올바르지 않습니다.");
         }
-        // The selected row can change its own settlement month.
-        row.link(vendorId,ym);
+        // Do not reset the reconciliation flag on a no-op selection.
+        if(!Objects.equals(row.getVendorId(),vendorId)
+                || !Objects.equals(row.getSettlementMonth(),ym)) row.link(vendorId,ym);
         row.classify("사업 입금");
 
         String payer=row.getCounterparty();
@@ -283,7 +284,8 @@ public class PersonalLedgerController {
         for(var entry:existing) {
             if(entry.getId().equals(row.getId())) continue;
             // Preserve the individual historical settlement-month allocation.
-            entry.link(vendorId,entry.getSettlementMonth());
+            if(!Objects.equals(entry.getVendorId(),vendorId))
+                entry.link(vendorId,entry.getSettlementMonth());
             entry.classify("사업 입금");
         }
 
