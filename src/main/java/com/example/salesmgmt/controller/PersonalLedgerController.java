@@ -35,6 +35,11 @@ public class PersonalLedgerController {
         this.transactions=transactions;this.aliases=aliases;this.categoryRules=categoryRules;this.vendors=vendors;this.payments=payments;
         this.businessPayments=businessPayments;this.weeklyPayments=weeklyPayments;
     }
+    @GetMapping("/access")
+    public org.springframework.http.ResponseEntity<Void> access() {
+        return org.springframework.http.ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     @Transactional(readOnly=true)
     public String page(@RequestParam(required=false) String month,Model model){
