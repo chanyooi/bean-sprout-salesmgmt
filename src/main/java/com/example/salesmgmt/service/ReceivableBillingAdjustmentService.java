@@ -41,9 +41,10 @@ public class ReceivableBillingAdjustmentService {
 
         for (SalesItemEntity item : items) {
             Long vendorId = item.getSalesOrder().getVendor().getId();
-            // MonthlySalesReportService already applies Palgong tray correction. Never deduct it twice.
+            // Sales treats a returned Palgong tray as -1,000; the payable
+            // ledger uses +1,000 because the refund reduces what we owe.
             BigDecimal reportBase = isPalgongTofuTray(item) ? billingAmount(item) : nz(item.getLineAmount());
-            BigDecimal correction = billingAmount(item).subtract(reportBase);
+            BigDecimal correction = signedVendorLedgerAmount(item).subtract(reportBase);
 
             if (correction.signum() != 0) {
                 corrections.merge(vendorId, correction, BigDecimal::add);
@@ -51,6 +52,11 @@ public class ReceivableBillingAdjustmentService {
         }
 
         return Map.copyOf(corrections);
+    }
+
+    public static BigDecimal signedVendorLedgerAmount(SalesItemEntity item) {
+        if (isPalgongTofuTray(item)) return billingAmount(item).negate();
+        return billingAmount(item);
     }
 
     public static BigDecimal billingAmount(SalesItemEntity item) {
