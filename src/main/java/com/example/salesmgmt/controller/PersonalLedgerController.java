@@ -4,6 +4,7 @@ import com.example.salesmgmt.entity.*;
 import com.example.salesmgmt.repository.*;
 import com.example.salesmgmt.service.PaymentService;
 import com.example.salesmgmt.service.NonghyupXlsCompatibility;
+import com.example.salesmgmt.service.PersonalTransferMatchingService;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,9 +34,11 @@ public class PersonalLedgerController {
     private final PaymentService payments;
     private final PaymentRepository businessPayments;
     private final WeeklyPaymentRepository weeklyPayments;
-    public PersonalLedgerController(PersonalBankTransactionRepository transactions,PersonalBankAliasRepository aliases,PersonalBankCategoryRuleRepository categoryRules,VendorRepository vendors,PaymentService payments,PaymentRepository businessPayments,WeeklyPaymentRepository weeklyPayments) {
+    private final PersonalTransferMatchingService transferMatcher;
+    public PersonalLedgerController(PersonalBankTransactionRepository transactions,PersonalBankAliasRepository aliases,PersonalBankCategoryRuleRepository categoryRules,VendorRepository vendors,PaymentService payments,PaymentRepository businessPayments,WeeklyPaymentRepository weeklyPayments,PersonalTransferMatchingService transferMatcher) {
         this.transactions=transactions;this.aliases=aliases;this.categoryRules=categoryRules;this.vendors=vendors;this.payments=payments;
         this.businessPayments=businessPayments;this.weeklyPayments=weeklyPayments;
+        this.transferMatcher=transferMatcher;
     }
     @GetMapping("/access")
     public org.springframework.http.ResponseEntity<Void> access() {
@@ -101,6 +104,21 @@ public class PersonalLedgerController {
             }
         }
 
+        Map<Long,String> transferLabels=new HashMap<>();
+        var counterpartIds=rows.stream()
+            .filter(PersonalBankTransactionEntity::isAutoTransfer)
+            .map(PersonalBankTransactionEntity::getMatchedTransferId)
+            .filter(Objects::nonNull).distinct().toList();
+        if(!counterpartIds.isEmpty()) {
+            Map<Long,PersonalBankTransactionEntity> counterparts=new HashMap<>();
+            transactions.findAllById(counterpartIds).forEach(other->counterparts.put(other.getId(),other));
+            for(var bankRow:rows) {
+                if(!bankRow.isAutoTransfer())continue;
+                var other=counterparts.get(bankRow.getMatchedTransferId());
+                if(other!=null)transferLabels.put(bankRow.getId(),maskedAccount(other.getAccount()));
+            }
+        }
+
         var monthlyBankPayments=businessPayments.findForPaymentDateRange(ym.atDay(1),ym.atEndOfMonth());
         var weeklyBankPayments=weeklyPayments.findForPaymentDateRange(ym.atDay(1),ym.atEndOfMonth());
         Map<Long,String> matches=new HashMap<>();
@@ -155,6 +173,8 @@ public class PersonalLedgerController {
         model.addAttribute("businessIncome",businessIncome);
         model.addAttribute("transferExpense",transferExpense);
         model.addAttribute("transferIncome",transferIncome);
+        model.addAttribute("autoTransferRows",rows.stream().filter(PersonalBankTransactionEntity::isAutoTransfer).count());
+        model.addAttribute("transferLabels",transferLabels);
         model.addAttribute("matches",matches);
         model.addAttribute("vendors",vendors.findAllByOrderByInputNameAsc());
         return "personal-ledger";
@@ -230,7 +250,10 @@ public class PersonalLedgerController {
                     }
                 }
             }
-            flash.addFlashAttribute("message","가져온 거래 "+inserted+"건, 중복 제외 "+skipped+"건");
+            transactions.flush();
+            var summary=transferMatcher.reconcile();
+            flash.addFlashAttribute("message","가져온 거래 "+inserted+"건, 중복 제외 "+skipped+
+                    "건 · 계좌 간 이체 신규 "+summary.newPairs()+"쌍 자동 인식");
         }catch(Exception ex){
             // A multipart upload can contain multiple accounts. Do not commit
             // the first file if parsing a later one fails.
@@ -249,6 +272,7 @@ public class PersonalLedgerController {
         String sanitized=category.trim();
         if(sanitized.isBlank()) throw new IllegalArgumentException("분류를 입력해주세요.");
         if(sanitized.length()>80)sanitized=sanitized.substring(0,80);
+        transferMatcher.releaseForManualChoice(row);
         row.classify(sanitized);
         // Category changes are per transaction. No hidden "remember" action.
         return "redirect:/personal-ledger?month="+month+
@@ -350,6 +374,7 @@ public class PersonalLedgerController {
                 org.springframework.http.HttpStatus.BAD_REQUEST,"정산월 형식이 올바르지 않습니다.");
         }
         // Do not reset the reconciliation flag on a no-op selection.
+        transferMatcher.releaseForManualChoice(row);
         if(!Objects.equals(row.getVendorId(),vendorId)
                 || !Objects.equals(row.getSettlementMonth(),ym)) row.link(vendorId,ym);
         row.classify("사업 입금");
@@ -364,6 +389,7 @@ public class PersonalLedgerController {
         var existing=transactions.findByCounterpartyAndIncomingGreaterThan(payer,BigDecimal.ZERO);
         for(var entry:existing) {
             if(entry.getId().equals(row.getId())) continue;
+            transferMatcher.releaseForManualChoice(entry);
             // Preserve the individual historical settlement-month allocation.
             if(!Objects.equals(entry.getVendorId(),vendorId))
                 entry.link(vendorId,entry.getSettlementMonth());
