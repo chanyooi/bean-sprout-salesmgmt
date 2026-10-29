@@ -6,5 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 public interface PersonalBankTransactionRepository extends JpaRepository<PersonalBankTransactionEntity,Long> {
     boolean existsByFingerprint(String fingerprint);
+    // Exact nonempty payer name across every account and every imported month; outgoing rows excluded.
+    List<PersonalBankTransactionEntity> findByCounterpartyAndIncomingGreaterThan(String counterparty, java.math.BigDecimal amount);
     List<PersonalBankTransactionEntity> findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(LocalDate from,LocalDate to);
 }
