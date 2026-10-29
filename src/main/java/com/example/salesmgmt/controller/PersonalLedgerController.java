@@ -179,20 +179,72 @@ public class PersonalLedgerController {
     }
     @PostMapping("/{id}/link")
     @Transactional
-    public String link(@PathVariable Long id,@RequestParam Long vendorId,@RequestParam(required=false)String settlementMonth,
-                       @RequestParam(defaultValue="false")boolean remember,@RequestParam String month){
-        var row=transactions.findById(id).orElseThrow();
-        if(row.getIncoming().signum()<=0)throw new IllegalArgumentException("입금 거래만 연결할 수 있습니다.");
-        vendors.findById(vendorId).orElseThrow();
-        String ym=settlementMonth==null||settlementMonth.isBlank()?null:YearMonth.parse(settlementMonth).toString();
-        row.link(vendorId,ym);row.classify("사업 입금");
-        if(remember&&row.getCounterparty()!=null&&!row.getCounterparty().isBlank()){
-            var a=aliases.findByAlias(row.getCounterparty()).orElse(null);
-            if(a==null)aliases.save(new PersonalBankAliasEntity(row.getCounterparty(),vendorId));
-            else a.changeVendor(vendorId);
-        }
+    public String link(@PathVariable Long id,
+                       @RequestParam Long vendorId,
+                       @RequestParam(required=false) String settlementMonth,
+                       @RequestParam(defaultValue="false") boolean remember,
+                       @RequestParam String month) {
+        saveVendorLink(id, vendorId, settlementMonth, remember);
         return "redirect:/personal-ledger?month="+month;
     }
+
+    /**
+     * Inline linking: returns a small JSON response so selecting a vendor
+     * does not reload the entire ledger and lose the user's scroll position.
+     * Does not create or modify Songcheon payment records.
+     */
+    @PostMapping("/{id}/link-instant")
+    @ResponseBody
+    @Transactional
+    public Map<String,String> linkInstant(@PathVariable Long id,
+                                           @RequestParam Long vendorId,
+                                           @RequestParam(required=false) String settlementMonth,
+                                           @RequestParam(defaultValue="true") boolean remember) {
+        var row=saveVendorLink(id,vendorId,settlementMonth,remember);
+        LocalDate date=row.getTransactionDate();
+        boolean monthlyMatch=businessPayments.findForPaymentDateRange(date,date).stream()
+            .anyMatch(p->p.getVendor().getId().equals(vendorId)
+                &&p.getAmount().compareTo(row.getIncoming())==0);
+        boolean weeklyMatch=weeklyPayments.findForPaymentDateRange(date,date).stream()
+            .anyMatch(p->p.getVendor().getId().equals(vendorId)
+                &&p.getAmount().compareTo(row.getIncoming())==0);
+        return Map.of("status","saved",
+                      "category",row.getCategory(),
+                      "matchStatus",monthlyMatch||weeklyMatch?"송천 기록 일치 후보":"송천 입금 확인 필요");
+    }
+
+    private PersonalBankTransactionEntity saveVendorLink(Long id,Long vendorId,
+                                               String settlementMonth,boolean remember) {
+        var row=transactions.findById(id).orElseThrow(
+            ()->new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.NOT_FOUND,"거래내역을 찾을 수 없습니다."));
+        if(row.getIncoming().signum()<=0)
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,"입금 거래만 연결할 수 있습니다.");
+        var vendor=vendors.findById(vendorId).orElseThrow(
+            ()->new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,"거래처를 찾을 수 없습니다."));
+        if(vendor.getInputName().contains("팔공")||vendor.getStatementName().contains("팔공"))
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,"팔공은 미지급금 거래처이므로 은행 입금으로 연결할 수 없습니다.");
+        String ym;
+        try {
+            ym=settlementMonth==null||settlementMonth.isBlank()
+                ?null:YearMonth.parse(settlementMonth).toString();
+        }catch(java.time.format.DateTimeParseException ex) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,"정산월 형식이 올바르지 않습니다.");
+        }
+        row.link(vendorId,ym);
+        row.classify("사업 입금");
+        if(remember&&row.getCounterparty()!=null&&!row.getCounterparty().isBlank()){
+            var alias=aliases.findByAlias(row.getCounterparty()).orElse(null);
+            if(alias==null) aliases.save(new PersonalBankAliasEntity(row.getCounterparty(),vendorId));
+            else alias.changeVendor(vendorId);
+        }
+        return row;
+    }
+
     private static int percentage(BigDecimal value,BigDecimal total){
         if(total==null||total.signum()==0)return 0;
         return value.multiply(new BigDecimal("100")).divide(total,0,java.math.RoundingMode.HALF_UP).intValue();
