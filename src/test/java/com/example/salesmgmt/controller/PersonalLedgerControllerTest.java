@@ -306,16 +306,18 @@ class PersonalLedgerControllerTest {
                 .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("accountCount",2))
-                .andExpect(model().attribute("rows",org.hamcrest.Matchers.hasSize(4)))
-                .andExpect(model().attribute("income",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("1700000"))))
-                .andExpect(model().attribute("expense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("120000"))));
+                .andExpect(model().attribute("rows",org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(model().attribute("selectedAccount",bankSelector("302-0000-3434-35")))
+                .andExpect(model().attribute("view","out"))
+                .andExpect(model().attribute("income",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("850000"))))
+                .andExpect(model().attribute("expense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("60000"))));
 
         var selection=bankSelector("351-0000-1212-13");
         mvc.perform(get("/personal-ledger").param("month","2026-10").param("account",selection)
                 .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("accountCount",2))
-                .andExpect(model().attribute("rows",org.hamcrest.Matchers.hasSize(2)))
+                .andExpect(model().attribute("rows",org.hamcrest.Matchers.hasSize(1)))
                 .andExpect(model().attribute("selectedAccount",selection))
                 .andExpect(model().attribute("income",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("850000"))))
                 .andExpect(model().attribute("expense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("60000"))))
@@ -458,6 +460,80 @@ class PersonalLedgerControllerTest {
         assertThat(in.isAutoTransfer()).isFalse();
         assertThat(out.isAutoTransfer()).isFalse();
         assertThat(transfers.reconcile().newPairs()).isZero();
+    }
+
+    @Test void monthlyViewShowsOnlyOneSelectedAccountAndOneTransactionDirection() throws Exception {
+        var accountA="351-0000-1111-22";
+        var accountB="302-0000-2222-33";
+        transactions.save(new PersonalBankTransactionEntity("simple-o-a",accountA,LocalDate.of(2026,10,10),
+                BigDecimal.ZERO,new BigDecimal("12000"),"보험사","자동이체"));
+        transactions.save(new PersonalBankTransactionEntity("simple-i-a",accountA,LocalDate.of(2026,10,11),
+                new BigDecimal("95000"),BigDecimal.ZERO,"마트","입금"));
+        transactions.save(new PersonalBankTransactionEntity("simple-o-b",accountB,LocalDate.of(2026,10,10),
+                BigDecimal.ZERO,new BigDecimal("47000"),"사업처","출금"));
+        var key=bankSelector(accountA);
+        mvc.perform(get("/personal-ledger").param("month","2026-10").param("account",key)
+                .with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("rows",org.hamcrest.Matchers.hasSize(1)))
+            .andExpect(model().attribute("expense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("12000"))))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("이번 달 출금 내역")))
+            .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("최근 6개월"))));
+        mvc.perform(get("/personal-ledger").param("month","2026-10").param("account",key)
+                .param("view","in").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("rows",org.hamcrest.Matchers.hasSize(1)))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("이번 달 입금 내역")));
+    }
+
+    @Test void expenseClassificationPersistsImmediatelyWithoutTouchingBusinessPayments() throws Exception {
+        var tx=transactions.save(new PersonalBankTransactionEntity("simple-classify-1",
+                "351-0000-1111-22",LocalDate.of(2026,10,12),
+                BigDecimal.ZERO,new BigDecimal("125000"),"개인지출",""));
+        long beforePayments=payments.count();
+        mvc.perform(post("/personal-ledger/"+tx.getId()+"/classify-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("type","personal").param("detail","월세"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("saved"))
+            .andExpect(jsonPath("$.category").value("월세"))
+            .andExpect(jsonPath("$.personalExpense").value("125000"))
+            .andExpect(jsonPath("$.businessExpense").value("0"));
+        assertThat(transactions.findById(tx.getId()).orElseThrow().getCategory()).isEqualTo("월세");
+        mvc.perform(post("/personal-ledger/"+tx.getId()+"/classify-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("type","business"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.businessExpense").value("125000"))
+            .andExpect(jsonPath("$.personalExpense").value("0"));
+        assertThat(transactions.findById(tx.getId()).orElseThrow().getCategory()).isEqualTo("사업 지출");
+        assertThat(payments.count()).isEqualTo(beforePayments);
+    }
+
+    @Test void expenseClassificationRejectsIncomeAndUnauthorizedUser() throws Exception {
+        var tx=transactions.save(new PersonalBankTransactionEntity("simple-invalid-income",
+                "351-0000-1111-22",LocalDate.of(2026,10,12),
+                new BigDecimal("13000"),BigDecimal.ZERO,"입금자",""));
+        mvc.perform(post("/personal-ledger/"+tx.getId()+"/classify-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("type","personal").param("detail","보험"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(post("/personal-ledger/"+tx.getId()+"/classify-instant")
+                .with(user("work").roles("USER")).with(csrf())
+                .param("type","personal").param("detail","보험"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test void previouslySavedCustomPersonalCategoryRemainsVisible() throws Exception {
+        var tx=transactions.save(new PersonalBankTransactionEntity("simple-custom-category",
+                "351-0000-1111-22",LocalDate.of(2026,10,12),
+                BigDecimal.ZERO,new BigDecimal("19000"),"개인지출",""));
+        tx.classify("친척선물비");
+        mvc.perform(get("/personal-ledger").param("month","2026-10")
+                .with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("친척선물비")))
+            .andExpect(model().attributeExists("personalTotals"));
     }
 
     @Test void nonAdminCannotReadOrUploadPrivateBankData() throws Exception {
