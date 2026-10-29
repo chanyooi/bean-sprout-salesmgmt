@@ -7,9 +7,12 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 </style></head><body><main class="ledger-wrap">
 <div class="ledger-head"><div><a th:href="@{/}">← 송천 대시보드</a><h1>개인 가계부</h1><p class="ledger-muted">농협 계좌 입출금 분석 · 송천 거래처 입금 대조</p></div>
 <form method="get" th:action="@{/personal-ledger}"><input type="month" name="month" th:value="${month}"><button class="ledger-btn">조회</button></form></div>
-<p class="warning">은행 입금 연결은 거래처 후보만 표시합니다. 기존 송천 입금 장부에 자동 저장하지 않으므로 중복 입금 위험이 없습니다. 팔공 지급은 지출이며 미수금 입금으로 처리하지 않습니다.</p>
+<p class="warning">은행 입금 연결은 거래처 후보만 표시합니다. 기존 송천 입금 장부에 자동 저장하지 않습니다. 같은 거래처·날짜·금액의 장부 기록이 있으면 일치 후보로 표시되며 최종 정산은 별도 확인해야 합니다. 팔공 지급은 지출이며 미수금 입금으로 처리하지 않습니다.</p>
 <p th:if="${message}" th:text="${message}"></p>
 <div class="ledger-grid">
+<div class="ledger-card"><div class="ledger-muted">생활 지출 (분류 후 사업·이체 제외)</div><div class="ledger-number" th:text="${#numbers.formatDecimal(personalExpense,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
+<div class="ledger-card"><div class="ledger-muted">개인 입금 (분류 후 사업·이체 제외)</div><div class="ledger-number" th:text="${#numbers.formatDecimal(personalIncome,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
+<div class="ledger-card"><div class="ledger-muted">개인 수지 (잠정)</div><div class="ledger-number" th:text="${#numbers.formatDecimal(personalIncome.subtract(personalExpense),1,'COMMA',0,'POINT')+'원'}">0원</div></div>
 <div class="ledger-card"><div class="ledger-muted">월 입금 총액 (계좌 이동 포함)</div><div class="ledger-number" th:text="${#numbers.formatDecimal(income,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
 <div class="ledger-card"><div class="ledger-muted">월 출금 총액 (계좌 이동 포함)</div><div class="ledger-number" th:text="${#numbers.formatDecimal(expense,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
 <div class="ledger-card"><div class="ledger-muted">은행 순변동</div><div class="ledger-number" th:text="${#numbers.formatDecimal(net,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
@@ -17,9 +20,9 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <section class="ledger-panel"><h2>농협 거래내역 업로드</h2><p class="ledger-muted">.xls / .xlsx · 두 계좌 파일을 동시에 선택할 수 있습니다. 동일 거래 파일 재업로드 시 중복 제외합니다.</p>
 <form th:action="@{/personal-ledger/upload}" method="post" enctype="multipart/form-data"><input type="file" name="file" accept=".xls,.xlsx" multiple required><button class="ledger-btn">업로드</button></form></section>
 <section class="ledger-panel"><h2>카테고리별 출금</h2><div th:each="cat : ${categories}"><span th:text="${cat.key}">항목</span> · <strong th:text="${#numbers.formatDecimal(cat.value,1,'COMMA',0,'POINT')+'원'}">0원</strong></div></section>
-<section class="ledger-panel"><h2>거래 내역 및 거래처 연결</h2><div class="ledger-scroll"><table class="ledger-table"><thead><tr><th>일자</th><th>계좌</th><th>입금자/적요</th><th>입금</th><th>출금</th><th>분류</th><th>송천 거래처 연결</th></tr></thead>
+<section class="ledger-panel"><h2>거래 내역 및 거래처 연결</h2><div class="ledger-scroll"><table class="ledger-table"><thead><tr><th>일자</th><th>계좌</th><th>입금자/적요</th><th>입금</th><th>출금</th><th>분류</th><th>송천 거래처 연결</th><th>장부 대조</th></tr></thead>
 <tbody><tr th:each="tx : ${rows}">
-<td th:text="${tx.transactionDate}"></td><td th:text="${tx.account}"></td>
+<td th:text="${tx.transactionDate}"></td><td th:text="${tx.maskedAccount}"></td>
 <td><strong th:text="${tx.counterparty}"></strong><div class="ledger-muted" th:text="${tx.description}"></div></td>
 <td th:text="${#numbers.formatDecimal(tx.incoming,1,'COMMA',0,'POINT')}"></td>
 <td th:text="${#numbers.formatDecimal(tx.outgoing,1,'COMMA',0,'POINT')}"></td>
@@ -28,6 +31,6 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <td><form th:if="${tx.incoming.signum() > 0}" th:action="@{/personal-ledger/{id}/link(id=${tx.id})}" method="post">
 <input type="hidden" name="month" th:value="${month}">
 <select name="vendorId" required><option value="">거래처 선택</option><option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.inputName}" th:selected="${v.id == tx.vendorId}"></option></select>
-<input type="month" name="settlementMonth" th:value="${tx.settlementMonth}" title="정산월"><label><input type="checkbox" name="remember" value="true">다음에도 연결</label><button>연결</button></form></td>
-</tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="7" class="ledger-muted">거래가 없습니다. 은행 거래내역 파일을 업로드하세요.</td></tr></tbody></table></div></section>
+<input type="month" name="settlementMonth" th:value="${tx.settlementMonth}" title="정산월"><label><input type="checkbox" name="remember" value="true">다음에도 연결</label><button>연결</button></form></td><td><span th:if="${tx.incoming.signum()>0}" th:text="${matches[tx.id]}" class="ledger-muted"></span></td>
+</tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="8" class="ledger-muted">거래가 없습니다. 은행 거래내역 파일을 업로드하세요.</td></tr></tbody></table></div></section>
 </main></body></html>
