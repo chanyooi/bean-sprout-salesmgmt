@@ -38,6 +38,7 @@ public class SecurityConfig {
                                 // 관리자만 사용할 위험/설정 기능
                                 .requestMatchers(
                                         "/admin/**",
+                                        "/personal-ledger/**",
                                         "/upload/**",
                                         "/excel/import/**",
                                         "/daily-entry/**",
