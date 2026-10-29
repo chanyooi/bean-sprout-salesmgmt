@@ -66,7 +66,7 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 </section>
 <section class="ledger-panel">
 <h2>입출금 분류 현황</h2>
-<p class="ledger-section-caption">아직 분류하지 않은 돈은 생활비에 포함하지 않습니다. 실제 개인 소비를 보려면 ‘분류 대기 출금’을 먼저 확인해주세요.</p>
+<p class="ledger-section-caption">아직 분류하지 않은 돈은 생활비에 포함하지 않습니다. 동일 날짜·금액의 다른 등록 계좌 입출금은 계좌 간 이체로 자동 추정합니다. 명의까지 확인한 것은 아니므로 잘못된 항목은 거래 분류를 직접 바꿔주세요.</p>
 <div class="ledger-grid">
 <div class="ledger-card"><div class="ledger-card-label">개인 지출 · 분류 완료</div><div class="ledger-number" th:text="${#numbers.formatDecimal(personalExpense,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
 <div class="ledger-card"><div class="ledger-card-label">분류 대기 출금</div><div class="ledger-number" th:text="${#numbers.formatDecimal(pendingExpense,1,'COMMA',0,'POINT')+'원'}">0원</div><div class="ledger-pending" th:if="${pendingExpense.signum() > 0}">사업비·계좌 이체 등이 섞여 있을 수 있습니다.</div></div>
@@ -75,6 +75,7 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <div class="ledger-card"><div class="ledger-card-label">분류 대기 입금</div><div class="ledger-number" th:text="${#numbers.formatDecimal(pendingIncome,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
 <div class="ledger-card"><div class="ledger-card-label">사업 입금 · 분류 완료</div><div class="ledger-number" th:text="${#numbers.formatDecimal(businessIncome,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
 </div>
+<p class="ledger-section-caption">자동 인식: <strong th:text="${autoTransferRows}">0</strong>건의 입금·출금 거래가 다른 등록 계좌와 날짜·금액이 일치했습니다. 같은 금액의 거래가 여러 개이거나 이미 별도 분류된 거래는 자동 변경하지 않습니다.</p>
 <div class="ledger-brief"><span>계좌 간 이체로 분류된 입금 <strong th:text="${#numbers.formatDecimal(transferIncome,1,'COMMA',0,'POINT')+'원'}">0원</strong></span><span>계좌 간 이체로 분류된 출금 <strong th:text="${#numbers.formatDecimal(transferExpense,1,'COMMA',0,'POINT')+'원'}">0원</strong></span></div>
 </section>
 <section class="ledger-panel"><h2>농협 거래내역 업로드</h2><p class="ledger-muted">.xls / .xlsx · 두 계좌 파일을 동시에 선택할 수 있습니다. 동일 거래 파일 재업로드 시 중복 제외합니다.</p>
@@ -91,7 +92,8 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <td th:text="${#numbers.formatDecimal(tx.incoming,1,'COMMA',0,'POINT')}"></td>
 <td th:text="${#numbers.formatDecimal(tx.outgoing,1,'COMMA',0,'POINT')}"></td>
 <td><form th:action="@{/personal-ledger/{id}/classify(id=${tx.id})}" method="post">
-<input type="hidden" name="month" th:value="${month}"><input type="hidden" name="account" th:value="${selectedAccount}"><input aria-label="거래 분류" name="category" th:value="${tx.category}" maxlength="80"><button>변경</button></form></td>
+<input type="hidden" name="month" th:value="${month}"><input type="hidden" name="account" th:value="${selectedAccount}"><input aria-label="거래 분류" name="category" th:value="${tx.category}" maxlength="80"><button>변경</button>
+<div th:if="${tx.autoTransfer}" class="ledger-save-status">자동 추정 · 상대 계좌 <span th:text="${transferLabels[tx.id]}">•••• 0000</span></div></form></td>
 <td><form th:if="${tx.incoming.signum() > 0}" th:action="@{/personal-ledger/{id}/link(id=${tx.id})}" th:attr="data-quick-url=@{/personal-ledger/{id}/link-instant(id=${tx.id})},data-payer=${tx.counterparty},data-bank-id=${tx.id}" method="post">
 <input type="hidden" name="month" th:value="${month}"><input type="hidden" name="account" th:value="${selectedAccount}">
 <select name="vendorId" required aria-label="송천 거래처 선택 · 선택 시 즉시 저장"><option value="">거래처 선택</option><option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.inputName}" th:selected="${v.id == tx.vendorId}"></option></select>
