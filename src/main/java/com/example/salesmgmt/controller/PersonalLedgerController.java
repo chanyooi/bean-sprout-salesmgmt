@@ -26,12 +26,13 @@ import java.util.stream.Collectors;
 public class PersonalLedgerController {
     private final PersonalBankTransactionRepository transactions;
     private final PersonalBankAliasRepository aliases;
+    private final PersonalBankCategoryRuleRepository categoryRules;
     private final VendorRepository vendors;
     private final PaymentService payments;
     private final PaymentRepository businessPayments;
     private final WeeklyPaymentRepository weeklyPayments;
-    public PersonalLedgerController(PersonalBankTransactionRepository transactions,PersonalBankAliasRepository aliases,VendorRepository vendors,PaymentService payments,PaymentRepository businessPayments,WeeklyPaymentRepository weeklyPayments) {
-        this.transactions=transactions;this.aliases=aliases;this.vendors=vendors;this.payments=payments;
+    public PersonalLedgerController(PersonalBankTransactionRepository transactions,PersonalBankAliasRepository aliases,PersonalBankCategoryRuleRepository categoryRules,VendorRepository vendors,PaymentService payments,PaymentRepository businessPayments,WeeklyPaymentRepository weeklyPayments) {
+        this.transactions=transactions;this.aliases=aliases;this.categoryRules=categoryRules;this.vendors=vendors;this.payments=payments;
         this.businessPayments=businessPayments;this.weeklyPayments=weeklyPayments;
     }
     @GetMapping
@@ -114,8 +115,8 @@ public class PersonalLedgerController {
                             if(incoming.signum()>0){
                                 var alias=aliases.findByAlias(who);
                                 alias.ifPresent(a->entry.link(a.getVendorId(),null));
-                                entry.classify(alias.isPresent()?"사업 입금":categoryFor(who,memo,true));
-                            } else entry.classify(categoryFor(who,memo,false));
+                                entry.classify(alias.isPresent()?"사업 입금":categoryRules.findByCounterparty(who).map(PersonalBankCategoryRuleEntity::getCategory).orElseGet(()->categoryFor(who,memo,true)));
+                            } else entry.classify(categoryRules.findByCounterparty(who).map(PersonalBankCategoryRuleEntity::getCategory).orElseGet(()->categoryFor(who,memo,false)));
                             transactions.save(entry);inserted++;
                         }
                     }
@@ -127,9 +128,17 @@ public class PersonalLedgerController {
     }
     @PostMapping("/{id}/classify")
     @Transactional
-    public String classify(@PathVariable Long id,@RequestParam String category,@RequestParam String month){
+    public String classify(@PathVariable Long id,@RequestParam String category,@RequestParam(defaultValue="false") boolean remember,@RequestParam String month){
         var row=transactions.findById(id).orElseThrow();
-        row.classify(category.trim().substring(0,Math.min(80,category.trim().length())));
+        String sanitized=category.trim();
+        if(sanitized.isBlank()) throw new IllegalArgumentException("분류를 입력해주세요.");
+        if(sanitized.length()>80)sanitized=sanitized.substring(0,80);
+        row.classify(sanitized);
+        if(remember&&row.getCounterparty()!=null&&!row.getCounterparty().isBlank()){
+            var rule=categoryRules.findByCounterparty(row.getCounterparty()).orElse(null);
+            if(rule==null)categoryRules.save(new PersonalBankCategoryRuleEntity(row.getCounterparty(),sanitized));
+            else rule.updateCategory(sanitized);
+        }
         return "redirect:/personal-ledger?month="+month;
     }
     @PostMapping("/{id}/link")
