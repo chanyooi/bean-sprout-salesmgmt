@@ -24,6 +24,9 @@ jobs:
           java-version: '21'
           cache: gradle
 
+      - name: Check sidebar JavaScript syntax
+        run: node --check src/main/resources/static/js/global-sidebar-and-recovery.js
+
       - name: Run tests
         run: |
           chmod +x gradlew
