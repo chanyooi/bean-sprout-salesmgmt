@@ -12,6 +12,7 @@
         if (path.startsWith('/payment')) return 'payment';
         if (path.startsWith('/profit') || path.startsWith('/bean-usage')) return 'profit';
         if (path.startsWith('/admin/users')) return 'users';
+        if (path.startsWith('/personal-ledger')) return 'personal-ledger';
         return '';
     }
 
@@ -24,6 +25,7 @@
             route: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v10H3z"></path><path d="M14 9h3.7L21 12.5V16h-7z"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17.5" cy="18" r="2"></circle><path d="M9 18h6.5M3 18h2"></path></svg>`,
             payment: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"></rect><path d="M3 10h18"></path><path d="M15 15h3"></path></svg>`,
             profit: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V10M10 19V5M16 19v-7M22 19H2"></path><path d="m4 8 5-4 5 4 6-5"></path></svg>`,
+            ledger: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 4v16M12 14h5M12 17h5"></path></svg>`,
             users: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"></circle><path d="M5 20c.6-4.4 3-6.5 7-6.5s6.4 2.1 7 6.5"></path></svg>`
         };
         return icons[name] || icons.dashboard;
@@ -214,6 +216,34 @@
             });
             if (allowed) row.remove();
         });
+    }
+
+
+    // The old server-rendered nav is replaced by this script on desktop and
+    // mobile. Never infer a user's role from the visible user-management link.
+    // Ask the server for a lightweight, authenticated permission check.
+    function addPersonalLedgerMenu() {
+        const desktopNav = document.querySelector('.desktop-global-sidebar .dgs-nav');
+        if (desktopNav && !desktopNav.querySelector('a[href="/personal-ledger"]')) {
+            desktopNav.insertAdjacentHTML('beforeend',
+                    link('/personal-ledger', 'ledger', '개인 가계부',
+                            '계좌 · 소비 · 입금 대조', 'personal-ledger', 'mint'));
+        }
+
+        const mobileNav = document.querySelector('.sc-mobile-drawer .sc-drawer-nav, .sp-mobile-drawer .sp-drawer-nav');
+        if (mobileNav && !mobileNav.querySelector('a[href="/personal-ledger"]')) {
+            mobileNav.insertAdjacentHTML('beforeend',
+                    mobileCard('/personal-ledger', 'ledger', '개인 가계부',
+                            '계좌 · 소비 · 입금 대조', 'personal-ledger', 'mint'));
+        }
+    }
+
+    if (path.startsWith('/personal-ledger')) {
+        addPersonalLedgerMenu();
+    } else {
+        fetch('/personal-ledger/access', {credentials: 'same-origin', cache: 'no-store'})
+            .then(response => { if (response.ok) addPersonalLedgerMenu(); })
+            .catch(() => { /* Keep the private menu hidden when the check fails. */ });
     }
 
     removeRedundantHeroQuickNav();
