@@ -108,6 +108,16 @@ class PersonalLedgerControllerTest {
             .findFirst().orElseThrow().getCategory()).isEqualTo("차량유지");
     }
 
+    @Test void adminCanRenderLedgerDashboardWithImportedData() throws Exception {
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-8899-00"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(get("/personal-ledger").param("month","2026-10")
+                .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(view().name("personal-ledger"));
+    }
+
     @Test void nonAdminCannotReadOrUploadPrivateBankData() throws Exception {
         mvc.perform(get("/personal-ledger").with(user("work").roles("USER")))
                 .andExpect(status().isForbidden());
