@@ -28,8 +28,11 @@ public class PersonalLedgerController {
     private final PersonalBankAliasRepository aliases;
     private final VendorRepository vendors;
     private final PaymentService payments;
-    public PersonalLedgerController(PersonalBankTransactionRepository transactions,PersonalBankAliasRepository aliases,VendorRepository vendors,PaymentService payments) {
+    private final PaymentRepository businessPayments;
+    private final WeeklyPaymentRepository weeklyPayments;
+    public PersonalLedgerController(PersonalBankTransactionRepository transactions,PersonalBankAliasRepository aliases,VendorRepository vendors,PaymentService payments,PaymentRepository businessPayments,WeeklyPaymentRepository weeklyPayments) {
         this.transactions=transactions;this.aliases=aliases;this.vendors=vendors;this.payments=payments;
+        this.businessPayments=businessPayments;this.weeklyPayments=weeklyPayments;
     }
     @GetMapping
     @Transactional(readOnly=true)
@@ -39,12 +42,35 @@ public class PersonalLedgerController {
         BigDecimal income=rows.stream().map(PersonalBankTransactionEntity::getIncoming).reduce(BigDecimal.ZERO,BigDecimal::add);
         BigDecimal expense=rows.stream().map(PersonalBankTransactionEntity::getOutgoing).reduce(BigDecimal.ZERO,BigDecimal::add);
         Map<String,BigDecimal> categories=new TreeMap<>();
-        for(var r:rows) if(r.getOutgoing().signum()>0) categories.merge(r.getCategory(),r.getOutgoing(),BigDecimal::add);
+        BigDecimal personalExpense=BigDecimal.ZERO;
+        BigDecimal personalIncome=BigDecimal.ZERO;
+        for(var r:rows) {
+            if(r.getOutgoing().signum()>0&&!List.of("사업 지출","계좌간 이체").contains(r.getCategory())){
+                categories.merge(r.getCategory(),r.getOutgoing(),BigDecimal::add);
+                personalExpense=personalExpense.add(r.getOutgoing());
+            }
+            if(r.getIncoming().signum()>0&&!List.of("사업 입금","계좌간 이체").contains(r.getCategory()))
+                personalIncome=personalIncome.add(r.getIncoming());
+        }
+        var monthlyBankPayments=businessPayments.findForPaymentDateRange(ym.atDay(1),ym.atEndOfMonth());
+        var weeklyBankPayments=weeklyPayments.findForPaymentDateRange(ym.atDay(1),ym.atEndOfMonth());
+        Map<Long,String> matches=new HashMap<>();
+        for(var r:rows) {
+            if(r.getIncoming().signum()==0) continue;
+            if(r.getVendorId()==null){matches.put(r.getId(),"거래처 미연결");continue;}
+            boolean monthlyMatch=monthlyBankPayments.stream().anyMatch(p->p.getVendor().getId().equals(r.getVendorId())
+                &&p.getPaymentDate().equals(r.getTransactionDate())&&p.getAmount().compareTo(r.getIncoming())==0);
+            boolean weeklyMatch=weeklyBankPayments.stream().anyMatch(p->p.getVendor().getId().equals(r.getVendorId())
+                &&p.getPaymentDate().equals(r.getTransactionDate())&&p.getAmount().compareTo(r.getIncoming())==0);
+            matches.put(r.getId(),monthlyMatch||weeklyMatch?"송천 기록 일치 후보":"송천 입금 확인 필요");
+        }
         model.addAttribute("month",ym.toString());
         model.addAttribute("previousMonth",ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",ym.plusMonths(1).toString());
         model.addAttribute("rows",rows);model.addAttribute("income",income);model.addAttribute("expense",expense);
         model.addAttribute("net",income.subtract(expense));model.addAttribute("categories",categories);
+        model.addAttribute("personalExpense",personalExpense);model.addAttribute("personalIncome",personalIncome);
+        model.addAttribute("matches",matches);
         model.addAttribute("vendors",vendors.findAllByOrderByInputNameAsc());
         return "personal-ledger";
     }
@@ -88,8 +114,8 @@ public class PersonalLedgerController {
                             if(incoming.signum()>0){
                                 var alias=aliases.findByAlias(who);
                                 alias.ifPresent(a->entry.link(a.getVendorId(),null));
-                                entry.classify(alias.isPresent()?"사업 입금":"미분류 입금");
-                            } else entry.classify("미분류 지출");
+                                entry.classify(alias.isPresent()?"사업 입금":categoryFor(who,memo,true));
+                            } else entry.classify(categoryFor(who,memo,false));
                             transactions.save(entry);inserted++;
                         }
                     }
@@ -121,6 +147,18 @@ public class PersonalLedgerController {
             else a.changeVendor(vendorId);
         }
         return "redirect:/personal-ledger?month="+month;
+    }
+    private static String categoryFor(String who,String memo,boolean income){
+        String content=((who==null?"":who)+" "+(memo==null?"":memo)).toUpperCase(Locale.ROOT);
+        if(content.contains("팔공"))return income?"사업 입금":"사업 지출";
+        if(income)return "미분류 입금";
+        if(content.contains("SKT")||content.contains("KT ")||content.contains("LGU")||content.contains("SKYLIFE")||content.contains("통신"))return "통신비";
+        if(content.contains("보험")||content.contains("삼성화재")||content.contains("현대해상"))return "보험";
+        if(content.contains("주유")||content.contains("GS칼텍스")||content.contains("SK에너지"))return "차량";
+        if(content.contains("한전")||content.contains("한국전력")||content.contains("도시가스")||content.contains("수도요금"))return "공과금";
+        if(content.contains("병원")||content.contains("약국"))return "의료";
+        if(content.contains("마트")||content.contains("편의점")||content.contains("GS25")||content.contains("CU ")||content.contains("식당"))return "식비·생활";
+        return "미분류 지출";
     }
     private static Map<String,Integer> headerColumns(Row row,DataFormatter fmt){
         Map<String,Integer> m=new HashMap<>();
