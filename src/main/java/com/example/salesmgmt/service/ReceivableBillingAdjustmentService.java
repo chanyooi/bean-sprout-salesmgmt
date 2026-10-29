@@ -53,9 +53,12 @@ public class ReceivableBillingAdjustmentService {
 
     public static BigDecimal billingAmount(SalesItemEntity item) {
         String name = normalize(item.getItemName());
-        if ("손두부".equals(name)
-                && !normalize(item.getSalesOrder().getVendor().getStatementName()).contains("아포농협")) {
-            return BigDecimal.ZERO;
+        if ("손두부".equals(name)) {
+            var vendor = item.getSalesOrder().getVendor();
+            boolean palgong = normalize(vendor.getInputName()).contains("팔공")
+                    || normalize(vendor.getStatementName()).contains("팔공");
+            if (palgong) return nz(item.getLineAmount()).abs().negate();
+            if (!normalize(vendor.getStatementName()).contains("아포농협")) return BigDecimal.ZERO;
         }
         if (isPalgongTofuTray(item)) {
             return nz(item.getQuantity()).abs().multiply(new BigDecimal("-1000"));
