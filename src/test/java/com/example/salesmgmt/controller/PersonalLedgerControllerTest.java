@@ -31,6 +31,12 @@ class PersonalLedgerControllerTest {
     @Autowired VendorRepository vendors;
     @Autowired com.example.salesmgmt.repository.PaymentRepository payments;
 
+    private String bankSelector(String account) throws Exception {
+        return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(account.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                    .substring(0,24);
+    }
+
     private MockMultipartFile bankFile(String account) throws Exception {
         try(Workbook wb=new HSSFWorkbook();ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
             Sheet sheet=wb.createSheet("입출금거래내역");
@@ -303,7 +309,7 @@ class PersonalLedgerControllerTest {
                 .andExpect(model().attribute("income",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("1700000"))))
                 .andExpect(model().attribute("expense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("120000"))));
 
-        var selection=org.apache.commons.codec.digest.DigestUtils.sha256Hex("351-0000-1212-13").substring(0,24);
+        var selection=bankSelector("351-0000-1212-13");
         mvc.perform(get("/personal-ledger").param("month","2026-10").param("account",selection)
                 .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isOk())
@@ -312,7 +318,7 @@ class PersonalLedgerControllerTest {
                 .andExpect(model().attribute("selectedAccount",selection))
                 .andExpect(model().attribute("income",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("850000"))))
                 .andExpect(model().attribute("expense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("60000"))))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("•••• 12-13")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("•••• 2-13")));
     }
 
     @Test void unclassifiedExpenseIsNotShownAsHouseholdSpending() throws Exception {
@@ -331,7 +337,7 @@ class PersonalLedgerControllerTest {
         var tx=transactions.save(new PersonalBankTransactionEntity(
             "category-selected-account","351-0000-1212-13",LocalDate.of(2026,9,16),
             BigDecimal.ZERO,new BigDecimal("40000"),"생활비","출금"));
-        var selection=org.apache.commons.codec.digest.DigestUtils.sha256Hex("351-0000-1212-13").substring(0,24);
+        var selection=bankSelector("351-0000-1212-13");
         mvc.perform(post("/personal-ledger/"+tx.getId()+"/classify")
                 .with(user("admin").roles("ADMIN")).with(csrf())
                 .param("category","식비").param("month","2026-09").param("account",selection))
