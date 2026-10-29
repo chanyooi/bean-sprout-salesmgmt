@@ -199,7 +199,7 @@ public class PersonalLedgerController {
     public Map<String,String> linkInstant(@PathVariable Long id,
                                            @RequestParam Long vendorId,
                                            @RequestParam(required=false) String settlementMonth,
-                                           @RequestParam(defaultValue="true") boolean remember) {
+                                           @RequestParam(defaultValue="false") boolean remember) {
         var row=saveVendorLink(id,vendorId,settlementMonth,remember);
         LocalDate date=row.getTransactionDate();
         boolean monthlyMatch=businessPayments.findForPaymentDateRange(date,date).stream()
@@ -224,9 +224,6 @@ public class PersonalLedgerController {
         var vendor=vendors.findById(vendorId).orElseThrow(
             ()->new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.BAD_REQUEST,"거래처를 찾을 수 없습니다."));
-        if(vendor.getInputName().contains("팔공")||vendor.getStatementName().contains("팔공"))
-            throw new org.springframework.web.server.ResponseStatusException(
-                org.springframework.http.HttpStatus.BAD_REQUEST,"팔공은 미지급금 거래처이므로 은행 입금으로 연결할 수 없습니다.");
         String ym;
         try {
             ym=settlementMonth==null||settlementMonth.isBlank()
