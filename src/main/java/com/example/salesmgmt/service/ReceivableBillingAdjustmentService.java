@@ -41,7 +41,10 @@ public class ReceivableBillingAdjustmentService {
 
         for (SalesItemEntity item : items) {
             Long vendorId = item.getSalesOrder().getVendor().getId();
-            BigDecimal correction = billingAmount(item).subtract(nz(item.getLineAmount()));
+            // Sales treats a returned Palgong tray as -1,000; the payable
+            // ledger uses +1,000 because the refund reduces what we owe.
+            BigDecimal reportBase = isPalgongTofuTray(item) ? billingAmount(item) : nz(item.getLineAmount());
+            BigDecimal correction = signedVendorLedgerAmount(item).subtract(reportBase);
 
             if (correction.signum() != 0) {
                 corrections.merge(vendorId, correction, BigDecimal::add);
@@ -51,11 +54,19 @@ public class ReceivableBillingAdjustmentService {
         return Map.copyOf(corrections);
     }
 
+    public static BigDecimal signedVendorLedgerAmount(SalesItemEntity item) {
+        if (isPalgongTofuTray(item)) return billingAmount(item).negate();
+        return billingAmount(item);
+    }
+
     public static BigDecimal billingAmount(SalesItemEntity item) {
         String name = normalize(item.getItemName());
-        if ("손두부".equals(name)
-                && !normalize(item.getSalesOrder().getVendor().getStatementName()).contains("아포농협")) {
-            return BigDecimal.ZERO;
+        if ("손두부".equals(name)) {
+            var vendor = item.getSalesOrder().getVendor();
+            boolean palgong = normalize(vendor.getInputName()).contains("팔공")
+                    || normalize(vendor.getStatementName()).contains("팔공");
+            if (palgong) return nz(item.getLineAmount()).abs().negate();
+            if (!normalize(vendor.getStatementName()).contains("아포농협")) return BigDecimal.ZERO;
         }
         if (isPalgongTofuTray(item)) {
             return nz(item.getQuantity()).abs().multiply(new BigDecimal("-1000"));

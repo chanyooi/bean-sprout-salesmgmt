@@ -28,4 +28,8 @@ public interface WeeklyPaymentRepository extends JpaRepository<WeeklyPaymentEnti
             where payment.note = '주별 입금 완료 자동 처리'
             """)
     List<WeeklyPaymentEntity> findAutomaticCompletions();
+    @org.springframework.data.jpa.repository.Query("select p from WeeklyPaymentEntity p join fetch p.vendor where p.paymentDate between :fromDate and :toDate")
+    java.util.List<com.example.salesmgmt.entity.WeeklyPaymentEntity> findForPaymentDateRange(
+            @org.springframework.data.repository.query.Param("fromDate") java.time.LocalDate fromDate,
+            @org.springframework.data.repository.query.Param("toDate") java.time.LocalDate toDate);
 }

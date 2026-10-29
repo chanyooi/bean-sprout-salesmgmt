@@ -35,7 +35,8 @@ public record MonthlyReceivableReport(
             BigDecimal outstandingAmount
     ) {
         public String status() {
-            if (outstandingAmount.signum() <= 0) {
+            if (outstandingAmount.signum() < 0) return "지급예정";
+            if (outstandingAmount.signum() == 0) {
                 return "입금완료";
             }
             if (paidAmount.signum() > 0) {

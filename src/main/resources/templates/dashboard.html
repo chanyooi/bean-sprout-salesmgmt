@@ -267,6 +267,7 @@
         <a th:href="@{/inventory}">
             <span>◇</span><strong>재고관리</strong>
         </a>
+        <a th:if="${isAdmin}" th:href="@{/personal-ledger}"><span>▦</span><strong>개인 가계부</strong></a>
         <a th:if="${isAdmin}" th:href="@{/admin/users}">
             <span>♙</span><strong>사용자관리</strong>
         </a>
@@ -308,6 +309,7 @@
         <a th:href="@{/profit(month=${selectedMonth})}">
             <span>↗</span><strong>원가·이익</strong>
         </a>
+        <a th:if="${isAdmin}" th:href="@{/personal-ledger}"><span>▦</span><strong>개인 가계부</strong></a>
         <a th:href="@{/inventory}">
             <span>◇</span><strong>재고 관리</strong>
         </a>

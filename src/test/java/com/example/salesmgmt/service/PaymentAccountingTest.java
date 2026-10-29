@@ -46,6 +46,24 @@ class PaymentAccountingTest {
                 amount == null ? null : new BigDecimal(amount)));
     }
 
+
+    @Test void palgongTofuPurchaseIsNegativePayableAndNotReceivable() {
+        var palgong=vendor("팔공",PaymentCycle.MONTHLY);
+        var regular=vendor("일반마트",PaymentCycle.MONTHLY);
+        sale(regular,"2026-09-07","200000");
+        var order=orders.save(new SalesOrderEntity("palgong-sep-order", LocalDate.of(2026,9,7),
+                palgong,null,null,null,"test",1));
+        items.save(new SalesItemEntity(order,"손두부",BigDecimal.ONE,new BigDecimal("100000")));
+        items.save(new SalesItemEntity(order,"두부판",BigDecimal.valueOf(2),BigDecimal.valueOf(1000)));
+        var report=monthly.createMonthlyReport(september);
+        var payable=report.vendorRows().stream().filter(x->x.vendorName().equals("팔공")).findFirst().orElseThrow();
+        assertThat(payable.billedAmount()).isEqualByComparingTo("-98000");
+        assertThat(payable.outstandingAmount()).isEqualByComparingTo("-98000");
+        assertThat(payable.status()).isEqualTo("지급예정");
+        assertThat(report.outstandingAmount()).isEqualByComparingTo("200000");
+        assertThat(report.outstandingVendorCount()).isEqualTo(1);
+    }
+
     @Test void weeklyAutoCompletionUsesTheSelectedWeeksSettlementDate() {
         var vendor = vendor("weekly-date", PaymentCycle.WEEKLY);
         LocalDate weekStart = LocalDate.of(2026, 9, 6);

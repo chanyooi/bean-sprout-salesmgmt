@@ -334,7 +334,8 @@ public class PaymentService {
 
             billedTotal = billedTotal.add(billed);
             paidTotal = paidTotal.add(paid);
-            outstandingTotal = outstandingTotal.add(outstanding);
+            // Payables such as Palgong must not reduce the accounts-receivable KPI.
+            if (outstanding.signum() > 0) outstandingTotal = outstandingTotal.add(outstanding);
             if (outstanding.signum() > 0) {
                 outstandingVendorCount++;
             }
