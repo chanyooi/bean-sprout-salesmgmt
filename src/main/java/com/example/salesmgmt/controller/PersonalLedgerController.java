@@ -64,10 +64,10 @@ public class PersonalLedgerController {
                             String line=readLine(row,fmt);
                             if(line.contains("계좌번호")&&account.isBlank())account=extractAccount(line);
                             Map<String,Integer> attempt=headerColumns(row,fmt);
-                            if(attempt.containsKey("date")&&(attempt.containsKey("in")||attempt.containsKey("out"))) {header=i;cols=attempt;break;}
+                            if(attempt.containsKey("date")&&attempt.containsKey("in")&&attempt.containsKey("out")&&attempt.containsKey("who")) {header=i;cols=attempt;break;}
                         }
-                        if(cols==null)continue;
-                        if(account.isBlank()) account="계좌 미확인 ("+sheet.getSheetName()+")";
+                        if(cols==null) throw new IllegalArgumentException("지원하지 않는 은행 거래내역 양식입니다. 거래일시·입금금액·출금금액·거래기록사항 열이 필요합니다.");
+                        if(account.isBlank()) throw new IllegalArgumentException("엑셀에서 계좌번호를 읽지 못했습니다. 다른 계좌와 혼합되지 않도록 가져오기를 취소합니다.");
                         Map<String,Integer> repetitions=new HashMap<>();
                         for(int i=header+1;i<=sheet.getLastRowNum();i++){
                             Row row=sheet.getRow(i);if(row==null)continue;
@@ -78,8 +78,9 @@ public class PersonalLedgerController {
                             BigDecimal outgoing=money(value(row,cols.get("out"),fmt));
                             if(incoming.signum()==0&&outgoing.signum()==0)continue;
                             String who=value(row,cols.get("who"),fmt);
-                            String memo=value(row,cols.get("memo"),fmt);
-                            String key=account+"|"+date+"|"+incoming+"|"+outgoing+"|"+who+"|"+memo;
+                            String memo=value(row,cols.get("channel"),fmt)+" "+value(row,cols.get("memo"),fmt);
+                            String balance=value(row,cols.get("balance"),fmt);
+                            String key=account+"|"+d+"|"+incoming+"|"+outgoing+"|"+balance+"|"+who+"|"+memo;
                             int occurrence=repetitions.merge(key,1,Integer::sum);
                             String hash=sha256(key+"|"+occurrence);
                             if(transactions.existsByFingerprint(hash)){skipped++;continue;}
@@ -114,7 +115,7 @@ public class PersonalLedgerController {
         vendors.findById(vendorId).orElseThrow();
         String ym=settlementMonth==null||settlementMonth.isBlank()?null:YearMonth.parse(settlementMonth).toString();
         row.link(vendorId,ym);row.classify("사업 입금");
-        if(remember&&!row.getCounterparty().isBlank()){
+        if(remember&&row.getCounterparty()!=null&&!row.getCounterparty().isBlank()){
             var a=aliases.findByAlias(row.getCounterparty()).orElse(null);
             if(a==null)aliases.save(new PersonalBankAliasEntity(row.getCounterparty(),vendorId));
             else a.changeVendor(vendorId);
@@ -129,8 +130,10 @@ public class PersonalLedgerController {
             if(s.contains("거래일")||s.equals("일자")||s.equals("거래일시"))m.put("date",i);
             if(s.contains("입금액")||s.equals("입금"))m.put("in",i);
             if(s.contains("출금액")||s.equals("출금"))m.put("out",i);
-            if(s.contains("거래내용")||s.contains("입금자")||s.contains("상대방")||s.contains("의뢰인"))m.put("who",i);
-            if(s.contains("적요")||s.contains("거래기록")||s.contains("거래메모")||s.contains("기재내용"))m.put("memo",i);
+            if(s.contains("거래기록사항")||s.contains("입금자")||s.contains("상대방")||s.contains("의뢰인"))m.put("who",i);
+            if(s.contains("거래내용"))m.put("channel",i);
+            if(s.contains("거래후잔액"))m.put("balance",i);
+            if(s.contains("적요")||s.contains("거래메모")||s.contains("기재내용"))m.put("memo",i);
         }
         return m;
     }
