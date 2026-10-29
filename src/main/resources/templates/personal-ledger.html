@@ -49,7 +49,7 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <div class="ledger-account-title" th:text="|농협 ${bank.label}|">농협 계좌</div>
 <div class="ledger-account-number" th:text="${#numbers.formatDecimal(bank.net,1,'COMMA',0,'POINT')+'원'}">0원</div>
 <div class="ledger-account-detail">이 기간 순변동 (현재 잔액이 아님)</div>
-<div class="ledger-account-detail"><span th:text="|'입금 ' + ${#numbers.formatDecimal(bank.income,1,'COMMA',0,'POINT')} + '원'|">입금</span> · <span th:text="|'출금 ' + ${#numbers.formatDecimal(bank.expense,1,'COMMA',0,'POINT')} + '원'|">출금</span></div>
+<div class="ledger-account-detail"><span th:text="|입금 ${#numbers.formatDecimal(bank.income,1,'COMMA',0,'POINT')}원|">입금</span> · <span th:text="|출금 ${#numbers.formatDecimal(bank.expense,1,'COMMA',0,'POINT')}원|">출금</span></div>
 <div class="ledger-account-detail" th:text="|${bank.count}건의 거래|">거래 수</div>
 </a>
 </div>
