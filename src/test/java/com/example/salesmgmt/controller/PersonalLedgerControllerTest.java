@@ -158,6 +158,85 @@ class PersonalLedgerControllerTest {
                         .string(org.hamcrest.Matchers.containsString("personal-ledger-instant-link.js")));
     }
 
+    @Test void samePayerBulkLinksEveryPastIncomingButPreservesIndividualSettlementMonths() throws Exception {
+        VendorEntity target=vendors.save(new VendorEntity("하루매일마트","하루매일마트",true));
+        VendorEntity previous=vendors.save(new VendorEntity("기존연결마트","기존연결마트",true));
+
+        var selected=transactions.save(new PersonalBankTransactionEntity(
+            "bulk-same-name-selected","351-0000-1111-22",LocalDate.of(2026,9,10),
+            new BigDecimal("120000"),BigDecimal.ZERO,"김철수","입금"));
+        var older=transactions.save(new PersonalBankTransactionEntity(
+            "bulk-same-name-older","302-0000-2222-33",LocalDate.of(2026,8,25),
+            new BigDecimal("80000"),BigDecimal.ZERO,"김철수","다른 계좌 입금"));
+        older.link(previous.getId(),"2026-07");
+        older.classify("사업 입금");
+        var outgoing=transactions.save(new PersonalBankTransactionEntity(
+            "bulk-same-name-outgoing","351-0000-1111-22",LocalDate.of(2026,9,11),
+            BigDecimal.ZERO,new BigDecimal("50000"),"김철수","출금"));
+        outgoing.classify("차량");
+        var unrelated=transactions.save(new PersonalBankTransactionEntity(
+            "bulk-unrelated-payer","351-0000-1111-22",LocalDate.of(2026,9,12),
+            new BigDecimal("70000"),BigDecimal.ZERO,"김철수상사","다른 사람"));
+        var sameDate=transactions.save(new PersonalBankTransactionEntity(
+            "bulk-same-name-same-date","351-0000-1111-22",LocalDate.of(2026,9,13),
+            new BigDecimal("35000"),BigDecimal.ZERO,"김철수","매일 입금"));
+        long beforePayments=payments.count();
+
+        mvc.perform(post("/personal-ledger/"+selected.getId()+"/link-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("vendorId",target.getId().toString())
+                .param("settlementMonth","2026-09")
+                .param("month","2026-09").param("remember","true"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.linkedCount").value(3))
+            .andExpect(jsonPath("$.batch").value(true))
+            .andExpect(jsonPath("$.counterparty").value("김철수"))
+            .andExpect(jsonPath("$.vendorId").value(target.getId()));
+
+        assertThat(transactions.findById(selected.getId()).orElseThrow().getVendorId()).isEqualTo(target.getId());
+        assertThat(transactions.findById(selected.getId()).orElseThrow().getSettlementMonth()).isEqualTo("2026-09");
+        var historical=transactions.findById(older.getId()).orElseThrow();
+        assertThat(historical.getVendorId()).isEqualTo(target.getId());
+        assertThat(historical.getSettlementMonth()).isEqualTo("2026-07");
+        assertThat(transactions.findById(sameDate.getId()).orElseThrow().getVendorId()).isEqualTo(target.getId());
+        assertThat(transactions.findById(sameDate.getId()).orElseThrow().getCategory()).isEqualTo("사업 입금");
+        assertThat(transactions.findById(outgoing.getId()).orElseThrow().getVendorId()).isNull();
+        assertThat(transactions.findById(outgoing.getId()).orElseThrow().getCategory()).isEqualTo("차량");
+        assertThat(transactions.findById(unrelated.getId()).orElseThrow().getVendorId()).isNull();
+        assertThat(payments.count()).isEqualTo(beforePayments);
+
+        // Existing batch mapping must also apply to new uploads.
+        mvc.perform(multipart("/personal-ledger/upload")
+                .file(bankFile("351-0000-8888-77"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+            .andExpect(status().is3xxRedirection());
+        var future=transactions.findAll().stream()
+                .filter(tx->"351-0000-8888-77".equals(tx.getAccount()))
+                .filter(tx->tx.getIncoming().signum()>0)
+                .findFirst().orElseThrow();
+        assertThat(future.getVendorId()).isEqualTo(target.getId());
+        assertThat(payments.count()).isEqualTo(beforePayments);
+    }
+
+    @Test void disablingRememberLinksOnlyOneIncome() throws Exception {
+        VendorEntity vendor=vendors.save(new VendorEntity("개별입금처","개별입금처",true));
+        var one=transactions.save(new PersonalBankTransactionEntity(
+            "single-only-first","351-0000-1111-22",LocalDate.of(2026,9,10),
+            new BigDecimal("10000"),BigDecimal.ZERO,"박영희",""));
+        var other=transactions.save(new PersonalBankTransactionEntity(
+            "single-only-second","351-0000-1111-22",LocalDate.of(2026,9,11),
+            new BigDecimal("20000"),BigDecimal.ZERO,"박영희",""));
+        mvc.perform(post("/personal-ledger/"+one.getId()+"/link-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("vendorId",vendor.getId().toString())
+                .param("month","2026-09"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.linkedCount").value(1))
+            .andExpect(jsonPath("$.batch").value(false));
+        assertThat(transactions.findById(one.getId()).orElseThrow().getVendorId()).isEqualTo(vendor.getId());
+        assertThat(transactions.findById(other.getId()).orElseThrow().getVendorId()).isNull();
+    }
+
     @Test void userApprovedCategoryRuleAppliesToFutureImport() throws Exception {
         mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-5555-66"))
                 .with(user("admin").roles("ADMIN")).with(csrf()))
