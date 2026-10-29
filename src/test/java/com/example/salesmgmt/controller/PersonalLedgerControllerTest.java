@@ -363,7 +363,7 @@ class PersonalLedgerControllerTest {
         assertThat(saved.getSettlementMonth()).isEqualTo("2026-08");
     }
 
-    @Test void uniqueSameDateAmountAcrossAccountsIsPairedAsInternalTransfer() {
+    @Test void uniqueSameDateAmountAcrossAccountsIsPairedAsInternalTransfer() throws Exception {
         var out=transactions.save(new PersonalBankTransactionEntity(
             "auto-transfer-out", "351-0000-1111-22",LocalDate.of(2026,9,10),
             BigDecimal.ZERO,new BigDecimal("500000"),"보낸사람","출금"));
