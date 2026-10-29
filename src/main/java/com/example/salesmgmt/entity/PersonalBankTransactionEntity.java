@@ -20,6 +20,12 @@ public class PersonalBankTransactionEntity {
     private Long vendorId;
     @Column(length=7) private String settlementMonth;
     @Column(nullable=false) private boolean reconciled=false;
+    // Automated internal transfers are reversible and auditable. Never turn them
+    // into real bank transactions or modify Songcheon business payment records.
+    private Long matchedTransferId;
+    @Column(length=80) private String preTransferCategory;
+    @Column(nullable=false) private boolean autoTransfer=false;
+    @Column(nullable=false) private boolean transferOptOut=false;
     protected PersonalBankTransactionEntity() {}
     public PersonalBankTransactionEntity(String fingerprint,String account,LocalDate date,BigDecimal incoming,BigDecimal outgoing,String counterparty,String description) {
         this.fingerprint=fingerprint;this.account=account;this.transactionDate=date;
@@ -37,6 +43,23 @@ public class PersonalBankTransactionEntity {
     public Long getVendorId(){return vendorId;}
     public String getSettlementMonth(){return settlementMonth;}
     public boolean isReconciled(){return reconciled;}
+    public Long getMatchedTransferId(){return matchedTransferId;}
+    public boolean isAutoTransfer(){return autoTransfer;}
+    public boolean isTransferOptOut(){return transferOptOut;}
+    public void markAutomaticTransfer(Long pairedId){
+        if(!autoTransfer) preTransferCategory=category;
+        matchedTransferId=pairedId;
+        autoTransfer=true;
+        category="계좌간 이체";
+    }
+    public void clearAutomaticTransfer() {
+        if(!autoTransfer) return;
+        category=preTransferCategory==null?"미분류":preTransferCategory;
+        autoTransfer=false;
+        matchedTransferId=null;
+        preTransferCategory=null;
+    }
+    public void optOutAutomaticTransfer() { transferOptOut=true; }
     public void classify(String category){this.category=category;}
     public void link(Long vendorId,String settlementMonth){this.vendorId=vendorId;this.settlementMonth=settlementMonth;this.reconciled=false;}
     public void markReconciled(){this.reconciled=true;}
