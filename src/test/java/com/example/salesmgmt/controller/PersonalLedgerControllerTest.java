@@ -30,6 +30,7 @@ class PersonalLedgerControllerTest {
     @Autowired PersonalBankTransactionRepository transactions;
     @Autowired VendorRepository vendors;
     @Autowired com.example.salesmgmt.repository.PaymentRepository payments;
+    @Autowired com.example.salesmgmt.service.PersonalTransferMatchingService transfers;
 
     private String bankSelector(String account) throws Exception {
         return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
@@ -360,6 +361,103 @@ class PersonalLedgerControllerTest {
         var saved=transactions.findById(tx.getId()).orElseThrow();
         assertThat(saved.getVendorId()).isEqualTo(b.getId());
         assertThat(saved.getSettlementMonth()).isEqualTo("2026-08");
+    }
+
+    @Test void uniqueSameDateAmountAcrossAccountsIsPairedAsInternalTransfer() {
+        var out=transactions.save(new PersonalBankTransactionEntity(
+            "auto-transfer-out", "351-0000-1111-22",LocalDate.of(2026,9,10),
+            BigDecimal.ZERO,new BigDecimal("500000"),"보낸사람","출금"));
+        out.classify("미분류 지출");
+        var in=transactions.save(new PersonalBankTransactionEntity(
+            "auto-transfer-in", "302-0000-2222-33",LocalDate.of(2026,9,10),
+            new BigDecimal("500000.00"),BigDecimal.ZERO,"받는사람","입금"));
+        in.classify("미분류 입금");
+        long businessBefore=payments.count();
+
+        var summary=transfers.reconcile();
+        assertThat(summary.newPairs()).isEqualTo(1);
+        assertThat(summary.totalPaired()).isEqualTo(1);
+        assertThat(out.isAutoTransfer()).isTrue();
+        assertThat(in.isAutoTransfer()).isTrue();
+        assertThat(out.getMatchedTransferId()).isEqualTo(in.getId());
+        assertThat(in.getMatchedTransferId()).isEqualTo(out.getId());
+        assertThat(out.getCategory()).isEqualTo("계좌간 이체");
+        assertThat(in.getCategory()).isEqualTo("계좌간 이체");
+        assertThat(payments.count()).isEqualTo(businessBefore);
+        assertThat(transfers.reconcile().newPairs()).isZero();
+        mvc.perform(get("/personal-ledger").param("month","2026-09").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("transferExpense",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("500000"))))
+            .andExpect(model().attribute("transferIncome",org.hamcrest.Matchers.comparesEqualTo(new BigDecimal("500000"))))
+            .andExpect(model().attribute("personalExpense",org.hamcrest.Matchers.comparesEqualTo(BigDecimal.ZERO)))
+            .andExpect(model().attribute("autoTransferRows",2L));
+    }
+
+    @Test void transferMatchingRejectsSameAccountDifferentDateAndAmbiguousPairs() {
+        var sameOut=transactions.save(new PersonalBankTransactionEntity(
+            "same-account-o","351-0000-1111-22",LocalDate.of(2026,9,10),
+            BigDecimal.ZERO,new BigDecimal("111111"),"A",""));
+        var sameIn=transactions.save(new PersonalBankTransactionEntity(
+            "same-account-i","351-0000-1111-22",LocalDate.of(2026,9,10),
+            new BigDecimal("111111"),BigDecimal.ZERO,"B",""));
+        var otherDate=transactions.save(new PersonalBankTransactionEntity(
+            "other-date-i","302-0000-2222-33",LocalDate.of(2026,9,11),
+            new BigDecimal("111111"),BigDecimal.ZERO,"C",""));
+        var duplicateOut=transactions.save(new PersonalBankTransactionEntity(
+            "ambiguous-o1","351-0000-1111-22",LocalDate.of(2026,9,20),
+            BigDecimal.ZERO,new BigDecimal("200000"),"D",""));
+        var secondOut=transactions.save(new PersonalBankTransactionEntity(
+            "ambiguous-o2","351-0000-1111-22",LocalDate.of(2026,9,20),
+            BigDecimal.ZERO,new BigDecimal("200000"),"D",""));
+        var duplicateIn=transactions.save(new PersonalBankTransactionEntity(
+            "ambiguous-i","302-0000-2222-33",LocalDate.of(2026,9,20),
+            new BigDecimal("200000"),BigDecimal.ZERO,"E",""));
+        var result=transfers.reconcile();
+        assertThat(result.newPairs()).isZero();
+        assertThat(result.ambiguousGroups()).isEqualTo(1);
+        for (var row:List.of(sameOut,sameIn,otherDate,duplicateOut,secondOut,duplicateIn))
+            assertThat(row.isAutoTransfer()).isFalse();
+    }
+
+    @Test void manualCategoryOverrideReleasesBothSidesAndPreventsRelinking() throws Exception {
+        var out=transactions.save(new PersonalBankTransactionEntity(
+            "manual-transfer-o","351-0000-1111-22",LocalDate.of(2026,9,9),
+            BigDecimal.ZERO,new BigDecimal("345678"),"X",""));
+        var in=transactions.save(new PersonalBankTransactionEntity(
+            "manual-transfer-i","302-0000-2222-33",LocalDate.of(2026,9,9),
+            new BigDecimal("345678"),BigDecimal.ZERO,"Y",""));
+        transfers.reconcile();
+        assertThat(in.isAutoTransfer()).isTrue();
+        mvc.perform(post("/personal-ledger/"+out.getId()+"/classify")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("month","2026-09").param("category","식비"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(out.getCategory()).isEqualTo("식비");
+        assertThat(out.isAutoTransfer()).isFalse();
+        assertThat(out.isTransferOptOut()).isTrue();
+        assertThat(in.isAutoTransfer()).isFalse();
+        assertThat(in.getCategory()).isEqualTo("미분류");
+        assertThat(transfers.reconcile().newPairs()).isZero();
+    }
+
+    @Test void linkingBankReceiptToBusinessVendorTakesPriorityOverAutomaticTransfer() throws Exception {
+        var out=transactions.save(new PersonalBankTransactionEntity(
+            "business-transfer-o","351-0000-1111-22",LocalDate.of(2026,9,15),
+            BigDecimal.ZERO,new BigDecimal("567890"),"X",""));
+        var in=transactions.save(new PersonalBankTransactionEntity(
+            "business-transfer-i","302-0000-2222-33",LocalDate.of(2026,9,15),
+            new BigDecimal("567890"),BigDecimal.ZERO,"별도입금자",""));
+        transfers.reconcile();
+        VendorEntity vendor=vendors.save(new VendorEntity("거래처 수정","거래처 수정",true));
+        mvc.perform(post("/personal-ledger/"+in.getId()+"/link-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("vendorId",vendor.getId().toString())
+                .param("month","2026-09").param("remember","true"))
+                .andExpect(status().isOk());
+        assertThat(in.getCategory()).isEqualTo("사업 입금");
+        assertThat(in.isAutoTransfer()).isFalse();
+        assertThat(out.isAutoTransfer()).isFalse();
+        assertThat(transfers.reconcile().newPairs()).isZero();
     }
 
     @Test void nonAdminCannotReadOrUploadPrivateBankData() throws Exception {
