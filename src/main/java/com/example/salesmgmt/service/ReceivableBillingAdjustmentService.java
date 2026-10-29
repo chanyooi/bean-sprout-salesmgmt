@@ -41,7 +41,9 @@ public class ReceivableBillingAdjustmentService {
 
         for (SalesItemEntity item : items) {
             Long vendorId = item.getSalesOrder().getVendor().getId();
-            BigDecimal correction = billingAmount(item).subtract(nz(item.getLineAmount()));
+            // MonthlySalesReportService already applies Palgong tray correction. Never deduct it twice.
+            BigDecimal reportBase = isPalgongTofuTray(item) ? billingAmount(item) : nz(item.getLineAmount());
+            BigDecimal correction = billingAmount(item).subtract(reportBase);
 
             if (correction.signum() != 0) {
                 corrections.merge(vendorId, correction, BigDecimal::add);
