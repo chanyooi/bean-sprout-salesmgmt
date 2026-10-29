@@ -27,6 +27,7 @@ public class PersonalBankTransactionEntity {
     }
     public Long getId(){return id;}
     public String getAccount(){return account;}
+    public String getMaskedAccount(){return account.length()>4?"••••"+account.substring(account.length()-4):"••••";}
     public LocalDate getTransactionDate(){return transactionDate;}
     public BigDecimal getIncoming(){return incoming;}
     public BigDecimal getOutgoing(){return outgoing;}
