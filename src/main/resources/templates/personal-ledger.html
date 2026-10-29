@@ -28,7 +28,7 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <section class="ledger-panel"><h2>카테고리별 생활 지출</h2>
 <div th:each="bar : ${categoryBars}"><div class="ledger-bar-label"><span th:text="${bar.label}"></span><strong th:text="${#numbers.formatDecimal(bar.amount,1,'COMMA',0,'POINT')+'원'}"></strong></div><div class="ledger-bar-track"><div class="ledger-bar-fill" th:style="|width:${bar.percent}%|"></div></div></div>
 </section>
-<section class="ledger-panel"><h2>거래 내역 및 거래처 연결</h2><div class="ledger-scroll"><table class="ledger-table"><thead><tr><th>일자</th><th>계좌</th><th>입금자/적요</th><th>입금</th><th>출금</th><th>분류</th><th>송천 거래처 연결</th><th>장부 대조</th></tr></thead>
+<section class="ledger-panel"><h2>거래 내역 및 거래처 연결</h2><p class="ledger-muted">입금자명을 한 번 연결하면 동일한 이름의 모든 과거 입금 내역에 자동 적용되고, 이후 업로드에도 반영됩니다. 출금 내역은 변경되지 않습니다.</p><div class="ledger-scroll"><table class="ledger-table"><thead><tr><th>일자</th><th>계좌</th><th>입금자/적요</th><th>입금</th><th>출금</th><th>분류</th><th>송천 거래처 연결</th><th>장부 대조</th></tr></thead>
 <tbody><tr th:each="tx : ${rows}">
 <td th:text="${tx.transactionDate}"></td><td th:text="${tx.maskedAccount}"></td>
 <td><strong th:text="${tx.counterparty}"></strong><div class="ledger-muted" th:text="${tx.description}"></div></td>
@@ -36,13 +36,13 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <td th:text="${#numbers.formatDecimal(tx.outgoing,1,'COMMA',0,'POINT')}"></td>
 <td><form th:action="@{/personal-ledger/{id}/classify(id=${tx.id})}" method="post">
 <input type="hidden" name="month" th:value="${month}"><input name="category" th:value="${tx.category}" maxlength="80"><label><input type="checkbox" name="remember" value="true">다음에도 적용</label><button>변경</button></form></td>
-<td><form th:if="${tx.incoming.signum() > 0}" th:action="@{/personal-ledger/{id}/link(id=${tx.id})}" th:attr="data-quick-url=@{/personal-ledger/{id}/link-instant(id=${tx.id})}" method="post">
+<td><form th:if="${tx.incoming.signum() > 0}" th:action="@{/personal-ledger/{id}/link(id=${tx.id})}" th:attr="data-quick-url=@{/personal-ledger/{id}/link-instant(id=${tx.id})},data-payer=${tx.counterparty},data-bank-id=${tx.id}" method="post">
 <input type="hidden" name="month" th:value="${month}">
 <select name="vendorId" required aria-label="송천 거래처 선택 · 선택 시 즉시 저장"><option value="">거래처 선택</option><option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.inputName}" th:selected="${v.id == tx.vendorId}"></option></select>
-<input type="month" name="settlementMonth" th:value="${tx.settlementMonth}" title="정산월"><label><input type="checkbox" name="remember" value="true" checked>다음에도 연결</label><noscript><button type="submit">연결</button></noscript>
+<input type="month" name="settlementMonth" th:value="${tx.settlementMonth}" title="정산월"><label><input type="checkbox" name="remember" value="true" checked>같은 이름 전체 연결</label><noscript><button type="submit">연결</button></noscript>
 <span class="ledger-save-status" data-link-status th:text="${tx.vendorId != null ? '연결됨' : '선택하면 바로 저장'}">선택하면 바로 저장</span></form></td><td><span th:if="${tx.incoming.signum()>0}" th:text="${matches[tx.id]}" class="ledger-muted" data-match-status></span></td>
 </tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="8" class="ledger-muted">거래가 없습니다. 은행 거래내역 파일을 업로드하세요.</td></tr></tbody></table></div></section>
 </main>
-<script defer th:src="@{/js/personal-ledger-instant-link.js(v=20261029_1)}"></script>
+<script defer th:src="@{/js/personal-ledger-instant-link.js(v=20261029_2)}"></script>
 <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261029_2)}"></script>
 </body></html>
