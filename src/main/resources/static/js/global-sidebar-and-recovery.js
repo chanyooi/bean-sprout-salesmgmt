@@ -242,7 +242,7 @@
         addPersonalLedgerMenu();
     } else {
         fetch('/personal-ledger/access', {credentials: 'same-origin', cache: 'no-store'})
-            .then(response => { if (response.ok) addPersonalLedgerMenu(); })
+            .then(response => { if (response.status === 204) addPersonalLedgerMenu(); })
             .catch(() => { /* Keep the private menu hidden when the check fails. */ });
     }
 
