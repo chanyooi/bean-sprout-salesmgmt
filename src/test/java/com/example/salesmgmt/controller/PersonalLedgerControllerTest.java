@@ -125,6 +125,22 @@ class PersonalLedgerControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+    void failedSecondAccountDoesNotPartiallyStoreFirstAccountAndAvoidsHttp500() throws Exception {
+        long before = transactions.count();
+        MockMultipartFile invalid = new MockMultipartFile(
+                "file", "broken.xls", "application/vnd.ms-excel", "invalid".getBytes());
+        mvc.perform(multipart("/personal-ledger/upload")
+                .file(bankFile("351-0000-1111-22"))
+                .file(invalid)
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/personal-ledger"))
+                .andExpect(flash().attributeExists("errorMessage"));
+        assertThat(transactions.count()).isEqualTo(before);
+    }
+
     @Test void nonAdminCannotReadOrUploadPrivateBankData() throws Exception {
         mvc.perform(get("/personal-ledger").with(user("work").roles("USER")))
                 .andExpect(status().isForbidden());

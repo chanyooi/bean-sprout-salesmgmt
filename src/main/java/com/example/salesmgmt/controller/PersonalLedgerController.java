@@ -3,6 +3,8 @@ package com.example.salesmgmt.controller;
 import com.example.salesmgmt.entity.*;
 import com.example.salesmgmt.repository.*;
 import com.example.salesmgmt.service.PaymentService;
+import com.example.salesmgmt.service.NonghyupXlsCompatibility;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -109,7 +111,7 @@ public class PersonalLedgerController {
         try{
             for(MultipartFile file:files){
                 if(file.isEmpty())continue;
-                try(InputStream in=file.getInputStream();Workbook wb=WorkbookFactory.create(in)){
+                try(Workbook wb=NonghyupXlsCompatibility.openWorkbook(file.getBytes())){
                     DataFormatter fmt=new DataFormatter(Locale.KOREA);
                     for(Sheet sheet:wb){
                         int header=-1; Map<String,Integer> cols=null;String account="";
@@ -150,7 +152,14 @@ public class PersonalLedgerController {
                 }
             }
             flash.addFlashAttribute("message","가져온 거래 "+inserted+"건, 중복 제외 "+skipped+"건");
-        }catch(Exception ex){throw new IllegalArgumentException("은행 엑셀 가져오기 실패: "+ex.getMessage(),ex);}
+        }catch(Exception ex){
+            // A multipart upload can contain multiple accounts. Do not commit
+            // the first file if parsing a later one fails.
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            flash.addFlashAttribute("errorMessage",
+                    "엑셀을 가져오지 못했습니다. 파일 형식을 확인해주세요. 변경 사항은 저장되지 않았습니다. 문제가 반복되면 농협 입출금거래내역 원본(.xls)을 다시 첨부해주세요.");
+            return "redirect:/personal-ledger";
+        }
         return "redirect:/personal-ledger";
     }
     @PostMapping("/{id}/classify")

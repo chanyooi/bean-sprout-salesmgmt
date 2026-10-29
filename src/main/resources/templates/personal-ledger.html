@@ -9,7 +9,8 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <div class="ledger-head"><div><a th:href="@{/}">← 송천 대시보드</a><h1>개인 가계부</h1><p class="ledger-muted">농협 계좌 입출금 분석 · 송천 거래처 입금 대조</p></div>
 <form method="get" th:action="@{/personal-ledger}"><input type="month" name="month" th:value="${month}"><button class="ledger-btn">조회</button></form></div>
 <p class="warning">은행 입금 연결은 거래처 후보만 표시합니다. 기존 송천 입금 장부에 자동 저장하지 않습니다. 같은 거래처·날짜·금액의 장부 기록이 있으면 일치 후보로 표시되며 최종 정산은 별도 확인해야 합니다. 팔공 지급은 지출이며 미수금 입금으로 처리하지 않습니다.</p>
-<p th:if="${message}" th:text="${message}"></p>
+<p th:if="${message}" th:text="${message}" role="status"></p>
+<p th:if="${errorMessage}" th:text="${errorMessage}" class="warning" role="alert"></p>
 <div class="ledger-grid">
 <div class="ledger-card"><div class="ledger-muted">생활 지출 (분류 후 사업·이체 제외)</div><div class="ledger-number" th:text="${#numbers.formatDecimal(personalExpense,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
 <div class="ledger-card"><div class="ledger-muted">개인 입금 (분류 후 사업·이체 제외)</div><div class="ledger-number" th:text="${#numbers.formatDecimal(personalIncome,1,'COMMA',0,'POINT')+'원'}">0원</div></div>
