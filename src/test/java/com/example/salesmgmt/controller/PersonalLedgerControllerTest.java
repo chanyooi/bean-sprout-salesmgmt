@@ -29,6 +29,7 @@ class PersonalLedgerControllerTest {
     @Autowired MockMvc mvc;
     @Autowired PersonalBankTransactionRepository transactions;
     @Autowired VendorRepository vendors;
+    @Autowired com.example.salesmgmt.repository.PaymentRepository payments;
 
     private MockMultipartFile bankFile(String account) throws Exception {
         try(Workbook wb=new HSSFWorkbook();ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
@@ -89,6 +90,72 @@ class PersonalLedgerControllerTest {
             .param("settlementMonth","2026-09").param("remember","true"))
             .andExpect(status().is3xxRedirection());
         assertThat(transactions.findById(income.getId()).orElseThrow().getVendorId()).isEqualTo(vendor.getId());
+    }
+
+    @Test void choosingVendorImmediatelyLinksAndRemembersPayerWithoutDuplicatingPayments() throws Exception {
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-4444-55"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        VendorEntity vendor=vendors.save(new VendorEntity("즉시연결마트","즉시연결마트",true));
+        var income=transactions.findAll().stream()
+                .filter(tx->tx.getIncoming().signum()>0).findFirst().orElseThrow();
+        long paymentsBefore=payments.count();
+
+        mvc.perform(post("/personal-ledger/"+income.getId()+"/link-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("vendorId",vendor.getId().toString())
+                .param("settlementMonth","2026-09").param("remember","true"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.status").value("saved"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.category").value("사업 입금"));
+
+        var saved=transactions.findById(income.getId()).orElseThrow();
+        assertThat(saved.getVendorId()).isEqualTo(vendor.getId());
+        assertThat(saved.getSettlementMonth()).isEqualTo("2026-09");
+        assertThat(saved.getCategory()).isEqualTo("사업 입금");
+        assertThat(payments.count()).isEqualTo(paymentsBefore);
+
+        // A later bank file from the other account learns the same payer alias.
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("302-0000-4444-55"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        assertThat(transactions.findAll().stream()
+                .filter(tx->"302-0000-4444-55".equals(tx.getAccount()))
+                .filter(tx->tx.getIncoming().signum()>0)
+                .findFirst().orElseThrow().getVendorId()).isEqualTo(vendor.getId());
+        assertThat(payments.count()).isEqualTo(paymentsBefore);
+    }
+
+    @Test void instantLinkRejectsExpenseAndUnauthorizedUsers() throws Exception {
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-6666-77"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        var expense=transactions.findAll().stream()
+                .filter(tx->tx.getOutgoing().signum()>0).findFirst().orElseThrow();
+        VendorEntity vendor=vendors.save(new VendorEntity("거래처테스트","거래처테스트",true));
+
+        mvc.perform(post("/personal-ledger/"+expense.getId()+"/link-instant")
+                .with(user("admin").roles("ADMIN")).with(csrf())
+                .param("vendorId",vendor.getId().toString()))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(post("/personal-ledger/"+expense.getId()+"/link-instant")
+                .with(user("work").roles("USER")).with(csrf())
+                .param("vendorId",vendor.getId().toString()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test void ledgerShowsInstantLinkControlWithoutConnectButton() throws Exception {
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-8888-99"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(get("/personal-ledger").param("month","2026-10")
+                .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("data-quick-url")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("personal-ledger-instant-link.js")));
     }
 
     @Test void userApprovedCategoryRuleAppliesToFutureImport() throws Exception {

@@ -27,6 +27,9 @@ jobs:
       - name: Check sidebar JavaScript syntax
         run: node --check src/main/resources/static/js/global-sidebar-and-recovery.js
 
+      - name: Check personal ledger JavaScript syntax
+        run: node --check src/main/resources/static/js/personal-ledger-instant-link.js
+
       - name: Run tests
         run: |
           chmod +x gradlew

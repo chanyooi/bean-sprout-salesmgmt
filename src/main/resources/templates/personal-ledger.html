@@ -5,7 +5,9 @@
 <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20261029_2)}">
 <style>
 body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-wrap{max-width:1240px;margin:30px auto;padding:0 16px}.ledger-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.ledger-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.ledger-card,.ledger-panel{background:white;border:1px solid #e1e6ef;border-radius:16px;padding:20px;margin:12px 0}.ledger-number{font-size:24px;font-weight:750}.ledger-table{width:100%;border-collapse:collapse;font-size:14px}.ledger-table td,.ledger-table th{padding:10px 8px;border-bottom:1px solid #e8edf3;text-align:left}.ledger-table th{background:#f8fafc}.ledger-table input,.ledger-table select{max-width:160px;padding:7px;border:1px solid #d7dee8;border-radius:7px}.ledger-table button,.ledger-btn{background:#253d72;color:white;border:none;border-radius:8px;padding:8px 11px;cursor:pointer}.ledger-muted{color:#67758a}.ledger-scroll{overflow-x:auto}form{display:inline-block}.warning{background:#fff7ed;padding:10px;border-radius:8px}@media(max-width:700px){.ledger-grid{grid-template-columns:1fr}.ledger-number{font-size:21px}}
-.ledger-bar-track{height:10px;background:#edf0f6;border-radius:6px;overflow:hidden;margin:7px 0 14px}.ledger-bar-fill{height:100%;background:#476bc2;border-radius:6px}.ledger-bar-label{display:flex;justify-content:space-between;gap:20px;font-size:14px}</style></head><body><main class="ledger-wrap">
+.ledger-bar-track{height:10px;background:#edf0f6;border-radius:6px;overflow:hidden;margin:7px 0 14px}.ledger-bar-fill{height:100%;background:#476bc2;border-radius:6px}.ledger-bar-label{display:flex;justify-content:space-between;gap:20px;font-size:14px}.ledger-save-status{display:block;margin-top:5px;font-size:12px;color:#16794a;white-space:nowrap}
+.ledger-save-failed{color:#c33b37}
+</style></head><body><main class="ledger-wrap">
 <div class="ledger-head"><div><a th:href="@{/}">← 송천 대시보드</a><h1>개인 가계부</h1><p class="ledger-muted">농협 계좌 입출금 분석 · 송천 거래처 입금 대조</p></div>
 <form method="get" th:action="@{/personal-ledger}"><input type="month" name="month" th:value="${month}"><button class="ledger-btn">조회</button></form></div>
 <p class="warning">은행 입금 연결은 거래처 후보만 표시합니다. 기존 송천 입금 장부에 자동 저장하지 않습니다. 같은 거래처·날짜·금액의 장부 기록이 있으면 일치 후보로 표시되며 최종 정산은 별도 확인해야 합니다. 팔공 지급은 지출이며 미수금 입금으로 처리하지 않습니다.</p>
@@ -34,11 +36,13 @@ body{background:#f6f7fb;color:#172334;font-family:system-ui,sans-serif}.ledger-w
 <td th:text="${#numbers.formatDecimal(tx.outgoing,1,'COMMA',0,'POINT')}"></td>
 <td><form th:action="@{/personal-ledger/{id}/classify(id=${tx.id})}" method="post">
 <input type="hidden" name="month" th:value="${month}"><input name="category" th:value="${tx.category}" maxlength="80"><label><input type="checkbox" name="remember" value="true">다음에도 적용</label><button>변경</button></form></td>
-<td><form th:if="${tx.incoming.signum() > 0}" th:action="@{/personal-ledger/{id}/link(id=${tx.id})}" method="post">
+<td><form th:if="${tx.incoming.signum() > 0}" th:action="@{/personal-ledger/{id}/link(id=${tx.id})}" th:attr="data-quick-url=@{/personal-ledger/{id}/link-instant(id=${tx.id})}" method="post">
 <input type="hidden" name="month" th:value="${month}">
-<select name="vendorId" required><option value="">거래처 선택</option><option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.inputName}" th:selected="${v.id == tx.vendorId}"></option></select>
-<input type="month" name="settlementMonth" th:value="${tx.settlementMonth}" title="정산월"><label><input type="checkbox" name="remember" value="true">다음에도 연결</label><button>연결</button></form></td><td><span th:if="${tx.incoming.signum()>0}" th:text="${matches[tx.id]}" class="ledger-muted"></span></td>
+<select name="vendorId" required aria-label="송천 거래처 선택 · 선택 시 즉시 저장"><option value="">거래처 선택</option><option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.inputName}" th:selected="${v.id == tx.vendorId}"></option></select>
+<input type="month" name="settlementMonth" th:value="${tx.settlementMonth}" title="정산월"><label><input type="checkbox" name="remember" value="true" checked>다음에도 연결</label><noscript><button type="submit">연결</button></noscript>
+<span class="ledger-save-status" data-link-status th:text="${tx.vendorId != null ? '연결됨' : '선택하면 바로 저장'}">선택하면 바로 저장</span></form></td><td><span th:if="${tx.incoming.signum()>0}" th:text="${matches[tx.id]}" class="ledger-muted" data-match-status></span></td>
 </tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="8" class="ledger-muted">거래가 없습니다. 은행 거래내역 파일을 업로드하세요.</td></tr></tbody></table></div></section>
 </main>
+<script defer th:src="@{/js/personal-ledger-instant-link.js(v=20261029_1)}"></script>
 <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261029_2)}"></script>
 </body></html>
