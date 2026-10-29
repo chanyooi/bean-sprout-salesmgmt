@@ -152,6 +152,11 @@ public class PersonalLedgerController {
             .toList());
         model.addAttribute("view",selectedView);
         model.addAttribute("personalCategoryOptions",PERSONAL_CATEGORIES);
+        Map<String,BigDecimal> personalTotals=new LinkedHashMap<>();
+        for(var tx:rows)
+            if(tx.getOutgoing().signum()>0&&"personal".equals(classificationKind(tx.getCategory())))
+                personalTotals.merge(tx.getCategory(),tx.getOutgoing(),BigDecimal::add);
+        model.addAttribute("personalTotals",personalTotals);
         Map<Long,String> classificationKinds=new HashMap<>();
         for(var tx:rows)classificationKinds.put(tx.getId(),classificationKind(tx.getCategory()));
         model.addAttribute("classificationKinds",classificationKinds);
@@ -302,7 +307,13 @@ public class PersonalLedgerController {
                 default -> pending=pending.add(item.getOutgoing());
             }
         }
+        Map<String,String> personalTotals=new LinkedHashMap<>();
+        for(var item:rows)
+            if(item.getOutgoing().signum()>0&&"personal".equals(classificationKind(item.getCategory())))
+                personalTotals.merge(item.getCategory(),item.getOutgoing().toPlainString(),
+                    (left,right)->new BigDecimal(left).add(new BigDecimal(right)).toPlainString());
         return Map.of("status","saved","category",newCategory,"type",type,
+            "personalTotals",personalTotals,
             "personalExpense",personal.toPlainString(),
             "businessExpense",business.toPlainString(),
             "pendingExpense",pending.toPlainString(),
