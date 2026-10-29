@@ -166,8 +166,8 @@ public class PersonalLedgerController {
             String s=fmt.formatCellValue(cell).replace(" ","").toLowerCase(Locale.ROOT);
             int i=cell.getColumnIndex();
             if(s.contains("거래일")||s.equals("일자")||s.equals("거래일시"))m.put("date",i);
-            if(s.contains("입금액")||s.equals("입금"))m.put("in",i);
-            if(s.contains("출금액")||s.equals("출금"))m.put("out",i);
+            if(s.contains("입금액")||s.contains("입금금액")||s.equals("입금"))m.put("in",i);
+            if(s.contains("출금액")||s.contains("출금금액")||s.equals("출금"))m.put("out",i);
             if(s.contains("거래기록사항")||s.contains("입금자")||s.contains("상대방")||s.contains("의뢰인"))m.put("who",i);
             if(s.contains("거래내용"))m.put("channel",i);
             if(s.contains("거래후잔액"))m.put("balance",i);
