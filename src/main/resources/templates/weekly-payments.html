@@ -102,7 +102,7 @@
     </section>
 </main>
 <form id="songcheonPcLogoutForm" th:action="@{/logout}" method="post" style="display:none" aria-hidden="true"></form>
-<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20260831_1)}"></script><script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script><script defer th:src="@{/js/weekly-payments-calendar.js(v=20260831_1)}"></script>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261029_2)}"></script><script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script><script defer th:src="@{/js/weekly-payments-calendar.js(v=20260831_1)}"></script>
 <script>function formatWeeklyWon(value){const number=Number(value||0);return Math.round(number).toLocaleString('ko-KR')+'원';}function confirmWeeklyComplete(form){const vendor=form.dataset.vendor||'거래처';const amount=form.dataset.amount||'0';return confirm(vendor+'\n'+'이 주의 남은 금액 '+formatWeeklyWon(amount)+'을 입금 완료 처리할까요?');}</script>
 </body>
 </html>
