@@ -243,7 +243,7 @@ class PersonalLedgerControllerTest {
         assertThat(transactions.findById(other.getId()).orElseThrow().getVendorId()).isNull();
     }
 
-    @Test void userApprovedCategoryRuleAppliesToFutureImport() throws Exception {
+    @Test void categoryEditDoesNotAutomaticallyChangeFutureImports() throws Exception {
         mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-5555-66"))
                 .with(user("admin").roles("ADMIN")).with(csrf()))
                 .andExpect(status().is3xxRedirection());
@@ -257,7 +257,7 @@ class PersonalLedgerControllerTest {
                 .andExpect(status().is3xxRedirection());
         assertThat(transactions.findAll().stream()
             .filter(t->t.getAccount().equals("302-0000-7777-88")&&t.getOutgoing().signum()>0)
-            .findFirst().orElseThrow().getCategory()).isEqualTo("차량유지");
+            .findFirst().orElseThrow().getCategory()).isEqualTo("차량");
     }
 
     @Test void adminCanRenderLedgerDashboardWithImportedData() throws Exception {
