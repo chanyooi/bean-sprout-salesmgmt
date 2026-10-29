@@ -30,6 +30,9 @@ jobs:
       - name: Check personal ledger JavaScript syntax
         run: node --check src/main/resources/static/js/personal-ledger-instant-link.js
 
+      - name: Check personal expense categorization JavaScript syntax
+        run: node --check src/main/resources/static/js/personal-ledger-expense.js
+
       - name: Run tests
         run: |
           chmod +x gradlew

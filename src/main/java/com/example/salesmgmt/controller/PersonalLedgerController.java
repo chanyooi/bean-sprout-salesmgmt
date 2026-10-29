@@ -27,6 +27,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/personal-ledger")
 @PreAuthorize("hasRole('ADMIN')")
 public class PersonalLedgerController {
+    private static final List<String> PERSONAL_CATEGORIES=List.of(
+        "보험","월세","용돈","식비","생활비","여가","쇼핑","교통","주유",
+        "통신비","공과금","의료","교육","경조사","저축","기타");
     private final PersonalBankTransactionRepository transactions;
     private final PersonalBankAliasRepository aliases;
     private final PersonalBankCategoryRuleRepository categoryRules;
@@ -48,14 +51,19 @@ public class PersonalLedgerController {
     @GetMapping
     @Transactional(readOnly=true)
     public String page(@RequestParam(required=false) String month,
-                       @RequestParam(required=false) String account, Model model) {
+                       @RequestParam(required=false) String account,
+                       @RequestParam(defaultValue="out") String view, Model model) {
         YearMonth ym=month==null||month.isBlank()?YearMonth.now():YearMonth.parse(month);
         var accountNumbers=transactions.findDistinctAccounts();
+        final String selectedView="in".equals(view)?"in":"out";
         String selectedAccount=account==null?"":account.trim();
+        // The screen shows one account at a time; no combined dashboard.
+        if(selectedAccount.isBlank()&&!accountNumbers.isEmpty())selectedAccount=accountKey(accountNumbers.get(0));
         String accountNumber="";
         if(!selectedAccount.isBlank()) {
+            final String requestedKey=selectedAccount;
             accountNumber=accountNumbers.stream()
-                .filter(number->accountKey(number).equals(selectedAccount))
+                .filter(number->accountKey(number).equals(requestedKey))
                 .findFirst()
                 .orElseThrow(()->new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.BAD_REQUEST,"존재하지 않는 계좌입니다."));
@@ -132,36 +140,26 @@ public class PersonalLedgerController {
             matches.put(tx.getId(),monthlyMatch||weeklyMatch?"송천 기록 일치 후보":"송천 입금 확인 필요");
         }
 
-        List<ChartRow> categoryBars=new ArrayList<>();
-        for(var entry:categories.entrySet())categoryBars.add(
-            new ChartRow(entry.getKey(),entry.getValue(),percentage(entry.getValue(),personalExpense)));
-        Map<YearMonth,BigDecimal> monthlyTotals=new LinkedHashMap<>();
-        BigDecimal maxMonth=BigDecimal.ZERO;
-        for(int offset=5;offset>=0;offset--){
-            YearMonth current=ym.minusMonths(offset);
-            var monthRows=current.equals(ym)?rows:transactions.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(
-                    current.atDay(1),current.atEndOfMonth());
-            BigDecimal total=monthRows.stream()
-                .filter(tx->selectedNumber.isBlank()||selectedNumber.equals(tx.getAccount()))
-                .filter(tx->!isUnclassified(tx.getCategory())&&!isBusiness(tx.getCategory())&&!isTransfer(tx.getCategory()))
-                .map(PersonalBankTransactionEntity::getOutgoing).reduce(BigDecimal.ZERO,BigDecimal::add);
-            monthlyTotals.put(current,total);
-            if(total.compareTo(maxMonth)>0)maxMonth=total;
-        }
-        List<ChartRow> monthlyBars=new ArrayList<>();
-        for(var entry:monthlyTotals.entrySet())
-            monthlyBars.add(new ChartRow(entry.getKey().toString(),entry.getValue(),percentage(entry.getValue(),maxMonth)));
-
         model.addAttribute("selectedAccount",selectedAccount);
         model.addAttribute("accountSummaries",accountSummaries);
         model.addAttribute("accountCount",accountNumbers.size());
         model.addAttribute("scopeTitle",selectedAccount.isBlank()?"전체 계좌 합산":"농협 "+maskedAccount(selectedNumber));
-        model.addAttribute("categoryBars",categoryBars);
-        model.addAttribute("monthlyBars",monthlyBars);
         model.addAttribute("month",ym.toString());
         model.addAttribute("previousMonth",ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",ym.plusMonths(1).toString());
-        model.addAttribute("rows",rows);
+        model.addAttribute("rows",rows.stream()
+            .filter(tx->"out".equals(selectedView) ? tx.getOutgoing().signum()>0 : tx.getIncoming().signum()>0)
+            .toList());
+        model.addAttribute("view",selectedView);
+        model.addAttribute("personalCategoryOptions",PERSONAL_CATEGORIES);
+        Map<String,BigDecimal> personalTotals=new LinkedHashMap<>();
+        for(var tx:rows)
+            if(tx.getOutgoing().signum()>0&&"personal".equals(classificationKind(tx.getCategory())))
+                personalTotals.merge(tx.getCategory(),tx.getOutgoing(),BigDecimal::add);
+        model.addAttribute("personalTotals",personalTotals);
+        Map<Long,String> classificationKinds=new HashMap<>();
+        for(var tx:rows)classificationKinds.put(tx.getId(),classificationKind(tx.getCategory()));
+        model.addAttribute("classificationKinds",classificationKinds);
         model.addAttribute("income",income);
         model.addAttribute("expense",expense);
         model.addAttribute("net",income.subtract(expense));
@@ -180,6 +178,12 @@ public class PersonalLedgerController {
         return "personal-ledger";
     }
 
+    private static String classificationKind(String category){
+        if(isTransfer(category))return "transfer";
+        if(isBusiness(category))return "business";
+        if(isUnclassified(category))return "pending";
+        return "personal";
+    }
     private static boolean isUnclassified(String category) {
         return category==null||category.isBlank()||category.startsWith("미분류");
     }
@@ -264,6 +268,58 @@ public class PersonalLedgerController {
         }
         return "redirect:/personal-ledger";
     }
+    @PostMapping("/{id}/classify-instant")
+    @ResponseBody
+    @Transactional
+    public Map<String,Object> classifyInstant(@PathVariable Long id,
+             @RequestParam String type,@RequestParam(required=false) String detail) {
+        var tx=transactions.findById(id).orElseThrow(()->new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.NOT_FOUND,"거래 내역이 없습니다."));
+        if(tx.getOutgoing().signum()<=0)throw new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.BAD_REQUEST,"출금 거래만 지출 분류할 수 있습니다.");
+        String newCategory=switch(type){
+            case "business" -> "사업 지출";
+            case "transfer" -> "계좌간 이체";
+            case "pending" -> "미분류 지출";
+            case "personal" -> {
+                String chosen=detail==null?"기타":detail.trim();
+                if(!PERSONAL_CATEGORIES.contains(chosen)&&!chosen.equals(tx.getCategory()))
+                    throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST,"지원하지 않는 개인 지출 항목입니다.");
+                yield chosen;
+            }
+            default -> throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,"지원하지 않는 분류입니다.");
+        };
+        transferMatcher.releaseForManualChoice(tx);
+        tx.classify(newCategory);
+        YearMonth ym=YearMonth.from(tx.getTransactionDate());
+        var rows=transactions.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(
+            ym.atDay(1),ym.atEndOfMonth()).stream()
+            .filter(item->item.getAccount().equals(tx.getAccount())).toList();
+        BigDecimal personal=BigDecimal.ZERO,business=BigDecimal.ZERO,pending=BigDecimal.ZERO,transfer=BigDecimal.ZERO;
+        for(var item:rows){
+            if(item.getOutgoing().signum()<=0)continue;
+            switch(classificationKind(item.getCategory())){
+                case "personal" -> personal=personal.add(item.getOutgoing());
+                case "business" -> business=business.add(item.getOutgoing());
+                case "transfer" -> transfer=transfer.add(item.getOutgoing());
+                default -> pending=pending.add(item.getOutgoing());
+            }
+        }
+        Map<String,String> personalTotals=new LinkedHashMap<>();
+        for(var item:rows)
+            if(item.getOutgoing().signum()>0&&"personal".equals(classificationKind(item.getCategory())))
+                personalTotals.merge(item.getCategory(),item.getOutgoing().toPlainString(),
+                    (left,right)->new BigDecimal(left).add(new BigDecimal(right)).toPlainString());
+        return Map.of("status","saved","category",newCategory,"type",type,
+            "personalTotals",personalTotals,
+            "personalExpense",personal.toPlainString(),
+            "businessExpense",business.toPlainString(),
+            "pendingExpense",pending.toPlainString(),
+            "transferExpense",transfer.toPlainString());
+    }
+
     @PostMapping("/{id}/classify")
     @Transactional
     public String classify(@PathVariable Long id,@RequestParam String category,
