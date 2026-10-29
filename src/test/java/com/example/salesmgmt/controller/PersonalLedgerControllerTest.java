@@ -91,6 +91,23 @@ class PersonalLedgerControllerTest {
         assertThat(transactions.findById(income.getId()).orElseThrow().getVendorId()).isEqualTo(vendor.getId());
     }
 
+    @Test void userApprovedCategoryRuleAppliesToFutureImport() throws Exception {
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("351-0000-5555-66"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        var expense=transactions.findAll().stream().filter(t->t.getOutgoing().signum()>0).findFirst().orElseThrow();
+        mvc.perform(post("/personal-ledger/"+expense.getId()+"/classify")
+            .with(user("admin").roles("ADMIN")).with(csrf())
+            .param("month","2026-10").param("category","차량유지").param("remember","true"))
+            .andExpect(status().is3xxRedirection());
+        mvc.perform(multipart("/personal-ledger/upload").file(bankFile("302-0000-7777-88"))
+                .with(user("admin").roles("ADMIN")).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        assertThat(transactions.findAll().stream()
+            .filter(t->t.getAccount().equals("302-0000-7777-88")&&t.getOutgoing().signum()>0)
+            .findFirst().orElseThrow().getCategory()).isEqualTo("차량유지");
+    }
+
     @Test void nonAdminCannotReadOrUploadPrivateBankData() throws Exception {
         mvc.perform(get("/personal-ledger").with(user("work").roles("USER")))
                 .andExpect(status().isForbidden());
