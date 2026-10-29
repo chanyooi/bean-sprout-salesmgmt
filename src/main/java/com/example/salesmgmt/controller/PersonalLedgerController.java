@@ -65,6 +65,28 @@ public class PersonalLedgerController {
                 &&p.getPaymentDate().equals(r.getTransactionDate())&&p.getAmount().compareTo(r.getIncoming())==0);
             matches.put(r.getId(),monthlyMatch||weeklyMatch?"송천 기록 일치 후보":"송천 입금 확인 필요");
         }
+
+        List<ChartRow> categoryBars=new ArrayList<>();
+        for(var entry:categories.entrySet())categoryBars.add(
+            new ChartRow(entry.getKey(),entry.getValue(),percentage(entry.getValue(),personalExpense)));
+        List<YearMonth> periods=new ArrayList<>();
+        Map<YearMonth,BigDecimal> monthlyTotals=new LinkedHashMap<>();
+        BigDecimal maxMonth=BigDecimal.ZERO;
+        for(int offset=5;offset>=0;offset--){
+            YearMonth current=ym.minusMonths(offset);
+            periods.add(current);
+            var monthlyRows=current.equals(ym)?rows:transactions.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(current.atDay(1),current.atEndOfMonth());
+            BigDecimal total=monthlyRows.stream()
+                .filter(t->!List.of("사업 지출","계좌간 이체").contains(t.getCategory()))
+                .map(PersonalBankTransactionEntity::getOutgoing).reduce(BigDecimal.ZERO,BigDecimal::add);
+            monthlyTotals.put(current,total);
+            if(total.compareTo(maxMonth)>0)maxMonth=total;
+        }
+        List<ChartRow> monthlyBars=new ArrayList<>();
+        for(YearMonth current:periods)
+            monthlyBars.add(new ChartRow(current.toString(),monthlyTotals.get(current),percentage(monthlyTotals.get(current),maxMonth)));
+        model.addAttribute("categoryBars",categoryBars);
+        model.addAttribute("monthlyBars",monthlyBars);
         model.addAttribute("month",ym.toString());
         model.addAttribute("previousMonth",ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",ym.plusMonths(1).toString());
@@ -157,6 +179,12 @@ public class PersonalLedgerController {
         }
         return "redirect:/personal-ledger?month="+month;
     }
+    private static int percentage(BigDecimal value,BigDecimal total){
+        if(total==null||total.signum()==0)return 0;
+        return value.multiply(new BigDecimal("100")).divide(total,0,java.math.RoundingMode.HALF_UP).intValue();
+    }
+    public record ChartRow(String label,BigDecimal amount,int percent){}
+
     private static String categoryFor(String who,String memo,boolean income){
         String content=((who==null?"":who)+" "+(memo==null?"":memo)).toUpperCase(Locale.ROOT);
         if(content.contains("팔공"))return income?"사업 입금":"사업 지출";
