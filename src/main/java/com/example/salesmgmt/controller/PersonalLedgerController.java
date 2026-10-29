@@ -55,14 +55,15 @@ public class PersonalLedgerController {
                        @RequestParam(defaultValue="out") String view, Model model) {
         YearMonth ym=month==null||month.isBlank()?YearMonth.now():YearMonth.parse(month);
         var accountNumbers=transactions.findDistinctAccounts();
-        if(!"in".equals(view))view="out";
+        final String selectedView="in".equals(view)?"in":"out";
         String selectedAccount=account==null?"":account.trim();
         // The screen shows one account at a time; no combined dashboard.
         if(selectedAccount.isBlank()&&!accountNumbers.isEmpty())selectedAccount=accountKey(accountNumbers.get(0));
         String accountNumber="";
         if(!selectedAccount.isBlank()) {
+            final String requestedKey=selectedAccount;
             accountNumber=accountNumbers.stream()
-                .filter(number->accountKey(number).equals(selectedAccount))
+                .filter(number->accountKey(number).equals(requestedKey))
                 .findFirst()
                 .orElseThrow(()->new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.BAD_REQUEST,"존재하지 않는 계좌입니다."));
@@ -147,9 +148,9 @@ public class PersonalLedgerController {
         model.addAttribute("previousMonth",ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",ym.plusMonths(1).toString());
         model.addAttribute("rows",rows.stream()
-            .filter(tx->"out".equals(view) ? tx.getOutgoing().signum()>0 : tx.getIncoming().signum()>0)
+            .filter(tx->"out".equals(selectedView) ? tx.getOutgoing().signum()>0 : tx.getIncoming().signum()>0)
             .toList());
-        model.addAttribute("view",view);
+        model.addAttribute("view",selectedView);
         model.addAttribute("personalCategoryOptions",PERSONAL_CATEGORIES);
         Map<Long,String> classificationKinds=new HashMap<>();
         for(var tx:rows)classificationKinds.put(tx.getId(),classificationKind(tx.getCategory()));
