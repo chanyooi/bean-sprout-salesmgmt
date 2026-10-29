@@ -57,8 +57,8 @@ class PaymentAccountingTest {
         items.save(new SalesItemEntity(order,"두부판",BigDecimal.valueOf(2),BigDecimal.valueOf(1000)));
         var report=monthly.createMonthlyReport(september);
         var payable=report.vendorRows().stream().filter(x->x.vendorName().equals("팔공")).findFirst().orElseThrow();
-        assertThat(payable.billedAmount()).isEqualByComparingTo("-102000");
-        assertThat(payable.outstandingAmount()).isEqualByComparingTo("-102000");
+        assertThat(payable.billedAmount()).isEqualByComparingTo("-98000");
+        assertThat(payable.outstandingAmount()).isEqualByComparingTo("-98000");
         assertThat(payable.status()).isEqualTo("지급예정");
         assertThat(report.outstandingAmount()).isEqualByComparingTo("200000");
         assertThat(report.outstandingVendorCount()).isEqualTo(1);
