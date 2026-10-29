@@ -118,6 +118,13 @@ class PersonalLedgerControllerTest {
                 .andExpect(view().name("personal-ledger"));
     }
 
+    @Test void sidebarPermissionProbeIsAdminOnly() throws Exception {
+        mvc.perform(get("/personal-ledger/access").with(user("admin").roles("ADMIN")))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/personal-ledger/access").with(user("work").roles("USER")))
+                .andExpect(status().isForbidden());
+    }
+
     @Test void nonAdminCannotReadOrUploadPrivateBankData() throws Exception {
         mvc.perform(get("/personal-ledger").with(user("work").roles("USER")))
                 .andExpect(status().isForbidden());
