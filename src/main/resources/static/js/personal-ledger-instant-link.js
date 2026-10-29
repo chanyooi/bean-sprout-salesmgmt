@@ -50,12 +50,27 @@
 
                 lastSavedVendor = selectedVendor;
                 lastSavedMonth = selectedMonth;
-                show('✓ 연결 저장됨', false);
+
+                const affectedForms = result.batch
+                    ? Array.from(document.querySelectorAll('form[data-quick-url]'))
+                        .filter(other => other.dataset.payer === result.counterparty)
+                    : [form];
+                // A repeated payer must update every visible row, not just
+                // the row used to submit the selection.
+                affectedForms.forEach(other => {
+                    other.dispatchEvent(new CustomEvent('ledger:vendor-linked', {
+                        detail: {
+                            vendorId: String(result.vendorId),
+                            matchStatus: result.matchStatuses
+                                ? result.matchStatuses[other.dataset.bankId] : null,
+                            linkedCount: result.linkedCount,
+                            batch: result.batch
+                        }
+                    }));
+                });
 
                 const row = form.closest('tr');
                 if (row) {
-                    const categoryInput = row.querySelector('input[name="category"]');
-                    if (categoryInput && result.category) categoryInput.value = result.category;
                     const matchingLabel = row.querySelector('[data-match-status]');
                     if (matchingLabel && result.matchStatus) matchingLabel.textContent = result.matchStatus;
                 }
@@ -68,6 +83,22 @@
                 busy = false;
             }
         }
+
+        form.addEventListener('ledger:vendor-linked', event => {
+            const data = event.detail;
+            select.value = data.vendorId;
+            lastSavedVendor = data.vendorId;
+            const row = form.closest('tr');
+            if (row) {
+                const categoryInput = row.querySelector('input[name="category"]');
+                if (categoryInput) categoryInput.value = '사업 입금';
+                const matchingLabel = row.querySelector('[data-match-status]');
+                if (matchingLabel && data.matchStatus) matchingLabel.textContent = data.matchStatus;
+            }
+            show(data.batch
+                ? '✓ 같은 이름 ' + data.linkedCount + '건 연결됨'
+                : '✓ 연결 저장됨', false);
+        });
 
         select.addEventListener('change', save);
         if (settlementMonth) settlementMonth.addEventListener('change', function () {

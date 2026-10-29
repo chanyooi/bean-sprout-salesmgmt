@@ -189,31 +189,66 @@ public class PersonalLedgerController {
     }
 
     /**
-     * Inline linking: returns a small JSON response so selecting a vendor
-     * does not reload the entire ledger and lose the user's scroll position.
-     * Does not create or modify Songcheon payment records.
+     * The same bank payer can deposit daily and through multiple accounts.
+     * A remembered mapping is applied to all existing INCOMING transactions
+     * with the same exact payer name, and saved for future imports.
+     * This never creates Songcheon business payment entries.
      */
     @PostMapping("/{id}/link-instant")
     @ResponseBody
     @Transactional
-    public Map<String,String> linkInstant(@PathVariable Long id,
+    public Map<String,Object> linkInstant(@PathVariable Long id,
                                            @RequestParam Long vendorId,
                                            @RequestParam(required=false) String settlementMonth,
+                                           @RequestParam(required=false) String month,
                                            @RequestParam(defaultValue="false") boolean remember) {
-        var row=saveVendorLink(id,vendorId,settlementMonth,remember);
-        LocalDate date=row.getTransactionDate();
-        boolean monthlyMatch=businessPayments.findForPaymentDateRange(date,date).stream()
-            .anyMatch(p->p.getVendor().getId().equals(vendorId)
-                &&p.getAmount().compareTo(row.getIncoming())==0);
-        boolean weeklyMatch=weeklyPayments.findForPaymentDateRange(date,date).stream()
-            .anyMatch(p->p.getVendor().getId().equals(vendorId)
-                &&p.getAmount().compareTo(row.getIncoming())==0);
-        return Map.of("status","saved",
-                      "category",row.getCategory(),
-                      "matchStatus",monthlyMatch||weeklyMatch?"송천 기록 일치 후보":"송천 입금 확인 필요");
+        LinkOutcome outcome=saveVendorLink(id,vendorId,settlementMonth,remember);
+        var row=outcome.row();
+        var samePayer=outcome.affectedRows();
+
+        YearMonth displayMonth;
+        try {
+            displayMonth=month==null||month.isBlank()
+                    ?YearMonth.from(row.getTransactionDate()) : YearMonth.parse(month);
+        } catch(DateTimeParseException ex) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "조회 월 형식이 올바르지 않습니다.");
+        }
+        var monthlyLedger=businessPayments.findForPaymentDateRange(
+                displayMonth.atDay(1),displayMonth.atEndOfMonth());
+        var weeklyLedger=weeklyPayments.findForPaymentDateRange(
+                displayMonth.atDay(1),displayMonth.atEndOfMonth());
+
+        Map<String,String> matchStatuses=new LinkedHashMap<>();
+        for (var entry : samePayer) {
+            if (!YearMonth.from(entry.getTransactionDate()).equals(displayMonth)) continue;
+            boolean monthlyMatch=monthlyLedger.stream().anyMatch(p ->
+                    p.getVendor().getId().equals(vendorId)
+                    && p.getPaymentDate().equals(entry.getTransactionDate())
+                    && p.getAmount().compareTo(entry.getIncoming())==0);
+            boolean weeklyMatch=weeklyLedger.stream().anyMatch(p ->
+                    p.getVendor().getId().equals(vendorId)
+                    && p.getPaymentDate().equals(entry.getTransactionDate())
+                    && p.getAmount().compareTo(entry.getIncoming())==0);
+            matchStatuses.put(entry.getId().toString(),
+                    monthlyMatch||weeklyMatch ? "송천 기록 일치 후보" : "송천 입금 확인 필요");
+        }
+        return Map.of(
+            "status","saved",
+            "category",row.getCategory(),
+            "matchStatus", matchStatuses.getOrDefault(row.getId().toString(),"송천 입금 확인 필요"),
+            "linkedCount",samePayer.size(),
+            "counterparty",row.getCounterparty()==null?"":row.getCounterparty(),
+            "vendorId",vendorId,
+            "batch",remember && row.getCounterparty()!=null && !row.getCounterparty().isBlank(),
+            "matchStatuses",matchStatuses
+        );
     }
 
-    private PersonalBankTransactionEntity saveVendorLink(Long id,Long vendorId,
+    private record LinkOutcome(PersonalBankTransactionEntity row,
+                               List<PersonalBankTransactionEntity> affectedRows) {}
+
+    private LinkOutcome saveVendorLink(Long id,Long vendorId,
                                                String settlementMonth,boolean remember) {
         var row=transactions.findById(id).orElseThrow(
             ()->new org.springframework.web.server.ResponseStatusException(
@@ -221,25 +256,43 @@ public class PersonalLedgerController {
         if(row.getIncoming().signum()<=0)
             throw new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.BAD_REQUEST,"입금 거래만 연결할 수 있습니다.");
-        var vendor=vendors.findById(vendorId).orElseThrow(
+        vendors.findById(vendorId).orElseThrow(
             ()->new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.BAD_REQUEST,"거래처를 찾을 수 없습니다."));
+
         String ym;
         try {
             ym=settlementMonth==null||settlementMonth.isBlank()
                 ?null:YearMonth.parse(settlementMonth).toString();
-        }catch(java.time.format.DateTimeParseException ex) {
+        } catch(DateTimeParseException ex) {
             throw new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.BAD_REQUEST,"정산월 형식이 올바르지 않습니다.");
         }
-        row.link(vendorId,ym);
+        // Do not reset the reconciliation flag on a no-op selection.
+        if(!Objects.equals(row.getVendorId(),vendorId)
+                || !Objects.equals(row.getSettlementMonth(),ym)) row.link(vendorId,ym);
         row.classify("사업 입금");
-        if(remember&&row.getCounterparty()!=null&&!row.getCounterparty().isBlank()){
-            var alias=aliases.findByAlias(row.getCounterparty()).orElse(null);
-            if(alias==null) aliases.save(new PersonalBankAliasEntity(row.getCounterparty(),vendorId));
-            else alias.changeVendor(vendorId);
+
+        String payer=row.getCounterparty();
+        if(!remember || payer==null || payer.isBlank()) {
+            return new LinkOutcome(row,List.of(row));
         }
-        return row;
+
+        // Reconcile only exact-name incoming records; other payers and
+        // outgoing transactions are deliberately not touched.
+        var existing=transactions.findByCounterpartyAndIncomingGreaterThan(payer,BigDecimal.ZERO);
+        for(var entry:existing) {
+            if(entry.getId().equals(row.getId())) continue;
+            // Preserve the individual historical settlement-month allocation.
+            if(!Objects.equals(entry.getVendorId(),vendorId))
+                entry.link(vendorId,entry.getSettlementMonth());
+            entry.classify("사업 입금");
+        }
+
+        var alias=aliases.findByAlias(payer).orElse(null);
+        if(alias==null) aliases.save(new PersonalBankAliasEntity(payer,vendorId));
+        else alias.changeVendor(vendorId);
+        return new LinkOutcome(row,existing);
     }
 
     private static int percentage(BigDecimal value,BigDecimal total){
