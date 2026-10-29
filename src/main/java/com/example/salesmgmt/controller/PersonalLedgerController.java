@@ -44,66 +44,145 @@ public class PersonalLedgerController {
 
     @GetMapping
     @Transactional(readOnly=true)
-    public String page(@RequestParam(required=false) String month,Model model){
+    public String page(@RequestParam(required=false) String month,
+                       @RequestParam(required=false) String account, Model model) {
         YearMonth ym=month==null||month.isBlank()?YearMonth.now():YearMonth.parse(month);
-        var rows=transactions.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(ym.atDay(1),ym.atEndOfMonth());
-        BigDecimal income=rows.stream().map(PersonalBankTransactionEntity::getIncoming).reduce(BigDecimal.ZERO,BigDecimal::add);
-        BigDecimal expense=rows.stream().map(PersonalBankTransactionEntity::getOutgoing).reduce(BigDecimal.ZERO,BigDecimal::add);
-        Map<String,BigDecimal> categories=new TreeMap<>();
-        BigDecimal personalExpense=BigDecimal.ZERO;
-        BigDecimal personalIncome=BigDecimal.ZERO;
-        for(var r:rows) {
-            if(r.getOutgoing().signum()>0&&!List.of("사업 지출","계좌간 이체").contains(r.getCategory())){
-                categories.merge(r.getCategory(),r.getOutgoing(),BigDecimal::add);
-                personalExpense=personalExpense.add(r.getOutgoing());
-            }
-            if(r.getIncoming().signum()>0&&!List.of("사업 입금","계좌간 이체").contains(r.getCategory()))
-                personalIncome=personalIncome.add(r.getIncoming());
+        var accountNumbers=transactions.findDistinctAccounts();
+        String selectedAccount=account==null?"":account.trim();
+        String accountNumber="";
+        if(!selectedAccount.isBlank()) {
+            accountNumber=accountNumbers.stream()
+                .filter(number->accountKey(number).equals(selectedAccount))
+                .findFirst()
+                .orElseThrow(()->new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST,"존재하지 않는 계좌입니다."));
         }
+
+        var allMonthRows=transactions.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(ym.atDay(1),ym.atEndOfMonth());
+        final String selectedNumber=accountNumber;
+        var rows=selectedNumber.isBlank()?allMonthRows:allMonthRows.stream()
+            .filter(tx->selectedNumber.equals(tx.getAccount())).toList();
+
+        List<AccountSummary> accountSummaries=new ArrayList<>();
+        for(String number:accountNumbers) {
+            var list=allMonthRows.stream().filter(tx->number.equals(tx.getAccount())).toList();
+            BigDecimal in=list.stream().map(PersonalBankTransactionEntity::getIncoming)
+                    .reduce(BigDecimal.ZERO,BigDecimal::add);
+            BigDecimal out=list.stream().map(PersonalBankTransactionEntity::getOutgoing)
+                    .reduce(BigDecimal.ZERO,BigDecimal::add);
+            accountSummaries.add(new AccountSummary(accountKey(number),maskedAccount(number),
+                    in,out,in.subtract(out),list.size()));
+        }
+
+        BigDecimal income=BigDecimal.ZERO,expense=BigDecimal.ZERO;
+        BigDecimal personalExpense=BigDecimal.ZERO,personalIncome=BigDecimal.ZERO;
+        BigDecimal pendingExpense=BigDecimal.ZERO,pendingIncome=BigDecimal.ZERO;
+        BigDecimal businessExpense=BigDecimal.ZERO,businessIncome=BigDecimal.ZERO;
+        BigDecimal transferExpense=BigDecimal.ZERO,transferIncome=BigDecimal.ZERO;
+        Map<String,BigDecimal> categories=new TreeMap<>();
+        for(var tx:rows) {
+            BigDecimal in=tx.getIncoming(),out=tx.getOutgoing();
+            income=income.add(in);
+            expense=expense.add(out);
+            String category=tx.getCategory();
+            if(isTransfer(category)) {
+                transferIncome=transferIncome.add(in);
+                transferExpense=transferExpense.add(out);
+            } else if(isBusiness(category)) {
+                businessIncome=businessIncome.add(in);
+                businessExpense=businessExpense.add(out);
+            } else if(isUnclassified(category)) {
+                pendingIncome=pendingIncome.add(in);
+                pendingExpense=pendingExpense.add(out);
+            } else {
+                personalIncome=personalIncome.add(in);
+                personalExpense=personalExpense.add(out);
+                if(out.signum()>0)categories.merge(category,out,BigDecimal::add);
+            }
+        }
+
         var monthlyBankPayments=businessPayments.findForPaymentDateRange(ym.atDay(1),ym.atEndOfMonth());
         var weeklyBankPayments=weeklyPayments.findForPaymentDateRange(ym.atDay(1),ym.atEndOfMonth());
         Map<Long,String> matches=new HashMap<>();
-        for(var r:rows) {
-            if(r.getIncoming().signum()==0) continue;
-            if(r.getVendorId()==null){matches.put(r.getId(),"거래처 미연결");continue;}
-            boolean monthlyMatch=monthlyBankPayments.stream().anyMatch(p->p.getVendor().getId().equals(r.getVendorId())
-                &&p.getPaymentDate().equals(r.getTransactionDate())&&p.getAmount().compareTo(r.getIncoming())==0);
-            boolean weeklyMatch=weeklyBankPayments.stream().anyMatch(p->p.getVendor().getId().equals(r.getVendorId())
-                &&p.getPaymentDate().equals(r.getTransactionDate())&&p.getAmount().compareTo(r.getIncoming())==0);
-            matches.put(r.getId(),monthlyMatch||weeklyMatch?"송천 기록 일치 후보":"송천 입금 확인 필요");
+        for(var tx:rows) {
+            if(tx.getIncoming().signum()==0)continue;
+            if(tx.getVendorId()==null){matches.put(tx.getId(),"거래처 미연결");continue;}
+            boolean monthlyMatch=monthlyBankPayments.stream().anyMatch(p->p.getVendor().getId().equals(tx.getVendorId())
+                &&p.getPaymentDate().equals(tx.getTransactionDate())&&p.getAmount().compareTo(tx.getIncoming())==0);
+            boolean weeklyMatch=weeklyBankPayments.stream().anyMatch(p->p.getVendor().getId().equals(tx.getVendorId())
+                &&p.getPaymentDate().equals(tx.getTransactionDate())&&p.getAmount().compareTo(tx.getIncoming())==0);
+            matches.put(tx.getId(),monthlyMatch||weeklyMatch?"송천 기록 일치 후보":"송천 입금 확인 필요");
         }
 
         List<ChartRow> categoryBars=new ArrayList<>();
         for(var entry:categories.entrySet())categoryBars.add(
             new ChartRow(entry.getKey(),entry.getValue(),percentage(entry.getValue(),personalExpense)));
-        List<YearMonth> periods=new ArrayList<>();
         Map<YearMonth,BigDecimal> monthlyTotals=new LinkedHashMap<>();
         BigDecimal maxMonth=BigDecimal.ZERO;
         for(int offset=5;offset>=0;offset--){
             YearMonth current=ym.minusMonths(offset);
-            periods.add(current);
-            var monthlyRows=current.equals(ym)?rows:transactions.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(current.atDay(1),current.atEndOfMonth());
-            BigDecimal total=monthlyRows.stream()
-                .filter(t->!List.of("사업 지출","계좌간 이체").contains(t.getCategory()))
+            var monthRows=current.equals(ym)?rows:transactions.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(
+                    current.atDay(1),current.atEndOfMonth());
+            BigDecimal total=monthRows.stream()
+                .filter(tx->selectedNumber.isBlank()||selectedNumber.equals(tx.getAccount()))
+                .filter(tx->!isUnclassified(tx.getCategory())&&!isBusiness(tx.getCategory())&&!isTransfer(tx.getCategory()))
                 .map(PersonalBankTransactionEntity::getOutgoing).reduce(BigDecimal.ZERO,BigDecimal::add);
             monthlyTotals.put(current,total);
             if(total.compareTo(maxMonth)>0)maxMonth=total;
         }
         List<ChartRow> monthlyBars=new ArrayList<>();
-        for(YearMonth current:periods)
-            monthlyBars.add(new ChartRow(current.toString(),monthlyTotals.get(current),percentage(monthlyTotals.get(current),maxMonth)));
+        for(var entry:monthlyTotals.entrySet())
+            monthlyBars.add(new ChartRow(entry.getKey().toString(),entry.getValue(),percentage(entry.getValue(),maxMonth)));
+
+        model.addAttribute("selectedAccount",selectedAccount);
+        model.addAttribute("accountSummaries",accountSummaries);
+        model.addAttribute("accountCount",accountNumbers.size());
+        model.addAttribute("scopeTitle",selectedAccount.isBlank()?"전체 계좌 합산":"농협 "+maskedAccount(selectedNumber));
         model.addAttribute("categoryBars",categoryBars);
         model.addAttribute("monthlyBars",monthlyBars);
         model.addAttribute("month",ym.toString());
         model.addAttribute("previousMonth",ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",ym.plusMonths(1).toString());
-        model.addAttribute("rows",rows);model.addAttribute("income",income);model.addAttribute("expense",expense);
-        model.addAttribute("net",income.subtract(expense));model.addAttribute("categories",categories);
-        model.addAttribute("personalExpense",personalExpense);model.addAttribute("personalIncome",personalIncome);
+        model.addAttribute("rows",rows);
+        model.addAttribute("income",income);
+        model.addAttribute("expense",expense);
+        model.addAttribute("net",income.subtract(expense));
+        model.addAttribute("personalExpense",personalExpense);
+        model.addAttribute("personalIncome",personalIncome);
+        model.addAttribute("pendingExpense",pendingExpense);
+        model.addAttribute("pendingIncome",pendingIncome);
+        model.addAttribute("businessExpense",businessExpense);
+        model.addAttribute("businessIncome",businessIncome);
+        model.addAttribute("transferExpense",transferExpense);
+        model.addAttribute("transferIncome",transferIncome);
         model.addAttribute("matches",matches);
         model.addAttribute("vendors",vendors.findAllByOrderByInputNameAsc());
         return "personal-ledger";
     }
+
+    private static boolean isUnclassified(String category) {
+        return category==null||category.isBlank()||category.startsWith("미분류");
+    }
+    private static boolean isTransfer(String category) {
+        return "계좌간 이체".equals(category)||"계좌 간 이체".equals(category);
+    }
+    private static boolean isBusiness(String category) {
+        return "사업 입금".equals(category)||"사업 지출".equals(category);
+    }
+    private static String maskedAccount(String number) {
+        return "•••• "+number.substring(Math.max(0,number.length()-4));
+    }
+    private static String accountKey(String number) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(number.getBytes(StandardCharsets.UTF_8))).substring(0,24);
+        } catch(java.security.NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 algorithm unavailable",ex);
+        }
+    }
+    public record AccountSummary(String key,String label,BigDecimal income,
+                                 BigDecimal expense,BigDecimal net,int count) {}
+
     @PostMapping("/upload")
     @Transactional
     public String upload(@RequestParam("file") List<MultipartFile> files,RedirectAttributes flash){
@@ -164,18 +243,16 @@ public class PersonalLedgerController {
     }
     @PostMapping("/{id}/classify")
     @Transactional
-    public String classify(@PathVariable Long id,@RequestParam String category,@RequestParam(defaultValue="false") boolean remember,@RequestParam String month){
+    public String classify(@PathVariable Long id,@RequestParam String category,
+                           @RequestParam String month,@RequestParam(required=false) String account){
         var row=transactions.findById(id).orElseThrow();
         String sanitized=category.trim();
         if(sanitized.isBlank()) throw new IllegalArgumentException("분류를 입력해주세요.");
         if(sanitized.length()>80)sanitized=sanitized.substring(0,80);
         row.classify(sanitized);
-        if(remember&&row.getCounterparty()!=null&&!row.getCounterparty().isBlank()){
-            var rule=categoryRules.findByCounterparty(row.getCounterparty()).orElse(null);
-            if(rule==null)categoryRules.save(new PersonalBankCategoryRuleEntity(row.getCounterparty(),sanitized));
-            else rule.updateCategory(sanitized);
-        }
-        return "redirect:/personal-ledger?month="+month;
+        // Category changes are per transaction. No hidden "remember" action.
+        return "redirect:/personal-ledger?month="+month+
+                (account==null||account.isBlank()?"":"&account="+account);
     }
     @PostMapping("/{id}/link")
     @Transactional
@@ -183,9 +260,11 @@ public class PersonalLedgerController {
                        @RequestParam Long vendorId,
                        @RequestParam(required=false) String settlementMonth,
                        @RequestParam(defaultValue="false") boolean remember,
-                       @RequestParam String month) {
+                       @RequestParam String month,
+                       @RequestParam(required=false) String account) {
         saveVendorLink(id, vendorId, settlementMonth, remember);
-        return "redirect:/personal-ledger?month="+month;
+        return "redirect:/personal-ledger?month="+month+
+                (account==null||account.isBlank()?"":"&account="+account);
     }
 
     /**
@@ -262,8 +341,10 @@ public class PersonalLedgerController {
 
         String ym;
         try {
+            // No settlement month field in the bank ledger UI. Preserve prior
+            // month allocations if a payer is associated with another vendor.
             ym=settlementMonth==null||settlementMonth.isBlank()
-                ?null:YearMonth.parse(settlementMonth).toString();
+                ?row.getSettlementMonth():YearMonth.parse(settlementMonth).toString();
         } catch(DateTimeParseException ex) {
             throw new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.BAD_REQUEST,"정산월 형식이 올바르지 않습니다.");
