@@ -104,6 +104,21 @@ public class PersonalLedgerController {
             }
         }
 
+        Map<Long,String> transferLabels=new HashMap<>();
+        var counterpartIds=rows.stream()
+            .filter(PersonalBankTransactionEntity::isAutoTransfer)
+            .map(PersonalBankTransactionEntity::getMatchedTransferId)
+            .filter(Objects::nonNull).distinct().toList();
+        if(!counterpartIds.isEmpty()) {
+            Map<Long,PersonalBankTransactionEntity> counterparts=new HashMap<>();
+            transactions.findAllById(counterpartIds).forEach(other->counterparts.put(other.getId(),other));
+            for(var bankRow:rows) {
+                if(!bankRow.isAutoTransfer())continue;
+                var other=counterparts.get(bankRow.getMatchedTransferId());
+                if(other!=null)transferLabels.put(bankRow.getId(),maskedAccount(other.getAccount()));
+            }
+        }
+
         var monthlyBankPayments=businessPayments.findForPaymentDateRange(ym.atDay(1),ym.atEndOfMonth());
         var weeklyBankPayments=weeklyPayments.findForPaymentDateRange(ym.atDay(1),ym.atEndOfMonth());
         Map<Long,String> matches=new HashMap<>();
@@ -159,6 +174,7 @@ public class PersonalLedgerController {
         model.addAttribute("transferExpense",transferExpense);
         model.addAttribute("transferIncome",transferIncome);
         model.addAttribute("autoTransferRows",rows.stream().filter(PersonalBankTransactionEntity::isAutoTransfer).count());
+        model.addAttribute("transferLabels",transferLabels);
         model.addAttribute("matches",matches);
         model.addAttribute("vendors",vendors.findAllByOrderByInputNameAsc());
         return "personal-ledger";
