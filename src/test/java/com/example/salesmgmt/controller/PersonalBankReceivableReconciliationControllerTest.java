@@ -64,10 +64,12 @@ class PersonalBankReceivableReconciliationControllerTest {
         assertThat(row.billed()).isEqualByComparingTo("200000");
         assertThat(row.ledgerPaid()).isEqualByComparingTo("70000");
         assertThat(row.ledgerOutstanding()).isEqualByComparingTo("130000");
-        assertThat(row.allocatedBank()).isEqualByComparingTo("70000");
-        assertThat(row.candidateBank()).isEqualByComparingTo("30000");
+        assertThat(row.allocatedBank()).isEqualByComparingTo("100000");
+        assertThat(row.candidateBank()).isEqualByComparingTo("0");
+        assertThat(row.bankShortfall()).isEqualByComparingTo("100000");
         assertThat(row.receipts()).hasSize(2);
         assertThat(report.ledgerOutstanding()).isEqualByComparingTo("130000");
+        assertThat(report.bankShortfall()).isEqualByComparingTo("100000");
         assertThat(payments.count()).isEqualTo(1);
 
         mvc.perform(get("/personal-ledger/reconciliation").param("month","2026-09")
@@ -76,7 +78,7 @@ class PersonalBankReceivableReconciliationControllerTest {
             .andExpect(view().name("personal-bank-reconciliation"))
             .andExpect(model().attributeExists("report"))
             .andExpect(content().string(org.hamcrest.Matchers.containsString("행복마트")))
-            .andExpect(content().string(org.hamcrest.Matchers.containsString("이 달 대금으로 지정")));
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("정산월 확정")));
     }
 
     @Test void assigningBankReceiptToSeptemberUpdatesOnlyBankAllocationAndCanBeUndone() throws Exception {
@@ -125,6 +127,68 @@ class PersonalBankReceivableReconciliationControllerTest {
             .with(user("work").roles("USER")).with(csrf()).param("month","2026-09"))
             .andExpect(status().isForbidden());
         assertThat(other.getSettlementMonth()).isEqualTo("2026-08");
+    }
+
+    @Test void octoberBankDepositsAutomaticallyApplyToSeptemberWithoutManualAssignment() throws Exception {
+        var vendor=sale("10월입금은9월사용","300000");
+        var october1=receipt("oct-auto-1",vendor.getId(),"2026-10-03","110000",
+            "351-0000-1111-22",null);
+        receipt("oct-auto-2",vendor.getId(),"2026-10-18","90000",
+            "302-0000-2222-33",null);
+        receipt("sept-unassigned-not-sept",vendor.getId(),"2026-09-30","50000",
+            "302-0000-2222-33",null);
+        receipt("nov-unassigned-not-sept",vendor.getId(),"2026-11-01","40000",
+            "351-0000-1111-22",null);
+        receipt("oct-explicit-august",vendor.getId(),"2026-10-19","70000",
+            "351-0000-1111-22","2026-08");
+
+        var actual=service.compare(YearMonth.of(2026,9),LocalDate.of(2026,9,1),
+            LocalDate.of(2026,11,30));
+        var row=actual.vendors().stream().filter(v->vendor.getId().equals(v.vendorId()))
+            .findFirst().orElseThrow();
+        assertThat(row.billed()).isEqualByComparingTo("300000");
+        assertThat(row.allocatedBank()).isEqualByComparingTo("200000");
+        assertThat(row.bankShortfall()).isEqualByComparingTo("100000");
+        assertThat(row.receipts()).hasSize(2);
+        assertThat(row.receipts()).allSatisfy(deposit->{
+            assertThat(deposit.inferredFromFollowingMonth()).isTrue();
+            assertThat(deposit.date().getMonthValue()).isEqualTo(10);
+        });
+        assertThat(october1.getSettlementMonth()).isNull();
+        assertThat(payments.count()).isZero();
+
+        // Search fields default to the following month, not Sep + Oct.
+        mvc.perform(get("/personal-ledger/reconciliation").param("month","2026-09")
+                .with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("from","2026-10-01"))
+            .andExpect(model().attribute("to","2026-10-31"))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("정산월 확정")));
+    }
+
+    @Test void yearBoundaryAndExplicitAllocationStayCorrect() throws Exception {
+        var vendor=vendors.save(new VendorEntity("연말 정산 가맹점","연말 정산 가맹점",true));
+        var order=orders.save(new SalesOrderEntity("year-boundary-"+vendor.getId(),
+            LocalDate.of(2025,12,31),vendor,null,null,null,"test",1));
+        items.save(new SalesItemEntity(order,"일반콩나물",BigDecimal.ONE,new BigDecimal("150000")));
+        var auto=receipt("newyear-jan",vendor.getId(),"2026-01-07","100000",
+            "351-0000-1111-22",null);
+        var explicitlyReassigned=receipt("newyear-other",vendor.getId(),"2026-01-08","20000",
+            "351-0000-1111-22","2026-02");
+
+        var report=service.compare(YearMonth.of(2025,12),LocalDate.of(2026,1,1),
+            LocalDate.of(2026,1,31));
+        var row=report.vendors().stream().filter(v->vendor.getId().equals(v.vendorId()))
+            .findFirst().orElseThrow();
+        assertThat(row.allocatedBank()).isEqualByComparingTo("100000");
+        assertThat(row.bankShortfall()).isEqualByComparingTo("50000");
+        assertThat(auto.getSettlementMonth()).isNull();
+        assertThat(explicitlyReassigned.getSettlementMonth()).isEqualTo("2026-02");
+        mvc.perform(get("/personal-ledger/reconciliation").param("month","2025-12")
+              .with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("from","2026-01-01"))
+            .andExpect(model().attribute("to","2026-01-31"));
     }
 
     @Test void excludesPalgongSupplierPayableFromReceivableComparison(){
