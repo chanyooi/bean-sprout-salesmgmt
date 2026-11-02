@@ -43,7 +43,9 @@ details summary{cursor:pointer;font-weight:650}
 </style></head>
 <body><main class="ledger-wrap">
 <div class="ledger-head">
-<div><a th:href="@{/}">← 송천 대시보드</a><h1>개인 가계부</h1><p class="muted">월별 지출을 사업과 개인으로 나눠서 관리</p></div>
+<div><a th:href="@{/}">← 송천 대시보드</a><h1>개인 가계부</h1><p class="muted">월별 지출을 사업과 개인으로 나눠서 관리</p>
+<p><a class="btn" style="display:inline-block;text-decoration:none;margin-top:10px"
+th:href="@{/personal-ledger/reconciliation(month=${month})}">거래처 입금 대조 · 9월 받을 돈 확인</a></p></div>
 <form class="month-form" method="get" th:action="@{/personal-ledger}">
 <input type="hidden" name="account" th:value="${selectedAccount}">
 <input type="hidden" name="view" th:value="${view}">
