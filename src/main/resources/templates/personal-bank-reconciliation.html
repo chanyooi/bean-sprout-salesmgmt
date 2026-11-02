@@ -52,10 +52,10 @@ details>summary{cursor:pointer;color:#215eae;font-size:12px;font-weight:650;padd
 <div class="card"><span class="muted">9월로 지정된 은행 입금</span><b th:text="${#numbers.formatDecimal(report.allocatedBank,1,'COMMA',0,'POINT')+'원'}">0원</b></div>
 <div class="card"><span class="muted">송천 장부 미수금</span><b th:text="${#numbers.formatDecimal(report.ledgerOutstanding,1,'COMMA',0,'POINT')+'원'}">0원</b></div>
 </div>
-<p class="muted">은행 입금 중 정산월 미지정: <b th:text="${#numbers.formatDecimal(report.candidateBank,1,'COMMA',0,'POINT')+'원'}">0원</b>. 이 금액은 9월 대금인지 확인 전이므로 청구액에서 자동 차감하지 않습니다.</p>
+<p class="muted">입금 기간 중 정산월 미지정: <b th:text="${#numbers.formatDecimal(report.candidateBank,1,'COMMA',0,'POINT')+'원'}">0원</b>. 이 금액은 해당 정산월 대금인지 확인 전이므로 청구액에서 자동 차감하지 않습니다.</p>
 </section>
 <div class="info">
-**비교 기준:** 9월 청구액·장부 입금·미수금은 송천 입금 관리의 9월 정산 자료입니다.
+비교 기준: 정산월 청구액·장부 입금·미수금은 송천 입금 관리의 9월 정산 자료입니다.
 은행 입금은 두 농협 계좌에서 연결해 둔 거래처명으로 모았습니다.
 입금자가 연결돼 있어도 그 돈이 꼭 9월 대금인 것은 아니므로, 정산월 미지정 거래는 '입금 후보'로 표시해요.
 은행 입금은 기존 송천 장부에 자동 등록하지 않습니다.
@@ -65,7 +65,7 @@ details>summary{cursor:pointer;color:#215eae;font-size:12px;font-weight:650;padd
 <p class="muted">장부상 미수금이 큰 순서로 정렬했습니다. 각 거래처의 '은행 입금 내역'을 열면 연결된 계좌 입금을 확인하고 정산월을 지정할 수 있어요.</p>
 <div class="grid-scroll">
 <table>
-<thead><tr><th>거래처</th><th>9월 청구액</th><th>장부 입금</th><th>은행 입금 (9월 지정)</th><th>은행 입금 (월 미지정)</th><th>장부 미수금</th><th>대조 상태</th></tr></thead>
+<thead><tr><th>거래처</th><th>정산월 청구액</th><th>장부 입금</th><th>은행 입금 (9월 지정)</th><th>은행 입금 (월 미지정)</th><th>장부 미수금</th><th>대조 상태</th></tr></thead>
 <tbody>
 <tr th:each="v : ${report.vendors}">
 <td>
