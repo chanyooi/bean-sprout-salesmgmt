@@ -14,8 +14,9 @@ import java.util.stream.Collectors;
 
 /**
  * Read-only comparison of Songcheon monthly receivables and bank transactions.
- * Bank receipts are NOT business payment records. Explicit monthly attribution
- * is required to call a bank deposit confirmed for a settlement month.
+ * Bank receipts are NOT business payment records. Unless a receipt has an
+ * explicit settlement month, cash received in month M is attributed to usage
+ * month M-1. Bank receipts never mutate business ledger payments.
  */
 @Service
 public class PersonalBankReceivableReconciliationService {
@@ -32,16 +33,16 @@ public class PersonalBankReceivableReconciliationService {
 
     public record BankReceipt(Long id,LocalDate date,String account,String payer,
                               BigDecimal amount, String allocatedMonth,boolean assignedToSelected,
-                              String comparisonStatus) {}
+                              boolean inferredFromFollowingMonth,String comparisonStatus) {}
 
     public record VendorComparison(Long vendorId,String name,String cycle,
                                    BigDecimal billed,BigDecimal ledgerPaid,BigDecimal ledgerOutstanding,
-                                   BigDecimal allocatedBank,BigDecimal candidateBank,
+                                   BigDecimal allocatedBank,BigDecimal candidateBank,BigDecimal bankShortfall,
                                    List<BankReceipt> receipts,String status) {}
 
     public record Comparison(YearMonth month,LocalDate from,LocalDate to,
                              BigDecimal billed,BigDecimal ledgerPaid,BigDecimal ledgerOutstanding,
-                             BigDecimal allocatedBank,BigDecimal candidateBank,
+                             BigDecimal allocatedBank,BigDecimal candidateBank,BigDecimal bankShortfall,
                              int missingVendors,List<VendorComparison> vendors) {}
 
     @Transactional(readOnly=true)
@@ -54,9 +55,7 @@ public class PersonalBankReceivableReconciliationService {
                 bankTransactions.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(from,to).stream()
                   .filter(t->t.getIncoming().signum()>0 && t.getVendorId()!=null)
                   .filter(t->!t.isAutoTransfer())
-                  .filter(t->t.getSettlementMonth()==null
-                      || t.getSettlementMonth().isBlank()
-                      || month.toString().equals(t.getSettlementMonth()))
+                  .filter(t->isReceiptForUsageMonth(t,month))
                   .collect(Collectors.groupingBy(PersonalBankTransactionEntity::getVendorId));
 
         Map<Long,MonthlyReceivableReport.VendorRow> reportVendors=new LinkedHashMap<>();
@@ -72,7 +71,7 @@ public class PersonalBankReceivableReconciliationService {
         vendorIds.addAll(bankByVendor.keySet());
 
         List<VendorComparison> result=new ArrayList<>();
-        BigDecimal billTotal=ZERO,paidTotal=ZERO,outstandingTotal=ZERO,allocatedTotal=ZERO,candidateTotal=ZERO;
+        BigDecimal billTotal=ZERO,paidTotal=ZERO,outstandingTotal=ZERO,allocatedTotal=ZERO,candidateTotal=ZERO,shortfallTotal=ZERO;
         int missing=0;
         for(Long vendorId:vendorIds){
             var vendorRow=reportVendors.get(vendorId);
@@ -83,9 +82,11 @@ public class PersonalBankReceivableReconciliationService {
             List<BankReceipt> receipts=new ArrayList<>();
             BigDecimal allocated=ZERO,candidate=ZERO;
             for(var row:bankRows){
-                boolean assigned=month.toString().equals(row.getSettlementMonth());
-                if(assigned)allocated=allocated.add(row.getIncoming());
-                else candidate=candidate.add(row.getIncoming());
+                // Explicit allocations take precedence. Without one, a
+                // following-month deposit is automatically for this usage month.
+                boolean inferred=row.getSettlementMonth()==null||row.getSettlementMonth().isBlank();
+                boolean assigned=!inferred;
+                allocated=allocated.add(row.getIncoming());
 
                 boolean ledgerMatch=ledgerPayments.stream().anyMatch(payment->
                     vendorId.equals(payment.vendorId()) &&
@@ -93,27 +94,37 @@ public class PersonalBankReceivableReconciliationService {
                     row.getIncoming().compareTo(payment.amount())==0);
                 receipts.add(new BankReceipt(row.getId(),row.getTransactionDate(),
                     maskedAccount(row.getAccount()),row.getCounterparty(),row.getIncoming(),
-                    row.getSettlementMonth(),assigned,
+                    row.getSettlementMonth(),assigned,inferred,
                     ledgerMatch?"장부 일치 후보":"장부 확인 필요"));
             }
             String name=vendorRow!=null?vendorRow.vendorName():"거래처 #"+vendorId;
             String cycle=vendorRow!=null?("WEEKLY".equals(vendorRow.paymentCycle().name())?"주별":"월별"):"매출 기록 없음";
-            String status=ledgerOutstanding.signum()>0
-                ? (allocated.signum()>0 || candidate.signum()>0?"입금 대조 필요":"장부 미수금")
-                : (billed.signum()==0?"청구 내역 없음":"장부상 정산완료");
-            if(ledgerOutstanding.signum()>0)missing++;
+            BigDecimal bankShortfall=billed.subtract(allocated).max(ZERO);
+            String status=billed.signum()==0
+                ? (allocated.signum()>0?"청구액 없이 은행 입금":"청구 내역 없음")
+                : allocated.signum()==0?"은행 미입금"
+                : bankShortfall.signum()>0?"은행 일부입금"
+                : allocated.compareTo(billed)>0?"은행 초과입금 확인":"은행 입금 확인";
+            if(bankShortfall.signum()>0)missing++;
             result.add(new VendorComparison(vendorId,name,cycle,billed,ledgerPaid,ledgerOutstanding,
-                    allocated,candidate,List.copyOf(receipts),status));
+                    allocated,candidate,bankShortfall,List.copyOf(receipts),status));
             billTotal=billTotal.add(billed);
             paidTotal=paidTotal.add(ledgerPaid);
             outstandingTotal=outstandingTotal.add(ledgerOutstanding);
             allocatedTotal=allocatedTotal.add(allocated);
             candidateTotal=candidateTotal.add(candidate);
+            shortfallTotal=shortfallTotal.add(bankShortfall);
         }
-        result.sort(Comparator.comparing(VendorComparison::ledgerOutstanding).reversed()
+        result.sort(Comparator.comparing(VendorComparison::bankShortfall).reversed()
                   .thenComparing(VendorComparison::name));
         return new Comparison(month,from,to,billTotal,paidTotal,outstandingTotal,
-                              allocatedTotal,candidateTotal,missing,List.copyOf(result));
+                              allocatedTotal,candidateTotal,shortfallTotal,missing,List.copyOf(result));
+    }
+
+    private static boolean isReceiptForUsageMonth(PersonalBankTransactionEntity row, YearMonth usageMonth) {
+        String explicit=row.getSettlementMonth();
+        if(explicit!=null&&!explicit.isBlank())return usageMonth.toString().equals(explicit);
+        return YearMonth.from(row.getTransactionDate()).minusMonths(1).equals(usageMonth);
     }
 
     private static String maskedAccount(String account){
