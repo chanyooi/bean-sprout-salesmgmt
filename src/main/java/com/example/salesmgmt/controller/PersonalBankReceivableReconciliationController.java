@@ -34,7 +34,7 @@ public class PersonalBankReceivableReconciliationController {
                        @RequestParam(required=false) String from,
                        @RequestParam(required=false) String to, Model model){
         YearMonth ym=parseMonth(month);
-        LocalDate start=parseDate(from,ym.atDay(1));
+        LocalDate start=parseDate(from,ym.plusMonths(1).atDay(1));
         LocalDate end=parseDate(to,ym.plusMonths(1).atEndOfMonth());
         var report=reconciliationService.compare(ym,start,end);
         model.addAttribute("report",report);
@@ -53,7 +53,7 @@ public class PersonalBankReceivableReconciliationController {
                          @RequestParam(defaultValue="true") boolean assign,
                          RedirectAttributes messages){
         YearMonth selected=parseMonth(month);
-        LocalDate start=parseDate(from,selected.atDay(1));
+        LocalDate start=parseDate(from,selected.plusMonths(1).atDay(1));
         LocalDate end=parseDate(to,selected.plusMonths(1).atEndOfMonth());
         // Validate parameters before altering any bank record.
         reconciliationService.compare(selected,start,end);
