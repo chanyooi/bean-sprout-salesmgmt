@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>표준재무제표 입력 · 송천</title>
+    <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20261109_1)}">
+    <style>
+        *{box-sizing:border-box}
+        body{margin:0;background:#f4f7fc;color:#25354d;font:14px/1.55 system-ui,-apple-system,'Malgun Gothic',sans-serif}
+        a{color:#2369c7;text-decoration:none}
+        .std-wrap{max-width:1380px;margin:22px auto;padding:0 22px 64px}
+        .std-top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px}
+        h1{font-size:30px;letter-spacing:-.045em;margin:4px 0}
+        h2{font-size:20px;margin:0 0 5px}
+        .std-muted{color:#718096}
+        .std-small{font-size:12px;color:#73839a;margin:6px 0}
+        .std-panel{background:#fff;border:1px solid #e0e8f2;border-radius:17px;padding:20px 22px;margin-bottom:16px}
+        .std-link,.std-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 15px;border-radius:10px;border:1px solid #d8e1ed;background:#fff;font:inherit;font-weight:700;color:#2a537f;cursor:pointer;text-decoration:none}
+        .std-link.primary,.std-button.primary{background:#2879ed;border-color:#2879ed;color:#fff}
+        .std-button:hover,.std-link:hover{filter:brightness(.975)}
+        .std-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+        .std-form-year{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+        .std-form-year label{font-weight:700;color:#64738a}
+        input[type=number]{font:inherit;padding:9px 11px;border:1px solid #ccd9e8;border-radius:9px;background:#fff}
+        .std-form-year input{width:110px}
+        .std-tabs{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px}
+        .std-tab{display:flex;flex-direction:column;gap:3px;flex:1 1 210px;padding:14px 16px;background:#fff;border:1px solid #dfe8f4;border-radius:13px;font-weight:800;color:#3b4f68}
+        .std-tab small{font-weight:450;color:#8190a4}
+        .std-tab.active{background:#eaf2ff;border-color:#8bbaf9;color:#2469c3}
+        .std-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+        .std-metric{background:#f8fbff;border:1px solid #e7eef7;border-radius:11px;padding:14px}
+        .std-metric span{display:block;color:#697d98;font-size:12px}
+        .std-metric strong{display:block;margin-top:5px;font-size:21px;font-weight:800;letter-spacing:-.045em;overflow-wrap:anywhere}
+        .std-metric.unbalanced{background:#fff7ee;border-color:#f1d7b4}
+        .std-alert{padding:12px 14px;border-radius:11px;background:#e9f8f1;color:#287352;margin-bottom:16px;font-weight:680}
+        .std-alert.error{background:#fff1f1;color:#ba4040}
+        .std-info{font-size:12px;background:#f3f7ff;border:1px solid #e5efff;color:#4c6890;border-radius:10px;padding:12px 14px;line-height:1.7;margin:10px 0 18px}
+        .std-table-wrap{overflow:auto}
+        .std-table{width:100%;border-collapse:collapse;min-width:620px}
+        .std-table th{background:#f1f5fb;color:#5a718d;text-align:left;font-weight:770;font-size:12px;padding:12px 13px;border-bottom:1px solid #dfe8f1}
+        .std-table td{border-bottom:1px solid #edf1f6;padding:8px 13px;vertical-align:middle}
+        .std-table tr:last-child td{border-bottom:0}
+        .std-table .amount{text-align:right;min-width:200px}
+        .std-table input{width:100%;max-width:220px;min-width:140px;text-align:right;border-radius:8px;font:inherit;padding:9px 10px;font-variant-numeric:tabular-nums}
+        .std-table input:focus{outline:2px solid #aecfff;outline-offset:1px}
+        .std-table .sum{font-weight:850;color:#174982;font-size:15px;font-variant-numeric:tabular-nums}
+        .std-table .section td{background:#f8fbff;font-weight:800}
+        .std-table .code{width:75px;min-width:75px;color:#7d8ba0;font-variant-numeric:tabular-nums}
+        .std-table .label{min-width:270px}
+        .std-table .tag{font-size:11px;color:#8b9ab0;white-space:nowrap}
+        .std-table .editable{background:#fffef6}
+        .std-table .calculated{background:#f7fbff}
+        .std-save{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:20px}
+        .std-footer-note{font-size:12px;color:#6f8097;margin-top:12px}
+        @media(max-width:900px){.std-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.std-wrap{padding:0 12px}.std-panel{padding:16px}}
+        @media(max-width:580px){h1{font-size:25px}.std-summary{grid-template-columns:1fr}.std-metric strong{font-size:20px}.std-table th,.std-table td{padding:9px 7px}.std-table .amount{min-width:160px}.std-table input{min-width:140px}}
+    </style>
+</head>
+<body>
+<main class="std-wrap">
+    <header class="std-top">
+        <div>
+            <a th:href="@{/}">← 송천 대시보드</a>
+            <h1>표준재무제표 · 복식부기</h1>
+            <p class="std-muted">2025년 홈택스 표준재무제표증명 양식의 항목·코드를 참고한 연간 수기 입력</p>
+        </div>
+        <div class="std-actions">
+            <a class="std-link" th:href="@{/bookkeeping/monthly-view(year=${year},month=1)}">기존 월별 장부</a>
+            <a class="std-link primary" th:href="@{/bookkeeping/export(year=${year})}">전체 엑셀 다운로드 ↓</a>
+        </div>
+    </header>
+
+    <div class="std-alert" th:if="${bookkeepingMessage}" th:text="${bookkeepingMessage}">저장 성공</div>
+    <div class="std-alert error" th:if="${bookkeepingError}" th:text="${bookkeepingError}">저장 실패</div>
+
+    <section class="std-panel">
+        <div class="std-actions" style="justify-content:space-between">
+            <div>
+                <h2>작성 연도</h2>
+                <p class="std-small">2025년 제출 서식의 계정과목을 기준으로 입력합니다. 2026년 등 다른 연도도 선택할 수 있습니다.</p>
+            </div>
+            <form class="std-form-year" method="get" th:action="@{/bookkeeping}">
+                <label>연도
+                    <input type="number" min="2020" max="2100" name="year" th:value="${year}" required>
+                </label>
+                <input type="hidden" name="type" th:value="${type}">
+                <button class="std-button" type="submit">연도 조회</button>
+            </form>
+        </div>
+    </section>
+
+    <nav class="std-tabs" aria-label="재무제표 양식 선택">
+        <a th:each="kind : ${types}" class="std-tab"
+           th:classappend="${kind == type} ? ' active' : ''"
+           th:href="@{/bookkeeping(year=${year},type=${kind})}">
+            <span th:text="${kind.label}">표준재무제표</span>
+            <small th:text="${kind.description}">양식 설명</small>
+        </a>
+    </nav>
+
+    <section class="std-panel">
+        <h2>연간 결산 현황 <span class="std-small" th:text="|${year}년 귀속|">2026년</span></h2>
+        <div class="std-summary">
+            <div class="std-metric"><span>제품·상품 등 매출액</span><strong th:text="|${#numbers.formatDecimal(sales,0,'COMMA',0,'POINT')}원|">0원</strong></div>
+            <div class="std-metric"><span>당기제품제조원가</span><strong th:text="|${#numbers.formatDecimal(manufacturingCost,0,'COMMA',0,'POINT')}원|">0원</strong></div>
+            <div class="std-metric"><span>당기순손익</span><strong th:text="|${#numbers.formatDecimal(netIncome,0,'COMMA',0,'POINT')}원|">0원</strong></div>
+            <div class="std-metric" th:classappend="${balanceDifference.signum()!=0} ? ' unbalanced' : ''">
+                <span>재무상태표 대차차액 (0원 목표)</span><strong th:text="|${#numbers.formatDecimal(balanceDifference,0,'COMMA',0,'POINT')}원|">0원</strong>
+            </div>
+        </div>
+        <p class="std-footer-note">자산총계 <strong th:text="|${#numbers.formatDecimal(assets,0,'COMMA',0,'POINT')}원|">0원</strong> / 부채 및 자본총계 <strong th:text="|${#numbers.formatDecimal(liabilitiesEquity,0,'COMMA',0,'POINT')}원|">0원</strong>. 입력이 없을 때 0원은 완료를 뜻하지 않습니다.</p>
+    </section>
+
+    <section class="std-panel">
+        <div class="std-actions" style="justify-content:space-between">
+            <div>
+                <h2 th:text="|${type.label} 입력|">재무제표 입력</h2>
+                <p class="std-small" th:text="|홈택스 코드 ${fieldCount}개 · 직접 입력 항목 중 ${filled}개 입력|">작성</p>
+            </div>
+            <span style="font-size:12px;color:#647996">노란 칸 = 수기 입력 · 파란 칸 = 자동 계산</span>
+        </div>
+
+        <p class="std-info" th:if="${type.name()=='COST'}">
+            2025년 표준원가명세서(제조원가명세서)의 항목 그대로 구성했습니다.
+            콩 매입액은 ‘당기재료매입액(03)’, 일용직 인건비는 ‘일용급여(08)’, 전기료는 ‘전력비(12)’에 입력하세요.
+            재고와 결산조정이 있으면 기초·기말 재고 항목도 입력해야 합니다.
+        </p>
+        <p class="std-info" th:if="${type.name()=='INCOME'}">
+            매출은 ‘제품매출(03)’에 입력하고 판매비·관리비는 원가명세서에 이미 포함된 제조경비와 중복되지 않도록 구분해주세요.
+            ‘당기총원가(17)’는 원가명세서 ‘당기제품제조원가(42)’에서 자동 반영됩니다.
+        </p>
+        <p class="std-info" th:if="${type.name()=='BALANCE'}">
+            통장잔액·외상매출채권·원재료 재고·임차보증금 등은 결산일 현재 실제 잔액으로 입력하세요.
+            당기순이익(89)은 손익계산서의 당기순손익(99)을 자동 참조합니다.
+        </p>
+
+        <form method="post" th:action="@{/bookkeeping/standard/save}">
+            <input type="hidden" name="year" th:value="${year}">
+            <input type="hidden" name="type" th:value="${type}">
+            <div class="std-table-wrap">
+                <table class="std-table">
+                    <thead><tr><th>코드</th><th>계정과목 (2025년 양식 기준)</th><th class="amount">금액 (원)</th><th>입력 방식</th></tr></thead>
+                    <tbody>
+                        <tr th:each="row : ${rows}" th:classappend="${row.indent==0} ? ' section' : ''">
+                            <td class="code" th:text="${row.code}">01</td>
+                            <td class="label">
+                                <span th:style="|padding-left: ${row.indent*14}px|" th:text="${row.label}">계정과목</span>
+                            </td>
+                            <td class="amount" th:classappend="${row.computed} ? ' calculated' : ' editable'">
+                                <strong class="sum" th:if="${row.computed}"
+                                        th:text="|${#numbers.formatDecimal(row.amount,0,'COMMA',0,'POINT')}|">0</strong>
+                                <input th:unless="${row.computed}" th:name="|value_${row.code}|"
+                                       th:value="${row.entered}" type="number" inputmode="decimal" step="1"
+                                       min="-9999999999999" max="9999999999999" placeholder="미입력" aria-label="금액 입력">
+                            </td>
+                            <td class="tag" th:text="${row.computed} ? '자동 계산' : '직접 입력'">구분</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="std-save">
+                <p class="std-small">저장하면 합계와 연결된 다른 양식의 금액이 다시 계산됩니다. 빈칸은 입력값이 없는 상태로 관리됩니다.</p>
+                <button class="std-button primary" type="submit">입력 금액 저장 · 자동 계산</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="std-panel">
+        <h2>엑셀 파일</h2>
+        <p class="std-muted">3개 표준재무제표 양식에 홈택스 계정 코드와 합계 수식을 넣어 다운로드합니다. 기존 월별 수기장부와 분개장은 별도 시트로 함께 보존됩니다.</p>
+        <div class="std-actions" style="margin-top:13px">
+            <a class="std-link primary" th:href="@{/bookkeeping/export(year=${year})}">표준재무제표 엑셀 다운로드 (.xlsx)</a>
+            <a class="std-link" th:href="@{/bookkeeping/monthly-view(year=${year},month=1)}">기존 월별 입력 열기</a>
+        </div>
+        <p class="std-footer-note">참고: 이 사이트에서 작성한 파일은 홈택스에서 발급한 공식 표준재무제표증명이 아닙니다. 연말 기초·기말 잔액과 결산자료를 점검해야 합니다.</p>
+    </section>
+</main>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261109_1)}"></script>
+</body>
+</html>
