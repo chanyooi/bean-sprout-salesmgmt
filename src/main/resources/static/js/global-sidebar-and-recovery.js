@@ -13,6 +13,7 @@
         if (path.startsWith('/profit') || path.startsWith('/bean-usage')) return 'profit';
         if (path.startsWith('/admin/users')) return 'users';
         if (path.startsWith('/personal-ledger')) return 'personal-ledger';
+        if (path.startsWith('/bookkeeping')) return 'bookkeeping';
         return '';
     }
 
@@ -244,6 +245,28 @@
         fetch('/personal-ledger/access', {credentials: 'same-origin', cache: 'no-store'})
             .then(response => { if (response.status === 204) addPersonalLedgerMenu(); })
             .catch(() => { /* Keep the private menu hidden when the check fails. */ });
+    }
+
+    // 수기 복식부기 메뉴도 관리자에게만 표시. 기존 매출/가계부와 독립.
+    function addManualBookkeepingMenu() {
+        const desktopNav = document.querySelector('.desktop-global-sidebar .dgs-nav');
+        if (desktopNav && !desktopNav.querySelector('a[href="/bookkeeping"]')) {
+            desktopNav.insertAdjacentHTML('beforeend',
+                    link('/bookkeeping', 'ledger', '복식부기', '수기 입력 · 엑셀 저장', 'bookkeeping', 'indigo'));
+        }
+        const mobileNav = document.querySelector('.sc-mobile-drawer .sc-drawer-nav, .sp-mobile-drawer .sp-drawer-nav');
+        if (mobileNav && !mobileNav.querySelector('a[href="/bookkeeping"]')) {
+            mobileNav.insertAdjacentHTML('beforeend',
+                    mobileCard('/bookkeeping', 'ledger', '복식부기', '수기 입력 · 엑셀 저장', 'bookkeeping', 'indigo'));
+        }
+    }
+
+    if (path.startsWith('/bookkeeping')) {
+        addManualBookkeepingMenu();
+    } else {
+        fetch('/bookkeeping/access', {credentials: 'same-origin', cache: 'no-store'})
+            .then(response => { if (response.status === 204) addManualBookkeepingMenu(); })
+            .catch(() => { /* 권한 확인 실패 시 관리자 메뉴 숨김 */ });
     }
 
     removeRedundantHeroQuickNav();
