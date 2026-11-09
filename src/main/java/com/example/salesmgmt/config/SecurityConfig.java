@@ -39,6 +39,8 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/admin/**",
                                         "/personal-ledger/**",
+                                        "/bookkeeping",
+                                        "/bookkeeping/**",
                                         "/upload/**",
                                         "/excel/import/**",
                                         "/daily-entry/**",
