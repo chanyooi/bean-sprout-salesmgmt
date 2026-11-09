@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>복식부기 수기 장부 · 송천</title>
+    <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20261109_1)}">
+    <style>
+        *{box-sizing:border-box}
+        body{margin:0;background:#f4f7fc;color:#253449;font:14px/1.55 system-ui,-apple-system,'Malgun Gothic',sans-serif}
+        a{color:#245dba}
+        .book-wrap{max-width:1430px;margin:24px auto;padding:0 24px 64px}
+        .book-top{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:22px}
+        .book-top h1{font-size:29px;margin:4px 0 4px;letter-spacing:-.045em}
+        .muted{color:#708096}
+        .book-note{font-size:12px;color:#708096;margin:6px 0}
+        .book-panel{background:#fff;border:1px solid #e2e8f1;border-radius:18px;padding:22px;margin:0 0 16px;box-shadow:0 4px 15px rgba(23,46,79,.035)}
+        .book-panel h2{font-size:19px;margin:0 0 8px}
+        .book-flex{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+        .book-spread{justify-content:space-between}
+        .book-btn,.book-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;border-radius:10px;font-weight:750;padding:10px 16px;min-height:43px;border:1px solid #d5dfed;cursor:pointer;background:#fff;color:#2a4466;font:inherit;font-weight:750}
+        .book-btn.primary,.book-link.primary{border-color:#2571e6;background:#2879f0;color:#fff}
+        .book-btn.danger{border-color:#f3d6d6;background:#fff8f8;color:#b24444;padding:6px 11px;min-height:34px}
+        input,select{border:1px solid #ccd9e7;border-radius:9px;min-height:41px;padding:8px 10px;font:inherit;color:#253449;background:#fff}
+        input:focus,select:focus{outline:2px solid #bbd6ff;outline-offset:1px}
+        label{font-size:13px;font-weight:650;color:#50647b}
+        .book-search{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end}
+        .book-search label{display:flex;flex-direction:column;gap:4px}
+        .book-search input{width:104px}
+        .book-search select{min-width:93px}
+        .book-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0 0}
+        .book-stat{border:1px solid #e6edf6;background:#f9fbff;border-radius:12px;padding:17px}
+        .book-stat span{color:#637892;font-size:12px;display:block}
+        .book-stat strong{font-size:23px;letter-spacing:-.04em;overflow-wrap:anywhere}
+        .book-table-wrap{overflow:auto}
+        .book-table{width:100%;border-collapse:collapse;min-width:640px}
+        .book-table th{text-align:left;font-size:12px;color:#657891;background:#f5f8fc;padding:12px;border-bottom:1px solid #e2e9f3}
+        .book-table td{padding:9px 12px;border-bottom:1px solid #edf1f6;vertical-align:middle}
+        .book-table tr:last-child td{border-bottom:0}
+        .book-table .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+        .book-table .amount-input{display:block;width:100%;max-width:210px;margin-left:auto;text-align:right;font-variant-numeric:tabular-nums}
+        .book-table .account{font-weight:670}
+        .book-head-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+        .book-flash{padding:13px 16px;margin:0 0 16px;border-radius:12px;background:#e7f7ef;color:#236b49;font-weight:650}
+        .book-flash.error{background:#fff1f1;color:#ad3333}
+        .book-journal{display:grid;grid-template-columns:minmax(128px,.8fr) minmax(150px,1.4fr) 1fr 1fr minmax(130px,.85fr) auto;gap:10px;align-items:end}
+        .book-journal label{display:flex;flex-direction:column;gap:5px;min-width:0}
+        .book-journal input,.book-journal select{width:100%;min-width:0}
+        .book-badge{display:inline-block;padding:3px 9px;border-radius:7px;background:#eff5ff;color:#3c66a3;font-weight:700;font-size:12px}
+        .book-empty{padding:20px 12px;text-align:center;color:#75859a}
+        @media(max-width:1000px){.book-journal{grid-template-columns:repeat(2,minmax(0,1fr))}.book-journal .book-btn{min-height:41px}}
+        @media(max-width:700px){.book-wrap{padding:0 12px 45px;margin:16px auto}.book-panel{padding:16px}.book-top h1{font-size:24px}.book-stats{grid-template-columns:1fr}.book-stat strong{font-size:22px}.book-journal{grid-template-columns:1fr}.book-top{align-items:flex-start}}
+    </style>
+</head>
+<body>
+<main class="book-wrap">
+    <div class="book-top">
+        <div>
+            <a th:href="@{/}">← 송천 대시보드</a>
+            <h1>복식부기 수기 장부</h1>
+            <p class="muted">기존 매출·매입·개인 가계부와 연결하지 않는 독립 장부입니다.</p>
+        </div>
+        <a class="book-link primary" th:href="@{/bookkeeping/export(year=${year})}">선택 연도 엑셀 다운로드 ↓</a>
+    </div>
+
+    <p class="book-flash" th:if="${bookkeepingMessage}" th:text="${bookkeepingMessage}">저장되었습니다.</p>
+    <p class="book-flash error" th:if="${bookkeepingError}" th:text="${bookkeepingError}">오류</p>
+
+    <section class="book-panel">
+        <div class="book-head-actions">
+            <div>
+                <h2>조회할 월 선택</h2>
+                <p class="book-note">월별 수기 금액과 거래별 분개는 사이트 DB에 저장됩니다.</p>
+            </div>
+            <form method="get" th:action="@{/bookkeeping}" class="book-search">
+                <label>연도 <input type="number" name="year" min="2020" max="2100" required th:value="${year}"></label>
+                <label>월
+                    <select name="month">
+                        <option th:each="m : ${#numbers.sequence(1,12)}"
+                                th:value="${m}" th:text="|${m}월|" th:selected="${m == month}">1월</option>
+                    </select>
+                </label>
+                <button class="book-btn" type="submit">조회</button>
+            </form>
+        </div>
+        <div class="book-stats">
+            <div class="book-stat"><span>선택 월 매출 입력액</span><strong th:text="|${#numbers.formatDecimal(income,0,'COMMA',0,'POINT')}원|">0원</strong></div>
+            <div class="book-stat"><span>선택 월 경비 입력액</span><strong th:text="|${#numbers.formatDecimal(costs,0,'COMMA',0,'POINT')}원|">0원</strong></div>
+            <div class="book-stat"><span>단순 차액 (결산 전 참고)</span><strong th:text="|${#numbers.formatDecimal(difference,0,'COMMA',0,'POINT')}원|">0원</strong></div>
+        </div>
+    </section>
+
+    <section class="book-panel">
+        <div class="book-head-actions">
+            <div>
+                <h2 th:text="|${year}년 ${month}월 · 항목별 금액 입력|">월별 금액 입력</h2>
+                <p class="book-note">실제 금액만 입력하고 저장하세요. 입력하지 않은 항목은 0원으로 저장됩니다.</p>
+            </div>
+            <span class="book-badge">직접 입력</span>
+        </div>
+        <form method="post" th:action="@{/bookkeeping/monthly}">
+            <input type="hidden" name="year" th:value="${year}">
+            <input type="hidden" name="month" th:value="${month}">
+            <div class="book-table-wrap">
+                <table class="book-table">
+                    <thead><tr><th>계정 항목</th><th class="num">이번 달 입력액 (원)</th><th class="num">올해 입력 합계 (원)</th></tr></thead>
+                    <tbody>
+                        <tr th:each="row : ${rows}">
+                            <td class="account" th:text="${row.label}">계정</td>
+                            <td>
+                                <input class="amount-input" type="number" step="1" inputmode="numeric"
+                                       min="-9999999999999" max="9999999999999"
+                                       th:name="|amount_${row.code}|" th:value="${row.value}" aria-label="금액 입력"
+                                       required>
+                            </td>
+                            <td class="num" th:text="|${#numbers.formatDecimal(row.annualTotal,0,'COMMA',0,'POINT')}원|">0원</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="book-flex book-spread" style="margin-top:18px">
+                <p class="book-note">월별 금액 합계는 분개장에 자동 반영되지 않습니다. 중복기록을 방지하기 위해 별도 관리합니다.</p>
+                <button type="submit" class="book-btn primary">월별 금액 저장</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="book-panel">
+        <h2>차변·대변 분개 직접 입력 <span class="book-badge">선택사항</span></h2>
+        <p class="book-note">정식 복식부기 기록이 필요할 때 거래별로 기록하세요. 한 거래의 차변과 대변을 같은 금액으로 저장합니다.</p>
+        <form method="post" th:action="@{/bookkeeping/journal}" class="book-journal" style="margin:18px 0">
+            <input type="hidden" name="year" th:value="${year}">
+            <input type="hidden" name="month" th:value="${month}">
+            <label>거래일<input type="date" name="entryDate" th:value="${today}" required></label>
+            <label>적요<input type="text" name="description" maxlength="240" placeholder="예: 11월 전기료" required></label>
+            <label>차변 계정
+                <select name="debitAccount" required><option value="">선택</option><option th:each="acc : ${accounts}" th:value="${acc}" th:text="${acc}">계정</option></select>
+            </label>
+            <label>대변 계정
+                <select name="creditAccount" required><option value="">선택</option><option th:each="acc : ${accounts}" th:value="${acc}" th:text="${acc}">계정</option></select>
+            </label>
+            <label>금액(원)<input type="number" name="amount" min="1" step="1" placeholder="500000" required></label>
+            <button type="submit" class="book-btn primary">분개 추가</button>
+        </form>
+        <div class="book-table-wrap">
+            <table class="book-table">
+                <thead><tr><th>거래일</th><th>적요</th><th>차변</th><th>대변</th><th class="num">금액</th><th>관리</th></tr></thead>
+                <tbody>
+                    <tr th:each="entry : ${entries}">
+                        <td th:text="${entry.entryDate}">2026-11-09</td>
+                        <td th:text="${entry.description}">전기료</td>
+                        <td th:text="${entry.debitAccount}">전력비</td>
+                        <td th:text="${entry.creditAccount}">보통예금</td>
+                        <td class="num" th:text="|${#numbers.formatDecimal(entry.amount,0,'COMMA',0,'POINT')}원|">0원</td>
+                        <td>
+                            <form method="post" th:action="@{/bookkeeping/journal/{id}/delete(id=${entry.id})}">
+                                <input type="hidden" name="year" th:value="${year}">
+                                <input type="hidden" name="month" th:value="${month}">
+                                <button type="submit" class="book-btn danger" onclick="return confirm('이 분개를 삭제할까요?')">삭제</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(entries)}"><td colspan="6" class="book-empty">아직 이 달에 입력된 분개가 없습니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="book-panel">
+        <div class="book-head-actions">
+            <div>
+                <h2>엑셀 다운로드</h2>
+                <p class="book-note">현재 선택한 연도의 모든 달을 합쳐 <strong>월별금액입력 · 분개장 · 분개계정별집계 · 작성안내</strong> 네 시트로 내려받습니다.</p>
+            </div>
+            <a class="book-link primary" th:href="@{/bookkeeping/export(year=${year})}">엑셀 다운로드 (.xlsx)</a>
+        </div>
+        <p class="book-note">이 엑셀은 홈택스에 바로 업로드하는 신고서가 아닙니다. 분개장과 월별 입력표는 별도 자료이며, 기초잔액·재고·결산 조정을 확인해야 정식 재무제표가 됩니다.</p>
+    </section>
+</main>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261109_1)}"></script>
+</body>
+</html>
