@@ -7,6 +7,7 @@ import com.example.salesmgmt.entity.ManualJournalEntryEntity;
 import com.example.salesmgmt.repository.ManualBookkeepingMonthlyRepository;
 import com.example.salesmgmt.repository.ManualJournalEntryRepository;
 import com.example.salesmgmt.service.ManualBookkeepingExcelService;
+import com.example.salesmgmt.service.StandardStatementExcelService;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,13 +30,16 @@ public class ManualBookkeepingController {
     private final ManualBookkeepingMonthlyRepository monthlyRepository;
     private final ManualJournalEntryRepository journalRepository;
     private final ManualBookkeepingExcelService excelService;
+    private final StandardStatementExcelService standardExcelService;
 
     public ManualBookkeepingController(ManualBookkeepingMonthlyRepository monthlyRepository,
                                        ManualJournalEntryRepository journalRepository,
-                                       ManualBookkeepingExcelService excelService) {
+                                       ManualBookkeepingExcelService excelService,
+                                       StandardStatementExcelService standardExcelService) {
         this.monthlyRepository = monthlyRepository;
         this.journalRepository = journalRepository;
         this.excelService = excelService;
+        this.standardExcelService = standardExcelService;
     }
 
     @GetMapping("/access")
@@ -44,7 +48,7 @@ public class ManualBookkeepingController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping
+    @GetMapping("/monthly-view")
     @Transactional(readOnly = true)
     public String page(@RequestParam(required = false) Integer year,
                        @RequestParam(required = false) Integer month,
@@ -171,6 +175,7 @@ public class ManualBookkeepingController {
                 monthlyRepository.findByYearOrderByMonthAscCategoryCodeAsc(year),
                 journalRepository.findByEntryDateBetweenOrderByEntryDateAscIdAsc(
                         LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)));
+        file = standardExcelService.addStandardSheets(year, file);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"songcheon_bookkeeping_" + year + ".xlsx\"")
@@ -204,7 +209,7 @@ public class ManualBookkeepingController {
     }
 
     private static String redirect(int year, int month) {
-        return "redirect:/bookkeeping?year=" + year + "&month=" + month;
+        return "redirect:/bookkeeping/monthly-view?year=" + year + "&month=" + month;
     }
 
     public record CategoryRow(String code, String label, BigDecimal value, BigDecimal annualTotal) {}
