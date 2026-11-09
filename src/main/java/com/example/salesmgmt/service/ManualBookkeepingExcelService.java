@@ -128,7 +128,7 @@ public class ManualBookkeepingExcelService {
 
     private void fillJournalRow(Row row, ManualJournalEntryEntity entry, String account,
                                 boolean debit, CellStyle number, CellStyle dateStyle) {
-        row.createCell(0).setCellValue(entry.getId());
+        row.createCell(0).setCellValue(entry.getId() == null ? "" : entry.getId().toString());
         Cell date = row.createCell(1);
         date.setCellValue(entry.getEntryDate());
         date.setCellStyle(dateStyle);
