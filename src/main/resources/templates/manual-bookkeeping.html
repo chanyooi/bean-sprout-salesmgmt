@@ -57,10 +57,10 @@
     <div class="book-top">
         <div>
             <a th:href="@{/}">← 송천 대시보드</a>
-            <h1>복식부기 수기 장부</h1>
+            <h1>월별 보조 장부 · 수기 입력</h1>
             <p class="muted">기존 매출·매입·개인 가계부와 연결하지 않는 독립 장부입니다.</p>
         </div>
-        <a class="book-link primary" th:href="@{/bookkeeping/export(year=${year})}">선택 연도 엑셀 다운로드 ↓</a>
+        <div class="book-flex"><a class="book-link" th:href="@{/bookkeeping(year=${year},type='COST')}">← 표준재무제표 입력</a><a class="book-link primary" th:href="@{/bookkeeping/export(year=${year})}">선택 연도 엑셀 다운로드 ↓</a></div>
     </div>
 
     <p class="book-flash" th:if="${bookkeepingMessage}" th:text="${bookkeepingMessage}">저장되었습니다.</p>
@@ -72,7 +72,7 @@
                 <h2>조회할 월 선택</h2>
                 <p class="book-note">월별 수기 금액과 거래별 분개는 사이트 DB에 저장됩니다.</p>
             </div>
-            <form method="get" th:action="@{/bookkeeping}" class="book-search">
+            <form method="get" th:action="@{/bookkeeping/monthly-view}" class="book-search">
                 <label>연도 <input type="number" name="year" min="2020" max="2100" required th:value="${year}"></label>
                 <label>월
                     <select name="month">
