@@ -1,5 +1,6 @@
 package com.example.salesmgmt.service;
 
+import com.example.salesmgmt.domain.ItemCatalog;
 import com.example.salesmgmt.domain.StatementWorkbookResult;
 import com.example.salesmgmt.entity.SalesItemEntity;
 import com.example.salesmgmt.repository.SalesItemRepository;
@@ -17,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -71,7 +73,7 @@ public class StatementFinalBillingPatchService {
 
         byte[] patched = patchWorkbook(
                 result.fileBytes(),
-                sheetName -> billingTotal(
+                sheetName -> billingItems(
                         byStatementName.getOrDefault(normalize(sheetName), List.of()),
                         periodFor(normalize(sheetName), month)
                 )
@@ -117,15 +119,13 @@ public class StatementFinalBillingPatchService {
                         period.end()
                 ))
                 .toList();
-        BigDecimal total = sumLineAmounts(periodItems);
-
-        byte[] patched = patchWorkbook(result.fileBytes(), ignored -> total);
+        byte[] patched = patchWorkbook(result.fileBytes(), ignored -> periodItems);
         return copyWithBytes(result, patched);
     }
 
     private byte[] patchWorkbook(
             byte[] source,
-            BillingTotalResolver resolver
+            BillingItemsResolver resolver
     ) {
         try (
                 XSSFWorkbook workbook = new XSSFWorkbook(
@@ -137,8 +137,9 @@ public class StatementFinalBillingPatchService {
                  sheetIndex < workbook.getNumberOfSheets();
                  sheetIndex++) {
                 XSSFSheet sheet = workbook.getSheetAt(sheetIndex);
-                BigDecimal total = resolver.resolve(sheet.getSheetName());
-                writeFinalBillingAmount(sheet, total);
+                List<SalesItemEntity> items = resolver.resolve(sheet.getSheetName());
+                writeItemSummary(sheet, items);
+                writeFinalBillingAmount(sheet, sumLineAmounts(items));
             }
 
             // 최종 청구금액 자체는 숫자로 확정하고, 나머지 템플릿 수식은
@@ -154,19 +155,17 @@ public class StatementFinalBillingPatchService {
         }
     }
 
-    private BigDecimal billingTotal(
+    private List<SalesItemEntity> billingItems(
             List<SalesItemEntity> items,
             StatementPeriod period
     ) {
-        return sumLineAmounts(
-                items.stream()
-                        .filter(item -> within(
-                                item.getSalesOrder().getDeliveryDate(),
-                                period.start(),
-                                period.end()
-                        ))
-                        .toList()
-        );
+        return items.stream()
+                .filter(item -> within(
+                        item.getSalesOrder().getDeliveryDate(),
+                        period.start(),
+                        period.end()
+                ))
+                .toList();
     }
 
     private BigDecimal sumLineAmounts(List<SalesItemEntity> items) {
@@ -177,6 +176,116 @@ public class StatementFinalBillingPatchService {
             );
         }
         return total;
+    }
+
+    /**
+     * 상단 품목표도 거래처 달력과 같은 주문별 적용단가를 반영합니다.
+     * 기간 중 단가가 여러 번 바뀌었으면 월간 실제 금액 / 수량으로 평균단가를 표시합니다.
+     */
+    private void writeItemSummary(XSSFSheet sheet, List<SalesItemEntity> items) {
+        Map<String, BigDecimal> quantities = new LinkedHashMap<>();
+        Map<String, BigDecimal> amounts = new LinkedHashMap<>();
+        for (SalesItemEntity item : items) {
+            String name = ItemCatalog.normalizeTemplateLabel(item.getItemName());
+            if (name == null) {
+                name = normalize(item.getItemName());
+            }
+            quantities.merge(name, item.getQuantity(), BigDecimal::add);
+            amounts.merge(
+                    name,
+                    ReceivableBillingAdjustmentService.signedVendorLedgerAmount(item),
+                    BigDecimal::add
+            );
+        }
+        writeItemSummaryValues(sheet, quantities, amounts);
+    }
+
+    /** 유효한 상단 '콩나물품목 / 수량 / 단가 / 금액' 구조가 있을 때만 갱신합니다. */
+    static boolean writeItemSummaryValues(
+            XSSFSheet sheet,
+            Map<String, BigDecimal> quantities,
+            Map<String, BigDecimal> amounts
+    ) {
+        if (sheet == null) {
+            return false;
+        }
+        DataFormatter formatter = new DataFormatter(Locale.KOREA);
+        int headerRow = -1;
+        int dateHeaderRow = -1;
+        for (int i = 0; i <= Math.min(sheet.getLastRowNum(), 80); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) {
+                continue;
+            }
+            String first = normalizeBillingLabel(
+                    row.getCell(0) == null ? "" : formatter.formatCellValue(row.getCell(0))
+            );
+            if ("콩나물품목".equals(first)
+                    && formattedEquals(row.getCell(1), formatter, "수량")
+                    && formattedEquals(row.getCell(2), formatter, "단가")
+                    && formattedEquals(row.getCell(3), formatter, "금액")) {
+                headerRow = i;
+            } else if ("날짜".equals(first)) {
+                dateHeaderRow = i;
+                break;
+            }
+        }
+        if (headerRow < 0 || dateHeaderRow <= headerRow) {
+            return false;
+        }
+
+        boolean updated = false;
+        for (int i = headerRow + 1; i < dateHeaderRow; i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) {
+                continue;
+            }
+            String raw = row.getCell(0) == null
+                    ? "" : formatter.formatCellValue(row.getCell(0));
+            String itemName = ItemCatalog.normalizeTemplateLabel(raw);
+            if (itemName != null) {
+                writeSummaryRow(row, itemName, quantities, amounts);
+                updated = true;
+            } else if (normalizeBillingLabel(raw).contains("회수통현황")) {
+                Row returnRow = sheet.getRow(i + 1);
+                if (returnRow != null && i + 1 < dateHeaderRow) {
+                    writeSummaryRow(returnRow, "회수통", quantities, amounts);
+                    updated = true;
+                }
+            }
+        }
+        return updated;
+    }
+
+    private static boolean formattedEquals(Cell cell, DataFormatter formatter, String value) {
+        return cell != null && value.equals(normalizeBillingLabel(formatter.formatCellValue(cell)));
+    }
+
+    private static void writeSummaryRow(
+            Row row,
+            String itemName,
+            Map<String, BigDecimal> quantities,
+            Map<String, BigDecimal> amounts
+    ) {
+        BigDecimal quantity = quantities.getOrDefault(itemName, BigDecimal.ZERO);
+        BigDecimal actual = amounts.getOrDefault(itemName, BigDecimal.ZERO);
+        // 회수통은 차감 내역을 양수로 보여주고 최종 합계에서는 음수로 반영합니다.
+        BigDecimal displayed = "회수통".equals(itemName) ? actual.negate() : actual;
+        BigDecimal average = quantity.signum() == 0
+                ? BigDecimal.ZERO
+                : displayed.divide(quantity, 6, RoundingMode.HALF_UP);
+
+        writeNumericCell(row, 1, quantity);
+        writeNumericCell(row, 2, average);
+        writeNumericCell(row, 3, displayed);
+    }
+
+    private static void writeNumericCell(Row row, int column, BigDecimal value) {
+        Cell cell = row.getCell(column, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+        if (cell.getCellType() == CellType.FORMULA) {
+            cell.setBlank();
+        }
+        cell.setCellValue(value.doubleValue());
     }
 
     /**
@@ -388,8 +497,8 @@ public class StatementFinalBillingPatchService {
     }
 
     @FunctionalInterface
-    private interface BillingTotalResolver {
-        BigDecimal resolve(String sheetName);
+    private interface BillingItemsResolver {
+        List<SalesItemEntity> resolve(String sheetName);
     }
 
     private record StatementPeriod(
