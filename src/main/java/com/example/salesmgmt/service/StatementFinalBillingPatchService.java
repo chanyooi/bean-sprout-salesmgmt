@@ -172,17 +172,16 @@ public class StatementFinalBillingPatchService {
     private BigDecimal sumLineAmounts(List<SalesItemEntity> items) {
         BigDecimal total = BigDecimal.ZERO;
         for (SalesItemEntity item : items) {
-            if (item.getLineAmount() != null) {
-                total = total.add(item.getLineAmount());
-            }
+            total = total.add(
+                    ReceivableBillingAdjustmentService.signedVendorLedgerAmount(item)
+            );
         }
         return total;
     }
 
     /**
-     * 템플릿에서 '최종 청구금액' 라벨을 찾아 같은 행의 값 셀을 숫자로 교체합니다.
-     * 공백/줄바꿈이 들어간 라벨도 인식하고, 병합된 라벨 셀도 처리합니다.
-     * 테스트에서 실제 template.xlsx를 열어 이 탐지가 되는지 검증합니다.
+     * 달력과 같은 주문별 적용금액으로 명세서의 이달 합계금 및 최종 청구금액을 확정합니다.
+     * '최종청구금액' 라벨 아래 행에 값이 들어있는 양식도 지원합니다.
      */
     static boolean writeFinalBillingAmount(
             XSSFSheet sheet,
@@ -194,6 +193,7 @@ public class StatementFinalBillingPatchService {
 
         DataFormatter formatter = new DataFormatter(Locale.KOREA);
         BigDecimal safeTotal = total == null ? BigDecimal.ZERO : total;
+        boolean finalBillingWritten = false;
 
         for (Row row : sheet) {
             if (row == null) {
@@ -206,24 +206,63 @@ public class StatementFinalBillingPatchService {
                 String label = normalizeBillingLabel(
                         formatter.formatCellValue(labelCell)
                 );
-                if (!isFinalBillingLabel(label)) {
+                boolean isFinalBilling = isFinalBillingLabel(label);
+                boolean isMonthlyTotal = label.contains("이달합계금");
+                if (!isFinalBilling && !isMonthlyTotal) {
                     continue;
                 }
 
-                Cell target = findBillingValueCell(
-                        sheet,
-                        row,
-                        labelCell.getColumnIndex()
-                );
-                if (target == null) {
-                    return false;
+                Cell target = isFinalBilling
+                        ? findFinalBillingValueCell(sheet, row, labelCell.getColumnIndex())
+                        : findBillingValueCell(sheet, row, labelCell.getColumnIndex());
+                if (target != null) {
+                    target.setCellValue(safeTotal.doubleValue());
+                    if (isFinalBilling) {
+                        finalBillingWritten = true;
+                    }
                 }
-
-                target.setCellValue(safeTotal.doubleValue());
-                return true;
             }
         }
-        return false;
+        return finalBillingWritten;
+    }
+
+    /**
+     * 현행 VIP마트 양식처럼 청구금액 라벨의 바로 아래 병합 셀에 금액이
+     * 있는 경우를 우선하고, 같은 행 우측에 값이 있는 기존 양식도 지원합니다.
+     */
+    private static Cell findFinalBillingValueCell(
+            XSSFSheet sheet,
+            Row labelRow,
+            int labelColumn
+    ) {
+        int firstColumn = labelColumn;
+        int lastColumn = labelColumn;
+        int lastLabelRow = labelRow.getRowNum();
+        for (CellRangeAddress region : sheet.getMergedRegions()) {
+            if (region.isInRange(labelRow.getRowNum(), labelColumn)) {
+                firstColumn = region.getFirstColumn();
+                lastColumn = region.getLastColumn();
+                lastLabelRow = region.getLastRow();
+                break;
+            }
+        }
+
+        for (int rowIndex = lastLabelRow + 1;
+             rowIndex <= Math.min(lastLabelRow + 3, sheet.getLastRowNum());
+             rowIndex++) {
+            Row valueRow = sheet.getRow(rowIndex);
+            if (valueRow == null) {
+                continue;
+            }
+            for (int column = firstColumn; column <= lastColumn; column++) {
+                Cell cell = valueRow.getCell(column);
+                if (cell != null && (cell.getCellType() == CellType.FORMULA
+                        || cell.getCellType() == CellType.NUMERIC)) {
+                    return cell;
+                }
+            }
+        }
+        return findBillingValueCell(sheet, labelRow, labelColumn);
     }
 
     private static Cell findBillingValueCell(
