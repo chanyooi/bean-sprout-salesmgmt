@@ -298,13 +298,11 @@ public class StatementWorkbookOnePassService {
                     ignored -> new HashMap<>()
             ).merge(itemName, item.getQuantity(), BigDecimal::add);
 
-            if (item.getLineAmount() != null) {
-                amountByDate.merge(
-                        date,
-                        item.getLineAmount(),
-                        BigDecimal::add
-                );
-            }
+            amountByDate.merge(
+                    date,
+                    ReceivableBillingAdjustmentService.signedVendorLedgerAmount(item),
+                    BigDecimal::add
+            );
         }
 
         List<LocalDate> dates = period.start()
