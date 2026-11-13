@@ -216,6 +216,11 @@ public class StatementFinalBillingPatchService {
                         ? findFinalBillingValueCell(sheet, row, labelCell.getColumnIndex())
                         : findBillingValueCell(sheet, row, labelCell.getColumnIndex());
                 if (target != null) {
+                    // POI의 setCellValue()는 수식을 지우지 않고 캐시값만 바꿀 수 있다.
+                    // 기존 수식을 먼저 제거해야 Excel 재계산 때 이전 금액으로 돌아가지 않는다.
+                    if (target.getCellType() == CellType.FORMULA) {
+                        target.setBlank();
+                    }
                     target.setCellValue(safeTotal.doubleValue());
                     if (isFinalBilling) {
                         finalBillingWritten = true;
