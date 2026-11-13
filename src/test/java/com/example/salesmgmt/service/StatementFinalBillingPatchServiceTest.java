@@ -9,6 +9,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -83,6 +84,44 @@ class StatementFinalBillingPatchServiceTest {
                     sheet, new BigDecimal("1851000")
             ));
             assertEquals(1_851_000d, row.getCell(3).getNumericCellValue());
+        }
+    }
+
+    @Test
+    void updatesProductTotalsUsingActualOrderAmountInsteadOfTemplateUnitPrice() throws Exception {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("VIP마트");
+
+            var header = sheet.createRow(0);
+            header.createCell(0).setCellValue("콩나물품목");
+            header.createCell(1).setCellValue("수량");
+            header.createCell(2).setCellValue("단가");
+            header.createCell(3).setCellValue("금액");
+
+            var general = sheet.createRow(1);
+            general.createCell(0).setCellValue("일반콩나물");
+            general.createCell(1).setCellValue(39);
+            general.createCell(2).setCellValue(13000);
+            general.createCell(3).setCellFormula("B2*C2");
+
+            var returnLabel = sheet.createRow(2);
+            returnLabel.createCell(0).setCellValue("회수통 현황");
+            var returnRow = sheet.createRow(3);
+            returnRow.createCell(1).setCellValue(65);
+            returnRow.createCell(2).setCellValue(3000);
+            returnRow.createCell(3).setCellFormula("B4*C4");
+            sheet.createRow(4).createCell(0).setCellValue("날짜");
+
+            assertTrue(StatementFinalBillingPatchService.writeItemSummaryValues(
+                    sheet,
+                    Map.of("일반콩나물", new BigDecimal("39"), "회수통", new BigDecimal("65")),
+                    Map.of("일반콩나물", new BigDecimal("450000"), "회수통", new BigDecimal("-195000"))
+            ));
+            assertEquals(CellType.NUMERIC, general.getCell(3).getCellType());
+            assertEquals(450_000d, general.getCell(3).getNumericCellValue());
+            assertEquals(450_000d / 39, general.getCell(2).getNumericCellValue(), 0.01);
+            assertEquals(195_000d, returnRow.getCell(3).getNumericCellValue());
+            assertEquals(3000d, returnRow.getCell(2).getNumericCellValue());
         }
     }
 }
