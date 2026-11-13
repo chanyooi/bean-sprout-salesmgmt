@@ -175,9 +175,11 @@ public class SingleVendorStatementWorkbookService {
             String itemName = normalizeItem(item.getItemName());
             quantities.computeIfAbsent(date, ignored -> new HashMap<>())
                     .merge(itemName, item.getQuantity(), BigDecimal::add);
-            if (item.getLineAmount() != null) {
-                amounts.merge(date, item.getLineAmount(), BigDecimal::add);
-            }
+            amounts.merge(
+                    date,
+                    ReceivableBillingAdjustmentService.signedVendorLedgerAmount(item),
+                    BigDecimal::add
+            );
         }
 
         List<LocalDate> dates = period.start()

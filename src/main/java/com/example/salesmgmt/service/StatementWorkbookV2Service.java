@@ -264,9 +264,11 @@ public class StatementWorkbookV2Service {
             String normalizedItem = normalizeItem(item.getItemName());
             qty.computeIfAbsent(date, ignored -> new HashMap<>())
                     .merge(normalizedItem, item.getQuantity(), BigDecimal::add);
-            if (item.getLineAmount() != null) {
-                amount.merge(date, item.getLineAmount(), BigDecimal::add);
-            }
+            amount.merge(
+                    date,
+                    ReceivableBillingAdjustmentService.signedVendorLedgerAmount(item),
+                    BigDecimal::add
+            );
         }
 
         List<LocalDate> dates = period.start().datesUntil(period.end().plusDays(1)).toList();
