@@ -1,0 +1,41 @@
+/* 거래처 일별 주문 카드 가독성 보정
+   전역 Liquid Glass button !important 스타일이 주문 날짜 버튼을
+   진한 파랑으로 덮는 것을 이 화면에서만 제한적으로 되돌립니다. */
+
+button.vendor-order-day,
+button.vendor-order-day.has-order {
+    border-color: #cfe0f7 !important;
+    background: #f4f8ff !important;
+    background-image: none !important;
+    color: #191f28 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 4px 12px rgba(35, 53, 78, .04) !important;
+}
+
+button.vendor-order-day.has-order:hover {
+    border-color: #9ec5ff !important;
+    background: #eaf3ff !important;
+    color: #191f28 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), 0 8px 18px rgba(49, 130, 246, .10) !important;
+}
+
+button.vendor-order-day.has-order:active {
+    background: #e2efff !important;
+}
+
+button.vendor-order-day .vendor-order-day-number,
+button.vendor-order-day.has-order .vendor-order-day-number {
+    background: #3182f6 !important;
+    color: #fff !important;
+}
+
+button.vendor-order-day .vendor-order-day-summary strong {
+    color: #263445 !important;
+}
+
+button.vendor-order-day .vendor-order-day-summary small {
+    color: #66758a !important;
+}
+
+button.vendor-order-day .vendor-order-day-total {
+    color: #246bfd !important;
+}
