@@ -13,7 +13,6 @@
     <link rel="stylesheet" th:href="@{/css/vendor-order-calendar-readability.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/vendor-detail-mobile-polish.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/sales-trend.css(v=20261021_1)}">
-    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 <main class="vendor-v2-shell">
@@ -37,8 +36,7 @@
     <div class="alert success" th:if="${successMessage}" th:text="${successMessage}"></div>
     <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
-    <details class="work-disclosure"><summary>거래처 정보 및 수정</summary>
-<section id="vendor-info" class="v2-panel vendor-detail-basic-info" th:if="${profile != null}">
+    <section id="vendor-info" class="v2-panel vendor-detail-basic-info" th:if="${profile != null}">
         <div class="vendor-basic-head">
             <div>
                 <h2>거래처 정보 수정</h2>
@@ -93,7 +91,6 @@
             </div>
         </form>
     </section>
-</details>
 
     <section class="v2-panel">
         <h2>명세서 전달 방식</h2>
@@ -113,8 +110,7 @@
     </section>
 
 
-    <details class="work-disclosure"><summary>월별 매출 추이</summary>
-<section class="v2-panel sales-trend-panel" aria-label="거래처 월별 매출 추이">
+    <section class="v2-panel sales-trend-panel" aria-label="거래처 월별 매출 추이">
         <div class="sales-trend-heading">
             <div><h2 th:text="|${selectedYear}년 월별 매출 추이|">월별 매출 추이</h2><p>월별 금액의 증가와 감소를 확인하세요.</p></div>
         </div>
@@ -124,9 +120,7 @@
         </div>
         <p class="sales-trend-hint">2026년 6월 이전에 직접 등록한 금액도 포함됩니다. 진행 중인 달은 아직 집계 중입니다.</p>
     </section>
-</details>
-    <details class="work-disclosure"><summary>입금·단가 상세</summary>
-<section class="detail-grid">
+    <section class="detail-grid">
         <div>
             <section class="v2-panel">
                 <h2>거래처 기본 단가</h2>
@@ -192,7 +186,6 @@
             </section>
         </div>
     </section>
-</details>
 
     <section class="v2-panel">
         <div class="vendor-v2-hero" style="margin-bottom:12px">

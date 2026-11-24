@@ -9,7 +9,6 @@
     <link rel="stylesheet" th:href="@{/css/sidebar-size-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/vendor-management-v2.css(v=20260902_2)}">
-    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 <main class="vendor-v2-shell">
@@ -29,33 +28,26 @@
     <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
     <section class="v2-panel">
-        <p class="muted" th:text="|${vendorSummaryMonth} 정산 기준|">정산 기준</p>
-        <input aria-label="거래처명 검색" id="vendorSearch" class="vendor-search" type="search" placeholder="거래처명 검색">
-        <details class="work-disclosure"><summary>상세 필터</summary>
-<div class="initial-filter" id="initialFilter">
+        <input id="vendorSearch" class="vendor-search" type="search" placeholder="거래처명 검색">
+        <div class="initial-filter" id="initialFilter">
             <button type="button" class="active" data-initial="">전체</button>
             <button type="button" data-initial="ㄱ">ㄱ</button><button type="button" data-initial="ㄴ">ㄴ</button><button type="button" data-initial="ㄷ">ㄷ</button><button type="button" data-initial="ㄹ">ㄹ</button><button type="button" data-initial="ㅁ">ㅁ</button><button type="button" data-initial="ㅂ">ㅂ</button><button type="button" data-initial="ㅅ">ㅅ</button><button type="button" data-initial="ㅇ">ㅇ</button><button type="button" data-initial="ㅈ">ㅈ</button><button type="button" data-initial="ㅊ">ㅊ</button><button type="button" data-initial="ㅋ">ㅋ</button><button type="button" data-initial="ㅌ">ㅌ</button><button type="button" data-initial="ㅍ">ㅍ</button><button type="button" data-initial="ㅎ">ㅎ</button>
         </div>
-</details>
 
         <div class="vendor-list" id="vendorList">
             <a th:each="vendor : ${vendors}"
                th:href="@{/vendor-management/{id}(id=${vendor.id})}"
-               th:data-name="${vendor.inputName}" th:with="amount=${vendorAmounts[vendor.id]}">
+               th:data-name="${vendor.inputName}">
                 <span class="vendor-card-name">
                     <strong th:text="${vendor.inputName}">거래처</strong>
                     <small th:if="${vendor.statementName != vendor.inputName}" th:text="|명세서: ${vendor.statementName}|">명세서명</small>
                 </span>
-                <span class="workspace-vendor-amounts">
-                    <span th:text="|청구 ${#numbers.formatDecimal(amount != null ? amount.billedAmount : 0, 1, 'COMMA', 0, 'POINT')}원|">청구 0원</span>
-                    <span th:text="|미수 ${#numbers.formatDecimal(amount != null and amount.outstandingAmount.signum() > 0 ? amount.outstandingAmount : 0, 1, 'COMMA', 0, 'POINT')}원|">미수 0원</span>
-                </span>
+                <span>›</span>
             </a>
         </div>
     </section>
 
-    <details class="work-disclosure"><summary>거래처 정보 일괄 관리</summary>
-<section class="v2-panel vendor-full-info-panel">
+    <section class="v2-panel vendor-full-info-panel">
         <div class="vendor-master-heading">
             <div>
                 <h2>거래처 정보</h2>
@@ -158,7 +150,6 @@
             </table>
         </div>
     </section>
-</details>
 </main>
 <form id="songcheonPcLogoutForm" th:action="@{/logout}" method="post" style="display:none" aria-hidden="true"></form>
 <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261109_menu_removed)}"></script>

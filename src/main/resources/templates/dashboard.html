@@ -26,7 +26,6 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/sales-trend.css(v=20261021_1)}">
-    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 
@@ -66,7 +65,168 @@
         </form>
     </header>
 
+    <div class="sc-mobile-month-nav">
+        <a th:href="@{/(month=${previousMonth})}" aria-label="이전 달">
+            <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        <strong th:text="${selectedMonth}">2026-08</strong>
+        <a th:href="@{/(month=${nextMonth})}" aria-label="다음 달">
+            <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+    </div>
+
+    <div class="report-notice warning"
+         th:if="${sales.missingPriceCount > 0}">
+        ⚠️ 단가 미등록 판매가
+        <strong th:text="|${sales.missingPriceCount}건|">0건</strong>
+        있습니다. 잘못 입력된 판매가 없는지 확인해주세요.
+        <a th:href="@{/reports/monthly(month=${selectedMonth})}">확인하기</a>
+    </div>
+
+
+    <section class="sales-trend-panel" aria-label="송천 전체 월별 매출 추이">
+        <div class="sales-trend-heading">
+            <div><h2>송천 전체 매출 추이</h2><p>선택한 달까지 최근 12개월의 확정 매출</p></div>
+            <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a>
+        </div>
+        <div class="sales-trend-chart" data-sales-trend="bar">
+            <div class="sales-trend-data" th:each="point : ${salesTrend}"
+                 th:data-label="${point.month}" th:data-amount="${point.amount}"></div>
+        </div>
+        <p class="sales-trend-hint">단가 미등록 건은 제외됩니다. 이번 달은 아직 집계 중일 수 있습니다.</p>
+    </section>
+    <section class="sc-mobile-kpi-section">
+        <div class="sc-section-heading">
+            <div>
+                <span>BUSINESS</span>
+                <h2>이번 달 현황</h2>
+            </div>
+            <a th:href="@{/reports/monthly(month=${selectedMonth})}">상세보기</a>
+        </div>
+
+        <div class="sc-kpi-grid">
+            <a class="sc-kpi-card sc-kpi-primary"
+               th:href="@{/reports/monthly(month=${selectedMonth})}">
+                <div class="sc-kpi-top">
+                    <span class="sc-kpi-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>
+                        </svg>
+                    </span>
+                    <span class="sc-kpi-label">월매출</span>
+                </div>
+                <strong th:text="${#numbers.formatDecimal(sales.confirmedSales, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+                <small th:text="|주문 ${sales.orderCount}건|">주문 0건</small>
+            </a>
+
+            <a class="sc-kpi-card"
+               th:href="@{/profit(month=${selectedMonth})}">
+                <div class="sc-kpi-top">
+                    <span class="sc-kpi-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2v20M17 6.5c0-2-2.2-3.5-5-3.5S7 4.4 7 6.5 9 9.3 12 10s5 1.8 5 4.3S14.8 18 12 18s-5-1.5-5-3.5"/>
+                        </svg>
+                    </span>
+                    <span class="sc-kpi-label">예상이익</span>
+                </div>
+                <strong th:text="${#numbers.formatDecimal(profit.estimatedProfit, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+                <small th:text="|이익률 ${profit.estimatedProfitMarginPercent}%|">이익률 0%</small>
+            </a>
+
+            <a class="sc-kpi-card sc-kpi-warning"
+               th:href="@{/payments(month=${selectedMonth})}">
+                <div class="sc-kpi-top">
+                    <span class="sc-kpi-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 7h18v11H3zM3 10h18M7 15h4"/>
+                        </svg>
+                    </span>
+                    <span class="sc-kpi-label">미수금</span>
+                </div>
+                <strong th:text="${#numbers.formatDecimal(receivables.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
+                    0원
+                </strong>
+                <small th:text="|미수 ${receivables.outstandingVendorCount}곳|">미수 0곳</small>
+            </a>
+        </div>
+    </section>
+
+<section class="sc-mobile-summary-section">
+        <div class="sc-section-heading">
+            <div>
+                <span>MONTHLY SNAPSHOT</span>
+                <h2>간단 요약</h2>
+            </div>
+        </div>
+
+        <div class="sc-summary-card">
+            <a th:href="@{/reports/monthly(month=${selectedMonth})}">
+                <span class="sc-summary-dot blue"></span>
+                <div>
+                    <small>이번 달 주문</small>
+                    <strong th:text="|${sales.orderCount}건|">0건</strong>
+                </div>
+            </a>
+
+            <a th:href="@{/vendor-management}">
+                <span class="sc-summary-dot violet"></span>
+                <div>
+                    <small>거래 거래처</small>
+                    <strong th:text="|${sales.vendorCount}곳|">0곳</strong>
+                </div>
+            </a>
+
+            <a th:href="@{/inventory}">
+                <span class="sc-summary-dot cyan"></span>
+                <div>
+                    <small>이번 달 박스</small>
+                    <strong th:text="|${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                        0박스
+                    </strong>
+                </div>
+            </a>
+
+            <a th:href="@{/payments(month=${selectedMonth})}">
+                <span class="sc-summary-dot orange"></span>
+                <div>
+                    <small>미수 거래처</small>
+                    <strong th:text="|${receivables.outstandingVendorCount}곳|">0곳</strong>
+                </div>
+            </a>
+        </div>
+
+        <a class="sc-payment-cta"
+           th:href="@{/payments(month=${selectedMonth})}">
+            <span class="sc-payment-cta-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 6h18v12H3zM3 10h18M7 15h3"/>
+                </svg>
+            </span>
+            <div>
+                <small>입금 현황 확인</small>
+                <strong th:if="${receivables.outstandingVendorCount > 0}"
+                        th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳을 확인하세요|">
+                    미수 거래처를 확인하세요
+                </strong>
+                <strong th:if="${receivables.outstandingVendorCount == 0}">
+                    이번 달 미수금이 없습니다
+                </strong>
+            </div>
+            <span class="sc-payment-arrow">›</span>
+        </a>
+    </section>
+
+    <div class="sc-mobile-footer-note">
+        <span>송천</span>
+        <span>·</span>
+        <span th:text="${isAdmin ? '관리자 모드' : '업무용 모드'}">관리자 모드</span>
+    </div>
 </div>
+
 <div class="sc-drawer-backdrop" id="scMobileDrawerBackdrop"></div>
 
 <aside class="sc-mobile-drawer"
@@ -166,13 +326,17 @@
     </div>
 </aside>
 
-<main class="container final-dashboard desktop-dashboard-shell work-home">
+<main class="container final-dashboard desktop-dashboard-shell">
 
     <section class="hero dashboard-hero">
         <div class="hero-row">
             <div>
+                <p class="eyebrow">사업 현황</p>
                 <h1>송천 매출 관리</h1>
-
+                <p>
+                    매출·예상이익·미수금과 일별 매출을
+                    한 화면에서 확인합니다.
+                </p>
             </div>
 
             <div class="dashboard-login-area">
@@ -208,13 +372,24 @@
 
     <div class="report-notice warning"
          th:if="${sales.missingPriceCount > 0}">
-        단가 미등록
+        ⚠️ 단가 미등록 판매가
         <strong th:text="|${sales.missingPriceCount}건|">0건</strong>
-
-        <a th:href="@{/reports/monthly(month=${selectedMonth})} + '#missing-price'">확인하기</a>
+        있습니다. 잘못 입력된 판매가 없는지 확인해주세요.
+        <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출에서 확인하기</a>
     </div>
 
 
+    <section class="sales-trend-panel" aria-label="송천 전체 월별 매출 추이">
+        <div class="sales-trend-heading">
+            <div><h2>송천 전체 매출 추이</h2><p>선택한 달까지 최근 12개월의 확정 매출</p></div>
+            <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a>
+        </div>
+        <div class="sales-trend-chart" data-sales-trend="bar">
+            <div class="sales-trend-data" th:each="point : ${salesTrend}"
+                 th:data-label="${point.month}" th:data-amount="${point.amount}"></div>
+        </div>
+        <p class="sales-trend-hint">단가 미등록 건은 제외됩니다. 이번 달은 아직 집계 중일 수 있습니다.</p>
+    </section>
     <section class="dashboard-metrics final-dashboard-metrics">
         <a class="metric-card"
            th:href="@{/reports/monthly(month=${selectedMonth})}">
@@ -225,8 +400,8 @@
             <small>
                 <span th:text="|주문 ${sales.orderCount}건 · 거래처 ${sales.vendorCount}곳|"></span>
                 <span class="box-inline"
-                      th:text="|${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
-                    0박스
+                      th:text="|📦 ${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
                 </span>
             </small>
         </a>
@@ -240,32 +415,80 @@
             <small th:text="|예상이익률 ${profit.estimatedProfitMarginPercent}%|"></small>
         </a>
 
-        <a class="metric-card"
+        <a class="metric-card warning-metric"
            th:href="@{/payments(month=${selectedMonth})}">
-            <span>선택 월 총미수금</span>
+            <span>미수금</span>
             <strong th:text="${#numbers.formatDecimal(receivables.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
                 0원
             </strong>
             <small th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳|"></small>
         </a>
-        <a class="metric-card" th:href="@{/inventory/overview(month=${selectedMonth})}">
-            <span>현재 콩 재고</span>
-            <strong th:text="|${#numbers.formatDecimal(#aggregates.sum(inventory.stockRows.![currentKg]) ?: 0, 1, 'COMMA', 0, 'POINT')}kg|">0kg</strong>
-            <small th:if="${inventory.lowStockCount > 0}" th:text="|부족 재고 ${inventory.lowStockCount}종|"></small>
-        </a>
     </section>
 
+    <section class="dashboard-overview-grid">
+        <article class="panel dashboard-overview-card">
+            <div class="overview-card-head">
+                <div>
+                    <p class="eyebrow">이번 달 요약</p>
+                    <h2>운영 현황</h2>
+                </div>
+            </div>
+
+            <div class="overview-stat-list">
+                <a th:href="@{/reports/monthly(month=${selectedMonth})}">
+                    <span>주문</span>
+                    <strong th:text="|${sales.orderCount}건|">0건</strong>
+                    <em>›</em>
+                </a>
+                <a th:href="@{/vendor-management}">
+                    <span>거래처</span>
+                    <strong th:text="|${sales.vendorCount}곳|">0곳</strong>
+                    <em>›</em>
+                </a>
+                <a th:href="@{/inventory}">
+                    <span>사용 박스</span>
+                    <strong th:text="|${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">0박스</strong>
+                    <em>›</em>
+                </a>
+            </div>
+        </article>
+
+        <article class="panel dashboard-overview-card attention-card">
+            <div class="overview-card-head">
+                <div>
+                    <p class="eyebrow">확인할 항목</p>
+                    <h2>입금 현황</h2>
+                </div>
+                <a class="overview-detail-link" th:href="@{/payments(month=${selectedMonth})}">관리하기</a>
+            </div>
+
+            <div class="attention-main">
+                <span>현재 미수금</span>
+                <strong th:text="${#numbers.formatDecimal(receivables.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</strong>
+                <small th:text="|미수 거래처 ${receivables.outstandingVendorCount}곳|">미수 거래처 0곳</small>
+            </div>
+
+            <a class="attention-action" th:href="@{/payments(month=${selectedMonth})}">
+                입금·미수금 확인
+                <span>›</span>
+            </a>
+        </article>
+    </section>
 <section class="panel dashboard-calendar-section">
         <div class="panel-heading dashboard-calendar-heading">
             <div>
+                <p class="eyebrow">일별 매출</p>
                 <h2>매출 캘린더</h2>
-
+                <p>
+                    날짜를 누르면 당일 판매내역을 바로 확인합니다.
+                    3.5kg일반·3.5kg곱슬·숙주는 수량 1개당 박스 1개로 계산합니다.
+                </p>
             </div>
 
             <div class="calendar-heading-summary">
                 <span>이번 달 박스</span>
-                <strong th:text="|${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
-                    0박스
+                <strong th:text="|📦 ${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
                 </strong>
             </div>
         </div>
@@ -301,6 +524,10 @@
                                 <strong th:text="${#numbers.formatDecimal(day.salesAmount, 0, 'COMMA', 0, 'POINT') + '원'}">
                                     0원
                                 </strong>
+                                <small th:text="|📦 ${day.boxCount.stripTrailingZeros().toPlainString()}박스|">
+                                    📦 0박스
+                                </small>
+                                <small th:text="|주문 ${day.orderCount} · 거래처 ${day.vendorCount}|"></small>
                             </div>
 
                             <span th:if="${!day.hasSales}"
@@ -344,15 +571,15 @@
 
             <div>
                 <span>일 박스 사용</span>
-                <strong th:text="|${calendar.selectedDay.dailyBoxCount.stripTrailingZeros().toPlainString()}박스|">
-                    0박스
+                <strong th:text="|📦 ${calendar.selectedDay.dailyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
                 </strong>
             </div>
 
             <div>
                 <span>해당 주 박스 사용</span>
-                <strong th:text="|${calendar.selectedDay.weeklyBoxCount.stripTrailingZeros().toPlainString()}박스|">
-                    0박스
+                <strong th:text="|📦 ${calendar.selectedDay.weeklyBoxCount.stripTrailingZeros().toPlainString()}박스|">
+                    📦 0박스
                 </strong>
             </div>
 
@@ -406,19 +633,6 @@
             </table>
         </div>
     </section>
-<details class="work-disclosure"><summary>최근 12개월 매출 추이</summary>
-    <section class="sales-trend-panel" aria-label="송천 전체 월별 매출 추이">
-        <div class="sales-trend-heading">
-            <div><h2>송천 전체 매출 추이</h2><p>선택한 달까지 최근 12개월의 확정 매출</p></div>
-            <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a>
-        </div>
-        <div class="sales-trend-chart" data-sales-trend="bar">
-            <div class="sales-trend-data" th:each="point : ${salesTrend}"
-                 th:data-label="${point.month}" th:data-amount="${point.amount}"></div>
-        </div>
-        <p class="sales-trend-hint">단가 미등록 건은 제외됩니다. 이번 달은 아직 집계 중일 수 있습니다.</p>
-    </section>
-</details>
 </main>
 
 <script>

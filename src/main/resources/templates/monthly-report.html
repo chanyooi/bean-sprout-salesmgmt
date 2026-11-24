@@ -23,7 +23,6 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
-    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 <main class="container">
@@ -105,11 +104,11 @@
         </article>
     </div>
 
-    <div id="missing-price" class="report-notice warning"
+    <div class="report-notice warning"
          th:if="${report.hasMissingPrices()}">
         단가 미등록 판매가 <strong th:text="|${report.missingPriceCount}건|">0건</strong> 있습니다.
         확정 매출에는 단가가 등록된 품목만 포함했습니다.
-        <a th:href="@{/sales(month=${selectedMonth},missingPriceOnly=true)}">미등록 판매 확인하기</a>
+        <a th:href="@{/sales}">미등록 판매 확인하기</a>
     </div>
 
     <div class="report-notice success"
@@ -122,8 +121,7 @@
         <p>다른 월을 선택하거나 장부 파일을 먼저 저장해주세요.</p>
     </section>
 
-    <details class="work-disclosure" th:if="${!report.isEmpty()}"><summary>거래처·품목별 매출</summary>
-<section class="report-columns" th:if="${!report.isEmpty()}">
+    <section class="report-columns" th:if="${!report.isEmpty()}">
         <article class="panel report-panel">
             <div class="panel-heading">
                 <div>
@@ -201,7 +199,6 @@
             </div>
         </article>
     </section>
-</details>
 
     <section class="panel" th:if="${!report.isEmpty()}">
         <div class="panel-heading">
