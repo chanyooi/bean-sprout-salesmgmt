@@ -25,6 +25,7 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
+    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 <main class="container">
@@ -99,7 +100,8 @@
         이 사용량은 콩 원가에서 제외되므로 매입 기록을 먼저 등록해주세요.
     </div>
 
-    <section class="panel expense-manager-panel">
+    <details class="work-disclosure"><summary>월 운영비 관리</summary>
+<section class="panel expense-manager-panel">
         <div class="expense-manager-head">
             <div>
                 <h2>월 운영비</h2>
@@ -205,8 +207,10 @@
             <strong>참고:</strong> 콩 사용 원가와 손두부 매입원가는 판매·매입 기록에서 자동 계산되므로 월 운영비에 다시 넣지 않아도 됩니다.
         </div>
     </section>
+</details>
 
-    <section class="report-columns">
+    <details class="work-disclosure"><summary>원가 및 비용 명세</summary>
+<section class="report-columns">
         <article class="panel report-panel">
             <h2>콩 사용 원가</h2>
             <p class="helper">
@@ -258,8 +262,10 @@
             </div>
         </article>
     </section>
+</details>
 
-    <section class="panel vendor-profit-panel">
+    <details class="work-disclosure"><summary>거래처별 수익성</summary>
+<section class="panel vendor-profit-panel">
         <div class="panel-heading">
             <div>
                 <h2>거래처별 매출·수익성</h2>
@@ -324,6 +330,7 @@
             </table>
         </div>
     </section>
+</details>
 </main>
     <script defer th:src="@{/js/premium-mobile-v2.js(v=20260813_1)}"></script>
     <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>

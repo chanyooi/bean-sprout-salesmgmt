@@ -23,6 +23,7 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
+    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 <main class="container">
@@ -48,7 +49,8 @@
         </div>
     </section>
 
-    <section class="input-recovery-card">
+    <details class="work-disclosure"><summary>최근 업로드 원본</summary>
+<section class="input-recovery-card">
         <h2>최근 업로드 원본</h2>
         <p>
             <strong>검사 후 DB 저장에 성공했던 input_data.xlsx 파일 자체를 그대로 보관합니다.</strong>
@@ -66,6 +68,7 @@
             이 기능 적용 이후 정상 저장된 업로드부터 원본이 보관됩니다.
         </p>
     </section>
+</details>
 
     <section class="panel">
         <div class="panel-heading">

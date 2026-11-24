@@ -23,6 +23,7 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
+    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 <main class="container">
@@ -63,9 +64,11 @@
 
                 <div class="statement-actions">
                     <button type="submit" class="statement-primary-action">전체 엑셀 다운로드</button>
+                    <details class="ledger-transaction"><summary>전달 방식별 다운로드</summary>
                     <button type="submit" name="deliveryMethod" value="FAX" class="statement-secondary-action">팩스 거래처</button>
                     <button type="submit" name="deliveryMethod" value="MAIL" class="statement-secondary-action">우편 거래처</button>
                     <button type="submit" name="deliveryMethod" value="SMS" class="statement-sms-action">문자 거래처</button>
+                    </details>
                 </div>
             </div>
 
@@ -80,7 +83,8 @@
         </form>
     </section>
 
-    <section class="panel statement-template-panel">
+    <details class="work-disclosure"><summary>양식 관리</summary>
+<section class="panel statement-template-panel">
         <div class="template-panel-heading">
             <div>
                 <h2>기본 템플릿 관리</h2>
@@ -109,8 +113,10 @@
             등록한 템플릿은 전체·팩스·우편·문자·거래처별 개별 명세서에 계속 사용됩니다.
         </p>
     </section>
+</details>
 
-    <section class="panel statement-guide">
+    <details class="work-disclosure"><summary>명세서 안내</summary>
+<section class="panel statement-guide">
         <h2>생성 기준</h2>
         <div class="guide-grid">
             <article>
@@ -131,14 +137,17 @@
             </article>
         </div>
     </section>
+</details>
 
-    <section class="panel caution-panel">
+    <details class="work-disclosure"><summary>유의사항</summary>
+<section class="panel caution-panel">
         <h2>확인할 점</h2>
         <p>
             아직 전달 방식이 <strong>미분류</strong>인 거래처는 전체 엑셀에는 포함되지만
             팩스·우편·문자 분류 다운로드에는 포함되지 않습니다.
         </p>
     </section>
+</details>
 </main>
 <script>
 (function () {

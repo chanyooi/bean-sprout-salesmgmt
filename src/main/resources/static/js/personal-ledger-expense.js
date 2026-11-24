@@ -64,6 +64,8 @@
                 const result=await response.json();
                 if(result.status!=='saved')throw new Error('Unexpected response');
                 savedType=newType;savedDetail=newDetail;
+                const category=form.parentElement.querySelector('.ledger-category');
+                if(category) category.textContent=type.selectedOptions[0].textContent;
                 statusText('✓ 저장됨',false);
                 ['personalExpense','businessExpense','pendingExpense','transferExpense'].forEach(name=>{
                     const target=document.querySelector('[data-stat="'+name+'"]');

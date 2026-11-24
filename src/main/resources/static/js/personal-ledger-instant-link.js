@@ -90,6 +90,8 @@
             lastSavedVendor = data.vendorId;
             const row = form.closest('tr');
             if (row) {
+                const categoryLabel = row.querySelector('.ledger-link-category');
+                if (categoryLabel) categoryLabel.textContent = '사업 입금';
                 const categoryInput = row.querySelector('input[name="category"]');
                 if (categoryInput) categoryInput.value = '사업 입금';
                 const matchingLabel = row.querySelector('[data-match-status]');

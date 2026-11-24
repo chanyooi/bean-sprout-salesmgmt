@@ -12,16 +12,20 @@
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/bean-usage-calendar.css(v=20260825_1)}">
     <link rel="stylesheet" th:href="@{/css/bean-usage-price.css(v=20260825_1)}">
+    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 <main class="bean-calendar-shell">
     <section class="bean-calendar-hero">
         <div>
-            <p class="eyebrow">원가·이익</p>
+
             <h1>콩 사용 관리</h1>
-            <p>날짜를 눌러 하루 사용 포대 수와 kg당 단가를 빠르게 추가하거나 삭제합니다.</p>
+
         </div>
-        <a class="secondary-link" th:href="@{/profit(month=${selectedMonth})}">원가·이익으로</a>
+        <div class="button-row">
+            <a class="secondary-link" th:href="@{/inventory/overview(month=${selectedMonth})}">현재 재고</a>
+            <a class="secondary-link" th:href="@{/profit(month=${selectedMonth})}">원가·이익</a>
+        </div>
     </section>
 
     <div class="alert success" th:if="${inventoryMessage}" th:text="${inventoryMessage}"></div>
@@ -56,7 +60,7 @@
                     th:data-medium="${cell.mediumBags.stripTrailingZeros().toPlainString()}"
                     th:data-small="${cell.smallBags.stripTrailingZeros().toPlainString()}">
                 <span class="bean-day-number" th:text="${cell.dayOfMonth}">1</span>
-                <div class="bean-day-usage" th:if="${cell.inMonth}">
+                <div class="bean-day-usage" th:if="${cell.inMonth and (cell.largeBags.signum() != 0 or cell.mediumBags.signum() != 0 or cell.smallBags.signum() != 0)}">
                     <span th:text="|대 ${cell.largeBags.stripTrailingZeros().toPlainString()}|">대 0</span>
                     <span th:text="|중 ${cell.mediumBags.stripTrailingZeros().toPlainString()}|">중 0</span>
                     <span th:text="|소 ${cell.smallBags.stripTrailingZeros().toPlainString()}|">소 0</span>

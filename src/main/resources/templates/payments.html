@@ -26,6 +26,7 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
+    <link rel="stylesheet" th:href="@{/css/workspace.css(v=1)}">
 </head>
 <body>
 <main class="container">
@@ -130,7 +131,8 @@
         있습니다. 해당 금액은 청구금액에 포함되지 않습니다.
     </div>
 
-    <section class="panel">
+    <details class="work-disclosure"><summary>입금 등록</summary>
+<section class="panel">
         <div class="panel-heading">
             <div>
                 <h2>부분입금 · 직접입금 등록</h2>
@@ -189,6 +191,7 @@
             <button type="submit">입금 저장</button>
         </form>
     </section>
+</details>
 
     <section class="panel">
         <div class="panel-heading payment-list-heading">
@@ -241,9 +244,7 @@
                 <thead>
                 <tr>
                     <th class="vendor-column">거래처</th>
-                    <th class="cycle-column">정산방식</th>
                     <th class="money-column">청구금액</th>
-                    <th class="money-column">입금액</th>
                     <th class="money-column">미수금</th>
                     <th class="status-column">상태</th>
                     <th class="action-column">관리</th>
@@ -260,16 +261,10 @@
                         <strong th:text="${row.vendorName}">거래처</strong>
                     </td>
 
-                    <td class="cycle-column"
-                        th:text="${row.paymentCycle.label}">
-                        월 단위
-                    </td>
-
                     <td class="money-column"
                         th:text="${#numbers.formatDecimal(row.billedAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td>
 
-                    <td class="money-column"
-                        th:text="${#numbers.formatDecimal(row.paidAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td>
+
 
                     <td class="money-column outstanding-money"
                         th:text="${#numbers.formatDecimal(row.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td>
@@ -287,6 +282,9 @@
                     </td>
 
                     <td class="action-column">
+                        <details class="ledger-transaction"><summary>상세</summary>
+                        <div th:text="|정산 ${row.paymentCycle.label}|"></div>
+                        <div th:text="|입금 ${#numbers.formatDecimal(row.paidAmount, 0, 'COMMA', 0, 'POINT')}원|"></div>
                         <a th:if="${row.paymentCycle.name() == 'WEEKLY'}"
                            th:href="@{/payments/weekly(week=${selectedMonth + '-01'})}">주별 입금확인</a>
                         <form th:if="${row.outstandingAmount.signum() > 0 and row.paymentCycle.name() != 'WEEKLY'}"
@@ -310,11 +308,12 @@
                               class="complete-check">
                             ✓ 완료
                         </span>
+                        </details>
                     </td>
                 </tr>
 
                 <tr th:if="${#lists.isEmpty(report.vendorRows)}">
-                    <td colspan="7" class="payment-empty-row">
+                    <td colspan="5" class="payment-empty-row">
                         해당 월의 판매 또는 입금 기록이 없습니다.
                     </td>
                 </tr>
@@ -323,7 +322,8 @@
         </div>
     </section>
 
-    <section class="panel">
+    <details class="work-disclosure"><summary>입금 이력</summary>
+<section class="panel">
         <div class="panel-heading">
             <div>
                 <h2>입금 내역</h2>
@@ -376,6 +376,7 @@
             </table>
         </div>
     </section>
+</details>
 </main>
 
 <script>

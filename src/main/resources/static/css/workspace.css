@@ -1,0 +1,82 @@
+:root {
+    --work-surface: #fff;
+    --work-bg: #f5f6f8;
+    --work-border: #dce2e9;
+    --work-ink: #172433;
+    --work-muted: #536174;
+    --work-accent: #235b85;
+}
+
+.work-home .dashboard-hero,
+.work-home .metric-card,
+.work-home .dashboard-calendar-section,
+.work-disclosure {
+    background: var(--work-surface) !important;
+    color: var(--work-ink) !important;
+    border: 1px solid var(--work-border) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+}
+
+.work-home .dashboard-hero { padding: 18px 22px !important; }
+.work-home .dashboard-hero h1 { margin: 0; font-size: clamp(1.3rem, 3vw, 1.85rem); color: var(--work-ink); }
+.work-home .final-dashboard-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+.work-home .metric-card { padding: 16px !important; text-decoration: none; }
+.work-home .metric-card strong { color: var(--work-ink) !important; font-size: clamp(1rem, 2.25vw, 1.65rem); overflow-wrap: anywhere; }
+.work-home .metric-card small { color: var(--work-muted); }
+.work-home .metric-card:hover { border-color: var(--work-accent) !important; }
+.work-home .dashboard-calendar-heading { padding-block: 4px; }
+.work-home .sales-calendar-day { min-width: 0; }
+.work-home .calendar-day-sales { min-width: 0; }
+.work-home .calendar-day-sales strong { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.work-home .dashboard-daily-detail { scroll-margin-top: 1rem; }
+.work-home .dashboard-daily-detail .table-wrap { overflow-x: auto; }
+
+.work-disclosure { margin: 12px 0; }
+.work-disclosure > summary, .ledger-transaction > summary {
+    padding: 13px 16px;
+    min-height: 44px;
+    color: var(--work-accent);
+    font-weight: 650;
+    cursor: pointer;
+}
+.work-disclosure > summary:focus-visible, .ledger-transaction > summary:focus-visible {
+    outline: 2px solid var(--work-accent);
+    outline-offset: -2px;
+}
+.work-disclosure[open] > summary { border-bottom: 1px solid var(--work-border); }
+.work-disclosure > section, .work-disclosure > .initial-filter { margin: 0 !important; box-shadow: none !important; }
+.work-disclosure > .initial-filter { padding: 12px; }
+.ledger-summary > :not(summary) { margin: 12px; }
+.ledger-transaction > summary { padding-inline: 0; }
+.ledger-transaction > form { margin-bottom: 8px; }
+.ledger-table .amount, .workspace-vendor-amounts { font-variant-numeric: tabular-nums; }
+#vendorList { grid-template-columns: 1fr; gap: 0; }
+#vendorList > a { border: 0; border-bottom: 1px solid var(--work-border); border-radius: 0; box-shadow: none; }
+.workspace-vendor-amounts { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: .875rem; }
+.workspace-vendor-amounts > span { white-space: nowrap; }
+
+@media (max-width: 600px) {
+    .work-home.desktop-dashboard-shell { display: block !important; padding-inline: 12px !important; }
+    body:has(.work-home) .sc-mobile-dashboard { min-height: 0 !important; max-width: none !important; padding-bottom: 0 !important; }
+    .work-home .final-dashboard-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+    .work-home .dashboard-hero { display: none; }
+    .work-home .dashboard-calendar-section { padding: 10px !important; }
+    .work-home .sales-calendar-week { gap: 2px; }
+    .work-home .sales-calendar-day { padding: 3px 1px !important; min-height: 52px !important; }
+    .work-home .calendar-day-sales strong { font-size: 9px !important; letter-spacing: -.03em; }
+    .ledger-table .classification, .ledger-table .vendor-form { max-width: 100%; }
+}
+
+.work-form-fields {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+}
+.work-home .metric-card strong, .work-home .report-notice,
+.work-home .dashboard-calendar-section strong { font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+    #vendorList > a { align-items: flex-start; flex-direction: column; gap: 4px; }
+    .ledger-wrap .table-scroll { overflow-x: auto; }
+    .work-home .calendar-day-sales strong { font-size: .65rem !important; }
+}

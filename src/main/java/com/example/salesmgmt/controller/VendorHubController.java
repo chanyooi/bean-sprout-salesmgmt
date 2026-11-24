@@ -1,11 +1,14 @@
 package com.example.salesmgmt.controller;
 
 import com.example.salesmgmt.domain.ItemCatalog;
+import com.example.salesmgmt.domain.MonthlyReceivableReport;
 import com.example.salesmgmt.domain.PaymentCycle;
 import com.example.salesmgmt.domain.RouteCode;
 import com.example.salesmgmt.domain.StatementDeliveryMethod;
 import com.example.salesmgmt.repository.VendorRepository;
 import com.example.salesmgmt.service.PriceManagementService;
+import com.example.salesmgmt.service.PaymentService;
+import com.example.salesmgmt.service.MonthlySalesReportService;
 import com.example.salesmgmt.service.SalesManagementService;
 import com.example.salesmgmt.service.VendorDetailService;
 import com.example.salesmgmt.service.VendorManagementService;
@@ -34,6 +37,8 @@ public class VendorHubController {
     private final VendorDetailService vendorDetailService;
     private final VendorRepository vendorRepository;
     private final VendorRegistrationService vendorRegistrationService;
+    private final PaymentService paymentService;
+    private final MonthlySalesReportService monthlySalesReportService;
 
     public VendorHubController(
             PriceManagementService priceManagementService,
@@ -41,7 +46,9 @@ public class VendorHubController {
             VendorManagementService vendorManagementService,
             VendorDetailService vendorDetailService,
             VendorRepository vendorRepository,
-            VendorRegistrationService vendorRegistrationService
+            VendorRegistrationService vendorRegistrationService,
+            PaymentService paymentService,
+            MonthlySalesReportService monthlySalesReportService
     ) {
         this.priceManagementService = priceManagementService;
         this.salesManagementService = salesManagementService;
@@ -49,10 +56,20 @@ public class VendorHubController {
         this.vendorDetailService = vendorDetailService;
         this.vendorRepository = vendorRepository;
         this.vendorRegistrationService = vendorRegistrationService;
+        this.paymentService = paymentService;
+        this.monthlySalesReportService = monthlySalesReportService;
     }
 
     @GetMapping("/vendor-management")
     public String vendorManagement(Model model) {
+        YearMonth month = monthlySalesReportService.findLatestSalesMonth().orElse(YearMonth.now());
+        var sales = monthlySalesReportService.createReport(month);
+        Map<Long, MonthlyReceivableReport.VendorRow> amounts = new LinkedHashMap<>();
+        for (var row : paymentService.createMonthlyReport(month, sales).vendorRows()) {
+            amounts.put(row.vendorId(), row);
+        }
+        model.addAttribute("vendorSummaryMonth", month);
+        model.addAttribute("vendorAmounts", amounts);
         model.addAttribute("vendors", priceManagementService.findVendors());
         model.addAttribute("vendorProfiles", vendorManagementService.findAllRows());
         model.addAttribute("routeCodes", RouteCode.values());
