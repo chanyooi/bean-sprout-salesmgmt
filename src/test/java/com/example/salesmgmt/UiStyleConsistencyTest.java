@@ -53,7 +53,7 @@ class UiStyleConsistencyTest {
     @Test void sharedStylesLoadKoreanFontAndSidebarRemainsCollapsible() throws Exception {
         String css=source("static/css/songcheon-ui.css");
         String script=source("static/js/global-sidebar-and-recovery.js");
-        assertThat(css).contains("pretendard.css","a.primary-link","--ui-control-height",
+        assertThat(css).contains("pretendard-dynamic-subset.min.css","a.primary-link","--ui-control-height",
                 "box-shadow: none", "songcheon-sidebar-collapsed");
         assertThat(script).contains("songcheon.sidebar.collapsed",
                 "localStorage.setItem(navStateKey","songcheon-sidebar-toggle",
