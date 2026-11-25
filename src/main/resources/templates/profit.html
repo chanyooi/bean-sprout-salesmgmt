@@ -48,12 +48,10 @@
         </div>
     </section>
 
-    <section class="panel">
-        <div class="button-row">
-            <a class="primary-link" th:href="@{/profit(month=${selectedMonth})}">수익 분석</a>
-            <a class="secondary-link" th:href="@{/inventory}">콩 재고 관리</a>
-        </div>
-    </section>
+    <nav class="sc-work-tabs" aria-label="손익 관리 화면">
+        <a class="sc-work-tab active" aria-current="page" th:href="@{/profit(month=${selectedMonth})}">수익 분석</a>
+        <a class="sc-work-tab" th:href="@{/inventory}">콩 재고 관리</a>
+    </nav>
 
     <div class="alert success" th:if="${profitMessage}" th:text="${profitMessage}"></div>
     <div class="alert error" th:if="${profitError}" th:text="${profitError}"></div>
