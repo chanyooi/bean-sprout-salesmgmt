@@ -1,5 +1,3 @@
-<link rel="stylesheet"
-      th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -7,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>원가·이익</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="stylesheet" th:href="@{/css/profit.css(v=20260827_3)}">
+    <link rel="stylesheet" th:href="@{/css/profit.css(v=20261125_polish1)}">
     <link rel="stylesheet" th:href="@{/css/profit-expense-manager.css(v=20260827_1)}">
     <link rel="stylesheet" th:href="@{/css/mobile-admin-system.css(v=20260813_1)}">
     <link rel="stylesheet" th:href="@{/css/premium-mobile-v2.css(v=20260813_1)}">
@@ -24,7 +22,7 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
-    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_flat)}">
+    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_polish1)}">
 </head>
 <body>
 <main class="container">
@@ -48,12 +46,10 @@
         </div>
     </section>
 
-    <section class="panel">
-        <div class="button-row">
-            <a class="primary-link" th:href="@{/profit(month=${selectedMonth})}">수익 분석</a>
-            <a class="secondary-link" th:href="@{/inventory}">콩 재고 관리</a>
-        </div>
-    </section>
+    <nav class="sc-work-tabs" aria-label="손익 관리 화면">
+        <a class="sc-work-tab active" aria-current="page" th:href="@{/profit(month=${selectedMonth})}">수익 분석</a>
+        <a class="sc-work-tab" th:href="@{/inventory}">콩 재고 관리</a>
+    </nav>
 
     <div class="alert success" th:if="${profitMessage}" th:text="${profitMessage}"></div>
     <div class="alert error" th:if="${profitError}" th:text="${profitError}"></div>

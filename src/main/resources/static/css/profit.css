@@ -1,3 +1,38 @@
+/* Section navigation should read as a flat tab row, never oversized buttons. */
+.sc-work-tabs {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:stretch;
+    gap:24px;
+    margin: 0 0 18px;
+    padding:0 4px;
+    border-bottom:1px solid #e5e7eb;
+}
+body .sc-work-tabs .sc-work-tab {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:42px;
+    padding:0 2px;
+    border-bottom:2px solid transparent;
+    background:transparent !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    color:#6b7280;
+    font-size:14px !important;
+    line-height:1.35 !important;
+    font-weight:500 !important;
+    text-decoration:none;
+    white-space:nowrap;
+}
+body .sc-work-tabs .sc-work-tab:hover { color:#1f2937; }
+body .sc-work-tabs .sc-work-tab.active {
+    border-bottom-color:#2563eb;
+    color:#1f2937;
+    font-weight:600 !important;
+}
+@media(max-width:620px){.sc-work-tabs{gap:18px;margin-bottom:14px;}}
+
 .profit-card {
     border-color: #a8d9bb;
     background: #edfff4;
