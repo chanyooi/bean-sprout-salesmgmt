@@ -29,8 +29,8 @@
 
 .final-menu-card {
     display: flex;
-    min-height: 128px;
-    padding: 17px 14px;
+    min-height: 104px;
+    padding: 16px 18px;
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
@@ -39,14 +39,16 @@
     text-decoration: none;
     background: #fff;
     border: 1px solid #dfe4ea;
-    border-radius: 14px;
-    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    border-radius: 8px;
+    box-shadow: none;
+    transition: background-color .12s ease, border-color .12s ease;
 }
 
 .final-menu-card:hover {
-    transform: translateY(-2px);
-    border-color: #b7c5d6;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, .07);
+    transform: none;
+    background: #f8fafc;
+    border-color: #d9e1e9;
+    box-shadow: none;
 }
 
 .final-menu-card .menu-icon {
@@ -55,15 +57,16 @@
     height: 32px;
     align-items: center;
     justify-content: center;
-    color: #356bd8;
-    background: #eef4ff;
-    border-radius: 9px;
+    color: #64748b;
+    background: transparent;
+    border-radius: 6px;
     font-size: 17px;
     font-weight: 900;
 }
 
 .final-menu-card strong {
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .final-menu-card small {
@@ -141,25 +144,26 @@
 .vendor-hub-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    margin-bottom: 48px;
+    gap: 10px;
+    margin-bottom: 24px;
 }
 
 .vendor-hub-card {
     display: block;
-    min-height: 155px;
-    padding: 22px;
+    min-height: 128px;
+    padding: 18px 20px;
     color: #172033;
     text-decoration: none;
     background: #fff;
     border: 1px solid #dfe4ea;
-    border-radius: 15px;
-    box-shadow: 0 3px 12px rgba(15, 23, 42, .035);
+    border-radius: 8px;
+    box-shadow: none;
 }
 
 .vendor-hub-card:hover {
-    border-color: #b7c6d8;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, .07);
+    border-color: #d9e1e9;
+    background: #f8fafc;
+    box-shadow: none;
 }
 
 .vendor-hub-card > span {
@@ -172,7 +176,7 @@
 
 .vendor-hub-card strong {
     display: block;
-    font-size: 20px;
+    font-size: 16px;
 }
 
 .vendor-hub-card p {
