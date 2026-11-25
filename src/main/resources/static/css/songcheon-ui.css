@@ -1,117 +1,188 @@
+/* Songcheon flat UI tokens. Keep structure/data intact; unify rendering across templates. */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+
 :root {
     color-scheme: light;
     --ui-bg: #f8fafc;
-    --ui-panel: #fff;
+    --ui-panel: #ffffff;
     --ui-text: #1f2937;
     --ui-muted: #6b7280;
     --ui-line: #e5e7eb;
     --ui-blue: #2563eb;
-    --ui-hover: #f1f5f9;
-    --ui-active: #eff6ff;
+    --ui-blue-dark: #1d4ed8;
+    --ui-hover: #f3f5f8;
+    --ui-active: #eef3fc;
     --ui-red: #b91c1c;
-    --ui-radius: 7px;
+    --ui-radius: 6px;
     --ui-nav-width: 232px;
+    --ui-control-height: 38px;
 }
 
 html body {
     background: var(--ui-bg) !important;
     color: var(--ui-text);
-    font-family: Pretendard, "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif !important;
+    font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif !important;
     font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 body :is(button, input, select, textarea) { font-family: inherit !important; }
-body :is(h1, h2, h3) { color: var(--ui-text); letter-spacing: -.025em; }
-body h1 { font-size: clamp(1.45rem, 2vw, 1.85rem); font-weight: 750; }
-body h2 { font-size: 1.125rem; font-weight: 700; }
-body h3 { font-size: 1rem; font-weight: 650; }
-body :is(.muted, .eyebrow, .helper, .hint) { color: var(--ui-muted) !important; }
+body :is(h1, h2, h3) { color: var(--ui-text); letter-spacing: -.025em; overflow-wrap: break-word; }
+body h1 { font-size: 24px !important; font-weight: 700 !important; line-height: 1.32; }
+body h2 { font-size: 18px !important; font-weight: 600 !important; line-height: 1.4; }
+body h3 { font-size: 16px !important; font-weight: 600 !important; line-height: 1.4; }
+body :is(.eyebrow, .muted, .helper, .hint) { color: var(--ui-muted) !important; }
+body :is(.hero, [class$="-hero"]) .eyebrow { font-size: 12px; font-weight: 500; margin-bottom: 7px; }
+body :is(.hero, [class$="-hero"]) h1 { margin-top: 0; margin-bottom: 8px; }
+body :is(.hero, [class$="-hero"]) p:not(.eyebrow) { max-width: 740px; line-height: 1.55; font-size: 14px; }
 body :focus-visible { outline: 2px solid var(--ui-blue); outline-offset: 2px; }
 
-body :is(.hero, [class$="-hero"], .panel, .v2-panel, .summary-card, .metric-card,
-    .sc-kpi-card, .sc-summary-card, .sales-trend-panel, .input-recovery-card,
-    .bean-calendar-card, [role="dialog"], .modern-login-card) {
+/* Heading regions are not cards. This fixes boxed headings and clipping. */
+body :is(.hero, [class$="-hero"]) {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    min-width: 0;
+}
+body :is(.hero-row, .vendor-v2-hero, .inventory-hero) > * { min-width: 0; }
+
+/* Panels are reserved for actual grouped information, without visual effects. */
+body :is(.panel, .v2-panel, .summary-card, .metric-card, .sc-kpi-card,
+    .sc-summary-card, .sales-trend-panel, .input-recovery-card, .bean-calendar-card,
+    [role="dialog"], .modern-login-card) {
     background: var(--ui-panel) !important;
-    color: var(--ui-text) !important;
+    color: var(--ui-text);
     border: 1px solid var(--ui-line) !important;
-    border-radius: 8px !important;
+    border-radius: 9px !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
 }
-body :is(.hero, [class$="-hero"], .panel, .v2-panel, .summary-card, .metric-card)::before,
-body :is(.hero, [class$="-hero"], .summary-card, .metric-card)::after {
+body :is(.panel, .v2-panel, .input-recovery-card) { padding: 20px !important; }
+body :is(.summary-card, .metric-card, .sc-kpi-card) { padding: 18px !important; }
+body :is(.panel, .v2-panel, .summary-card, .metric-card)::before,
+body :is(.panel, .v2-panel, .summary-card, .metric-card)::after {
     box-shadow: none !important;
-    background: none !important;
     pointer-events: none;
 }
+body :is(.summary-card, .metric-card) > span { color: var(--ui-muted); font-size: 13px; font-weight: 500; }
+body :is(.summary-card, .metric-card) > strong { font-size: clamp(22px, 1.7vw, 28px); font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+body :is(.dashboard-hero, .vendor-v2-hero, .inventory-hero) { margin-bottom: 18px; }
+body :is(.dashboard-hero, .vendor-v2-hero, .inventory-hero) > div { min-width: 0; }
 
-body :is(button, a.btn, a[class*="-button"], a[class*="-link"], input[type="submit"]) {
+/* Fix anchor-buttons missing their base styles (the previous primary-link
+   had a mobile-only rule, so its text rendered at heading-like size). */
+body :is(a.primary-link, a.secondary-link, a.btn, a[class*="primary-button"],
+    a[class*="secondary-button"], .primary-button, .secondary-button,
+    button[type="submit"], input[type="submit"]) {
+    display: inline-flex !important;
+    justify-content: center;
+    align-items: center;
+    vertical-align: middle;
+    box-sizing: border-box;
+    min-height: var(--ui-control-height) !important;
+    min-width: 0;
+    padding: 0 14px !important;
+    gap: 6px;
     border-radius: var(--ui-radius) !important;
+    border: 1px solid var(--ui-line);
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0;
+    text-decoration: none;
+    white-space: nowrap;
     box-shadow: none !important;
     background-image: none !important;
     transform: none !important;
-    transition: background-color .14s ease, border-color .14s ease !important;
+    transition: background-color .12s ease, border-color .12s ease !important;
 }
-body :is(button:not([class]), button[type="submit"], .btn, .secondary-link, .secondary-button, input[type="submit"]) {
-    min-height: 38px;
-    padding-inline: 12px;
-    font-size: .875rem;
-    gap: 7px;
+body :is(button, a.btn, a[class$="-link"], input[type="submit"]) {
+    box-shadow: none !important;
+    background-image: none !important;
+    transform: none !important;
+    border-radius: var(--ui-radius) !important;
 }
-body :is(.secondary-link, .secondary-button, button[type="button"]:not([class])) {
-    background: var(--ui-panel) !important;
+body :is(a.secondary-link, .secondary-button, button[type="button"]:not([class])) {
+    background: #fff !important;
     border-color: var(--ui-line) !important;
     color: var(--ui-text) !important;
 }
-body :is(.secondary-link, .secondary-button, button[type="button"]:not([class])):hover {
+body :is(a.secondary-link, .secondary-button, button[type="button"]:not([class])):hover {
     background: var(--ui-hover) !important;
 }
-body :is(button[type="submit"], input[type="submit"], .primary-button, .statement-primary-action):not(.secondary-button):not(.logout-button) {
+body :is(a.primary-link, a.primary-button, button.primary-button,
+    button[type="submit"]:not(.secondary-button):not(.logout-button),
+    input[type="submit"], .statement-primary-action) {
     background: var(--ui-blue) !important;
-    color: white !important;
-    border-color: transparent !important;
+    color: #fff !important;
+    border-color: var(--ui-blue) !important;
 }
-body :is(button[type="submit"], .primary-button):not(.secondary-button):not(.logout-button):hover { background: #1d4ed8 !important; }
+body :is(a.primary-link, a.primary-button, button.primary-button, button[type="submit"]):not(.logout-button):hover {
+    background: var(--ui-blue-dark) !important;
+}
 body :is(button[class*="danger"], button[class*="delete"], form[action$="/delete"] button, button[formaction$="/delete"]) {
     background: #fef2f2 !important;
     border-color: #fecaca !important;
     color: var(--ui-red) !important;
 }
-body :is(button[class*="danger"], button[class*="delete"], form[action$="/delete"] button):hover { background: #fee2e2 !important; }
+body :is(button[class*="danger"], button[class*="delete"], form[action$="/delete"] button):hover {
+    background: #fee2e2 !important;
+}
+body :is(.button-row, .top-links) { gap: 8px; align-items: center; }
+body :is(.button-row, .top-links) > :is(a, button) { flex: 0 0 auto; }
 
-body :is(input:not([type]), input:is([type="text"], [type="email"], [type="password"], [type="month"],
-    [type="date"], [type="number"], [type="search"], [type="tel"], [type="file"]),
+/* Input surfaces: consistent inner spacing and keyboard affordance. */
+body :is(input:not([type]), input:is([type="text"],[type="email"],[type="password"],
+    [type="month"],[type="date"],[type="number"],[type="search"],[type="tel"],[type="file"]),
     select, textarea) {
-    min-height: 38px;
+    box-sizing: border-box;
+    min-height: var(--ui-control-height);
     border: 1px solid var(--ui-line) !important;
     border-radius: var(--ui-radius) !important;
-    background-color: var(--ui-panel) !important;
+    background: var(--ui-panel) !important;
     color: var(--ui-text) !important;
     box-shadow: none !important;
-    font-size: .875rem;
+    font-size: 14px;
+    line-height: 1.4;
 }
-body :is(input, textarea, select):focus-visible { border-color: var(--ui-blue) !important; }
+body :is(input:is([type="text"],[type="email"],[type="password"],[type="search"],
+    [type="number"],[type="tel"]),select,textarea) { padding-inline: 12px; }
+body :is(input,textarea,select):focus-visible { border-color: var(--ui-blue) !important; }
 body :is(.alert, .report-notice, .active-filter-notice) {
-    border-radius: var(--ui-radius) !important;
-    box-shadow: none !important;
-    background-image: none !important;
+    border-radius: 8px !important;
     border-width: 1px;
+    background-image: none !important;
+    box-shadow: none !important;
 }
 body :is(.error, .alert-danger, .report-notice.error) { color: #991b1b; }
 
-body table:not(#statementCapture table) { border: 0 !important; border-collapse: collapse; }
+/* Flat tables preserve original columns, sorting and data. */
+body table:not(#statementCapture table) { border-collapse: collapse; border-spacing: 0; }
 body table:not(#statementCapture table) :is(td, th) {
     border: 0 !important;
     border-bottom: 1px solid var(--ui-line) !important;
-    padding-block: 10px;
+    padding: 10px 12px;
     color: var(--ui-text);
     font-variant-numeric: tabular-nums;
 }
-body table:not(#statementCapture table) thead th { background: #f1f5f9 !important; color: var(--ui-muted) !important; font-weight: 650; }
-body table:not(#statementCapture table) tbody td { background-color: var(--ui-panel); }
-@media (hover: hover) {
-    body table:not(#statementCapture table) tbody tr:hover > td { background-color: var(--ui-hover); }
+body table:not(#statementCapture table) thead th {
+    background: #f7f8fa !important;
+    color: var(--ui-muted) !important;
+    font-weight: 600;
+    font-size: 12px;
 }
-body table:not(#statementCapture table) :is(.number, .amount, .strong-number, .money-column, .numeric, .text-right) { text-align: right; }
+body table:not(#statementCapture table) tbody td { background-color: var(--ui-panel); }
+@media (hover:hover) { body table:not(#statementCapture table) tbody tr:hover > td { background-color: var(--ui-hover); } }
+body table:not(#statementCapture table) :is(.number,.amount,.strong-number,.money-column,.numeric,.text-right) { text-align: right; }
+body :is(.table-wrap,.table-scroll,.vendor-full-info-scroll) {
+    border-color: var(--ui-line);
+    border-radius: 8px;
+    box-shadow: none !important;
+}
 
 /* Persistent desktop panel and the fallback overlay for pages without a legacy mobile drawer. */
 .desktop-global-sidebar {
@@ -121,7 +192,7 @@ body table:not(#statementCapture table) :is(.number, .amount, .strong-number, .m
     display: flex;
     flex-direction: column;
     width: var(--ui-nav-width);
-    padding: 57px 12px 14px;
+    padding: 57px 10px 14px;
     overflow: auto;
     background: var(--ui-panel);
     border-right: 1px solid var(--ui-line);
@@ -186,7 +257,7 @@ body :is(.dgs-card, .dgs-menu-toggle, .mobile-pc-card, .mobile-pc-statement-togg
     align-items: center;
     gap: 9px;
     width: 100%;
-    min-height: 40px !important;
+    min-height: 38px !important;
     padding: 7px 8px !important;
     border: 0 !important;
     border-radius: var(--ui-radius) !important;
@@ -220,7 +291,7 @@ body :is(.dgs-icon, .mobile-pc-icon) svg {
     stroke: currentColor;
     stroke-width: 1.6;
 }
-body :is(.dgs-copy, .mobile-pc-copy) strong { color: inherit !important; font-size: .875rem !important; font-weight: 650 !important; }
+body :is(.dgs-copy, .mobile-pc-copy) strong { color: inherit !important; font-size: 14px !important; font-weight: 500 !important; }
 body :is(.dgs-copy small, .dgs-card-arrow, .mobile-pc-copy small, .mobile-pc-card > .mobile-pc-arrow) { display: none; }
 .dgs-menu-arrow { margin-left: auto; }
 .dgs-submenu { display: none; margin-left: 17px; padding-left: 10px; border-left: 1px solid var(--ui-line); }
@@ -256,4 +327,29 @@ body :is(.content-card, .entry-card, .vendor-hub-card, .final-menu-card,
     color: var(--ui-text) !important;
     border-radius: 8px !important;
     box-shadow: none !important;
+}
+
+/* Existing sidebar remains keyboard accessible and collapses completely. */
+body .desktop-global-sidebar, body .songcheon-sidebar-toggle {
+    box-shadow: none !important;
+}
+body .dgs-brand { padding: 8px 10px 13px; }
+body .dgs-brand strong { font-size: 14px; font-weight: 650; }
+body .dgs-brand small { font-size: 11px; }
+body .dgs-section-label { font-weight: 500; letter-spacing: .015em; }
+body .dgs-submenu a { font-size: 13px; }
+@media(min-width:641px){
+    body.songcheon-sidebar-ready.songcheon-sidebar-collapsed:not(.security-page) .desktop-global-sidebar {
+        transform: translateX(-100%);
+        visibility: hidden;
+    }
+    body.songcheon-sidebar-ready:not(.songcheon-sidebar-collapsed):not(.security-page) .desktop-global-sidebar {
+        visibility: visible;
+    }
+}
+@media(max-width:640px) {
+    body :is(.panel, .v2-panel, .input-recovery-card) { padding: 15px !important; }
+    body :is(.summary-card, .metric-card, .sc-kpi-card) { padding: 14px !important; }
+    body h1 { font-size: 22px !important; }
+    body h2 { font-size: 17px !important; }
 }
