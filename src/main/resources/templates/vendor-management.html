@@ -165,7 +165,7 @@
   var activeInitial='';
   var choseong=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
   function firstInitial(name){var c=(name||'').trim().charCodeAt(0);if(c<0xAC00||c>0xD7A3)return '';return choseong[Math.floor((c-0xAC00)/588)];}
-  function apply(){var q=(search.value||'').trim().toLowerCase();list.forEach(function(a){var n=(a.dataset.name||'');var ok=(!q||n.toLowerCase().indexOf(q)>=0)&&(!activeInitial||firstInitial(n)===activeInitial);a.style.display=ok?'flex':'none';});}
+  function apply(){var q=(search.value||'').trim().toLowerCase();list.forEach(function(a){var n=(a.dataset.name||'');var ok=(!q||n.toLowerCase().indexOf(q)>=0)&&(!activeInitial||firstInitial(n)===activeInitial);a.style.display=ok?'grid':'none';});}
   search.addEventListener('input',apply);
   document.getElementById('initialFilter').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;document.querySelectorAll('#initialFilter button').forEach(function(x){x.classList.remove('active')});b.classList.add('active');activeInitial=b.dataset.initial||'';apply();});
 })();
