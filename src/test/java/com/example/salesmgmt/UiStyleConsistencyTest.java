@@ -22,6 +22,8 @@ class UiStyleConsistencyTest {
             assertThat(htmlPages).hasSizeGreaterThan(30);
             for(Path page:htmlPages){
                 String contents=Files.readString(page,StandardCharsets.UTF_8);
+                assertThat(contents.stripLeading()).as("Non-standard HTML header: "+page)
+                        .startsWith("<!DOCTYPE html>");
                 assertThat(contents).as("Shared UI stylesheet missing: "+page)
                         .contains("songcheon-ui.css(v=20261125_polish1)");
                 assertThat(contents).as("Stale CSS cache version: "+page)
