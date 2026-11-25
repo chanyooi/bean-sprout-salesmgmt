@@ -2,7 +2,7 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>개인 가계부 · 송천</title>
-<link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20261029_2)}">
+<link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20261125_flat)}">
 <style>
 :root{--primary:#3179ed;--ink:#1d2939;--muted:#697a91;--line:#e2e8f1;--canvas:#f4f7fb}
 *{box-sizing:border-box}body{background:var(--canvas);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;font-size:14px;margin:0}
@@ -40,7 +40,8 @@ a{color:#2670d6}.muted{color:var(--muted)}
 .upload-row input{max-width:100%}
 details summary{cursor:pointer;font-weight:650}
 @media(max-width:700px){.summary{grid-template-columns:1fr}.metric .value{font-size:24px}.ledger-wrap{padding:0 10px}.panel{padding:14px}.ledger-table{min-width:610px}h1{font-size:25px}}
-</style></head>
+</style>    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_flat)}">
+</head>
 <body><main class="ledger-wrap">
 <div class="ledger-head">
 <div><a th:href="@{/}">← 송천 대시보드</a><h1>개인 가계부</h1><p class="muted">월별 지출을 사업과 개인으로 나눠서 관리</p>
@@ -160,5 +161,5 @@ th:href="@{/personal-ledger/reconciliation(month=${month})}">거래처 입금 �
 </main>
 <script defer th:src="@{/js/personal-ledger-instant-link.js(v=20261029_2)}"></script>
 <script defer th:src="@{/js/personal-ledger-expense.js(v=20261029_1)}"></script>
-<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261109_menu_removed)}"></script>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261125_flat)}"></script>
 </body></html>

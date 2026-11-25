@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>표준재무제표 입력 · 송천</title>
-    <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20261109_1)}">
+    <link rel="stylesheet" th:href="@{/css/global-sidebar-and-recovery.css(v=20261125_flat)}">
     <style>
         *{box-sizing:border-box}
         body{margin:0;background:#f4f7fc;color:#25354d;font:14px/1.55 system-ui,-apple-system,'Malgun Gothic',sans-serif}
@@ -56,6 +56,7 @@
         @media(max-width:900px){.std-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.std-wrap{padding:0 12px}.std-panel{padding:16px}}
         @media(max-width:580px){h1{font-size:25px}.std-summary{grid-template-columns:1fr}.std-metric strong{font-size:20px}.std-table th,.std-table td{padding:9px 7px}.std-table .amount{min-width:160px}.std-table input{min-width:140px}}
     </style>
+    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_flat)}">
 </head>
 <body>
 <main class="std-wrap">
@@ -176,6 +177,6 @@
         <p class="std-footer-note">참고: 이 사이트에서 작성한 파일은 홈택스에서 발급한 공식 표준재무제표증명이 아닙니다. 연말 기초·기말 잔액과 결산자료를 점검해야 합니다.</p>
     </section>
 </main>
-<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261109_menu_removed)}"></script>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261125_flat)}"></script>
 </body>
 </html>

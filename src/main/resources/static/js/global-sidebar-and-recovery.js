@@ -88,10 +88,12 @@
         });
     }
 
-    if (window.matchMedia('(min-width: 641px)').matches
-            && !document.body.classList.contains('security-page')) {
+    const desktop = window.matchMedia('(min-width: 641px)');
+    if (!document.body.classList.contains('security-page')) {
         const sidebar = document.createElement('aside');
         sidebar.className = 'desktop-global-sidebar';
+        sidebar.id = 'songcheon-sidebar';
+        sidebar.setAttribute('aria-label', '업무 메뉴');
         sidebar.innerHTML = `
             <a class="dgs-brand" href="/"><span class="dgs-brand-mark">송</span><div><strong>송천</strong><small>매출 관리</small></div></a>
             <div class="dgs-section-label">업무 메뉴</div>
@@ -107,6 +109,71 @@
             <div class="dgs-bottom">${link('/admin/users', 'users', '사용자 관리', '계정 · 권한 설정', 'users', 'slate')}</div>`;
         document.body.appendChild(sidebar);
         bindDesktopMenus(sidebar);
+        const body = document.body;
+        const navStateKey = 'songcheon.sidebar.collapsed';
+        let collapsed = false;
+        try { collapsed = localStorage.getItem(navStateKey) === 'true'; } catch {}
+        let overlayOpen = false;
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'songcheon-sidebar-toggle';
+        toggle.setAttribute('aria-controls', sidebar.id);
+        toggle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>';
+        const backdrop = document.createElement('div');
+        backdrop.className = 'songcheon-sidebar-backdrop';
+        backdrop.hidden = true;
+        body.append(toggle, backdrop);
+        body.classList.add('songcheon-sidebar-ready');
+
+        function render() {
+            const mobile = !desktop.matches;
+            const currentDrawer = document.querySelector('.sc-mobile-drawer, .sp-mobile-drawer');
+            const nativeDrawer = currentDrawer && getComputedStyle(currentDrawer).display !== 'none';
+            const visible = mobile ? !nativeDrawer && overlayOpen : !collapsed;
+            body.classList.toggle('songcheon-sidebar-collapsed', collapsed);
+            body.classList.toggle('songcheon-sidebar-overlay', mobile && visible);
+            toggle.hidden = mobile && Boolean(nativeDrawer);
+            backdrop.hidden = !mobile || !visible;
+            sidebar.inert = !visible;
+            sidebar.setAttribute('aria-hidden', String(!visible));
+            toggle.setAttribute('aria-expanded', String(visible));
+            toggle.setAttribute('aria-label', visible ? '메뉴 접기' : '메뉴 펼치기');
+        }
+        function closeOverlay() {
+            overlayOpen = false;
+            render();
+            toggle.focus();
+        }
+        toggle.addEventListener('click', () => {
+            if (!desktop.matches && overlayOpen) {
+                closeOverlay();
+                return;
+            }
+            if (desktop.matches) {
+                collapsed = !collapsed;
+                try { localStorage.setItem(navStateKey, String(collapsed)); } catch {}
+            } else {
+                overlayOpen = true;
+            }
+            render();
+            if (overlayOpen) sidebar.querySelector('a').focus();
+        });
+        backdrop.addEventListener('click', closeOverlay);
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && overlayOpen) closeOverlay();
+        });
+        function refreshLayout() {
+            overlayOpen = false;
+            if (!desktop.matches) upgradeMobileDrawer();
+            render();
+        }
+        desktop.addEventListener('change', refreshLayout);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', refreshLayout, { once: true });
+        } else {
+            refreshLayout();
+        }
+
     }
 
     function injectMobileSidebarStyles() {
@@ -165,6 +232,7 @@
         const nav = document.querySelector('.sc-mobile-drawer .sc-drawer-nav')
                 || document.querySelector('.sp-mobile-drawer .sp-drawer-nav');
         if (!nav || nav.dataset.pcUpgraded === 'true') return;
+        const ledgerLink = nav.querySelector('a[href="/personal-ledger"]');
         const hasUsers = Array.from(nav.querySelectorAll('a')).some(a => (a.getAttribute('href') || '').startsWith('/admin/users'));
         const label = document.createElement('div');
         label.className = 'mobile-pc-menu-label';
@@ -179,6 +247,7 @@
             ${mobilePaymentMenu()}
             ${mobileCard('/profit', 'profit', '원가 · 이익', '원가와 수익 분석', 'profit', 'purple')}
             ${hasUsers ? mobileCard('/admin/users', 'users', '사용자 관리', '계정 · 권한 설정', 'users', 'slate') : ''}`;
+        if (ledgerLink) nav.append(ledgerLink);
         nav.dataset.pcUpgraded = 'true';
         nav.querySelectorAll('[data-mobile-menu-group]').forEach(menu => {
             const toggle = menu.querySelector('[data-mobile-menu-toggle]');

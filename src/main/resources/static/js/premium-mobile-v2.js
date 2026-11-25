@@ -54,7 +54,8 @@
     appbar.innerHTML = `
         <button class="sp-appbar-button sp-left-action" type="button" aria-label="${path === '/' ? '메뉴 열기' : '뒤로 가기'}">${path === '/' ? icons.menu : icons.back}</button>
         <div class="sp-appbar-title">${esc(title())}</div>
-        <span class="sp-appbar-button" aria-hidden="true"></span>
+        ${path === '/' ? '<span class="sp-appbar-button" aria-hidden="true"></span>'
+            : `<button class="sp-appbar-button sp-right-menu" type="button" aria-label="메뉴 열기">${icons.menu}</button>`}
     `;
     body.appendChild(appbar);
 
@@ -63,6 +64,8 @@
 
     const drawer = document.createElement('aside');
     drawer.className = 'sp-mobile-drawer';
+    drawer.id = 'songcheon-mobile-drawer';
+    drawer.inert = true;
     drawer.setAttribute('aria-hidden','true');
     drawer.innerHTML = `
         <div class="sp-drawer-head">
@@ -97,14 +100,25 @@
     `;
     body.appendChild(bottom);
 
+    const menuToggle = appbar.querySelector(path === '/' ? '.sp-left-action' : '.sp-right-menu');
+    menuToggle.setAttribute('aria-controls', drawer.id);
+    menuToggle.setAttribute('aria-expanded', 'false');
+
     function openDrawer() {
+        drawer.inert = false;
+        menuToggle.setAttribute('aria-expanded', 'true');
         drawer.classList.add('is-open');
         backdrop.classList.add('is-open');
         body.classList.add('sp-drawer-open');
         drawer.setAttribute('aria-hidden','false');
+        drawer.querySelector('.sp-drawer-close').focus();
     }
 
     function closeDrawer() {
+        if (!drawer.classList.contains('is-open')) return;
+        menuToggle.focus();
+        drawer.inert = true;
+        menuToggle.setAttribute('aria-expanded', 'false');
         drawer.classList.remove('is-open');
         backdrop.classList.remove('is-open');
         body.classList.remove('sp-drawer-open');
@@ -116,6 +130,7 @@
         else if (history.length > 1) history.back();
         else location.href = '/';
     });
+    appbar.querySelector('.sp-right-menu')?.addEventListener('click', openDrawer);
     drawer.querySelector('.sp-drawer-close').addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
