@@ -45,7 +45,8 @@ class UiStyleConsistencyTest {
         String style=source("static/css/vendor-management-v2.css");
         assertThat(page).contains("id=\"vendorSearch\"","id=\"initialFilter\"",
                 "id=\"vendorList\"","th:data-name=\"\u0024{vendor.inputName}\"",
-                "vendor-list-head","vendor-detail-link");
+                "vendor-list-head","vendor-detail-link",
+                "a.style.display=ok?'grid':'none'");
         assertThat(style).contains(".vendor-list{display:block")
                 .doesNotContain(".vendor-list{display:grid;grid-template-columns:repeat(2");
     }
