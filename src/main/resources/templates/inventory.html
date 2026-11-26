@@ -22,7 +22,7 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-management.css(v=20260817_1)}">
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
-    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_polish1)}">
+    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
 </head>
 <body>
 <main class="container inventory-shell">
@@ -30,10 +30,6 @@
         <div>
             <p class="eyebrow">원재료 관리</p>
             <h1>콩 재고 · 원가</h1>
-            <p class="hero-description">
-                현재 재고와 선택한 월의 콩 사용 원가를 확인합니다.
-                사용 등록과 매입 등록은 각각 별도 화면으로 분리했습니다.
-            </p>
         </div>
         <div class="top-links">
             <a class="secondary-link" th:href="@{/}">홈(대시보드)</a>
@@ -84,10 +80,6 @@
             <div>
                 <h2>현재 콩 재고</h2>
                 <p>누적 매입 포대 - 누적 사용 포대로 계산합니다. 1포는 25kg입니다.</p>
-            </div>
-            <div class="button-row">
-                <a class="secondary-link" th:href="@{/inventory/usages/new}">+ 사용 등록</a>
-                <a class="secondary-link" th:href="@{/inventory/purchases/new}">+ 매입 등록</a>
             </div>
         </div>
 

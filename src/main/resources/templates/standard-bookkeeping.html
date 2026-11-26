@@ -56,7 +56,7 @@
         @media(max-width:900px){.std-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.std-wrap{padding:0 12px}.std-panel{padding:16px}}
         @media(max-width:580px){h1{font-size:25px}.std-summary{grid-template-columns:1fr}.std-metric strong{font-size:20px}.std-table th,.std-table td{padding:9px 7px}.std-table .amount{min-width:160px}.std-table input{min-width:140px}}
     </style>
-    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_polish1)}">
+    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
 </head>
 <body>
 <main class="std-wrap">
@@ -64,7 +64,6 @@
         <div>
             <a th:href="@{/}">← 송천 대시보드</a>
             <h1>표준재무제표 · 복식부기</h1>
-            <p class="std-muted">2025년 홈택스 표준재무제표증명 양식의 항목·코드를 참고한 연간 수기 입력</p>
         </div>
         <div class="std-actions">
             <a class="std-link" th:href="@{/bookkeeping/monthly-view(year=${year},month=1)}">기존 월별 장부</a>

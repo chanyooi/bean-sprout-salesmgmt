@@ -34,20 +34,26 @@ body h1 { font-size: 24px !important; font-weight: 700 !important; line-height: 
 body h2 { font-size: 18px !important; font-weight: 600 !important; line-height: 1.4; }
 body h3 { font-size: 16px !important; font-weight: 600 !important; line-height: 1.4; }
 body :is(.eyebrow, .muted, .helper, .hint) { color: var(--ui-muted) !important; }
-body :is(.hero, [class$="-hero"]) .eyebrow { font-size: 12px; font-weight: 500; margin-bottom: 7px; }
-body :is(.hero, [class$="-hero"]) h1 { margin-top: 0; margin-bottom: 8px; }
+body :is(.hero, [class$="-hero"]) .eyebrow { font-size: 12px; font-weight: 500; margin: 0 0 8px !important; }
+body :is(.hero, [class$="-hero"]) h1 { margin: 0 !important; word-break: keep-all; overflow-wrap: anywhere; }
 body :is(.hero, [class$="-hero"]) p:not(.eyebrow) { max-width: 740px; line-height: 1.55; font-size: 14px; }
 body :focus-visible { outline: 2px solid var(--ui-blue); outline-offset: 2px; }
 
-/* Heading regions are not cards. This fixes boxed headings and clipping. */
-body :is(.hero, [class$="-hero"]) {
+/* Page headers and their adjacent navigation share a restrained, flat layout. */
+body :is(.hero, [class$="-hero"], .ledger-head, .std-top) {
+    box-sizing: border-box;
     background: transparent !important;
     border: 0 !important;
+    border-bottom: 1px solid var(--ui-line) !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
-    padding: 0 !important;
+    padding: clamp(20px, 3vw, 32px) clamp(18px, 3vw, 32px) !important;
     min-width: 0;
+}
+body :is(.hero-row, .vendor-v2-hero, .inventory-hero, .ledger-head, .std-top) {
+    flex-wrap: wrap;
+    gap: 12px 20px;
 }
 body :is(.hero, [class$="-hero"])::before,
 body :is(.hero, [class$="-hero"])::after {

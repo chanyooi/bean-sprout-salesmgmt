@@ -40,11 +40,11 @@ a{color:#2670d6}.muted{color:var(--muted)}
 .upload-row input{max-width:100%}
 details summary{cursor:pointer;font-weight:650}
 @media(max-width:700px){.summary{grid-template-columns:1fr}.metric .value{font-size:24px}.ledger-wrap{padding:0 10px}.panel{padding:14px}.ledger-table{min-width:610px}h1{font-size:25px}}
-</style>    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_polish1)}">
+</style>    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
 </head>
 <body><main class="ledger-wrap">
 <div class="ledger-head">
-<div><a th:href="@{/}">← 송천 대시보드</a><h1>개인 가계부</h1><p class="muted">월별 지출을 사업과 개인으로 나눠서 관리</p>
+<div><a th:href="@{/}">← 송천 대시보드</a><h1>개인 가계부</h1>
 <p><a class="btn" style="display:inline-block;text-decoration:none;margin-top:10px"
 th:href="@{/personal-ledger/reconciliation(month=${month})}">거래처 입금 대조</a></p></div>
 <form class="month-form" method="get" th:action="@{/personal-ledger}">

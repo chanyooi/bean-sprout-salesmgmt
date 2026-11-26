@@ -51,7 +51,7 @@
         @media(max-width:1000px){.book-journal{grid-template-columns:repeat(2,minmax(0,1fr))}.book-journal .book-btn{min-height:41px}}
         @media(max-width:700px){.book-wrap{padding:0 12px 45px;margin:16px auto}.book-panel{padding:16px}.book-top h1{font-size:24px}.book-stats{grid-template-columns:1fr}.book-stat strong{font-size:22px}.book-journal{grid-template-columns:1fr}.book-top{align-items:flex-start}}
     </style>
-    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_polish1)}">
+    <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
 </head>
 <body>
 <main class="book-wrap">
@@ -59,7 +59,6 @@
         <div>
             <a th:href="@{/}">← 송천 대시보드</a>
             <h1>월별 보조 장부 · 수기 입력</h1>
-            <p class="muted">기존 매출·매입·개인 가계부와 연결하지 않는 독립 장부입니다.</p>
         </div>
         <div class="book-flex"><a class="book-link" th:href="@{/bookkeeping(year=${year},type='COST')}">← 표준재무제표 입력</a><a class="book-link primary" th:href="@{/bookkeeping/export(year=${year})}">선택 연도 엑셀 다운로드 ↓</a></div>
     </div>
