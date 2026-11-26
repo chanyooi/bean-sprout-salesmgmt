@@ -37,6 +37,29 @@ public class WeeklyPaymentController {
         return "weekly-payments";
     }
 
+    @PostMapping("/payments/weekly/period")
+    public String settlementPeriod(
+            @RequestParam LocalDate weekStart,
+            @RequestParam Long vendorId,
+            @RequestParam LocalDate start,
+            @RequestParam LocalDate end,
+            @RequestParam(required = false) String confirmation,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            if (confirmation == null) {
+                redirectAttributes.addFlashAttribute("periodPreview",
+                        weeklyPaymentService.previewPeriod(vendorId, weekStart, start, end));
+            } else {
+                weeklyPaymentService.savePeriod(vendorId, weekStart, start, end, confirmation);
+                redirectAttributes.addFlashAttribute("successMessage", "정산 기간을 저장했습니다.");
+            }
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return "redirect:/payments/weekly?week=" + weekStart;
+    }
+
     @PostMapping("/payments/weekly/add")
     public String addPayment(
             @RequestParam LocalDate weekStart,

@@ -239,7 +239,7 @@
                 <thead>
                 <tr>
                     <th class="vendor-column">거래처</th>
-                    <th class="cycle-column">정산방식</th>
+                    <th class="cycle-column">입금자명</th>
                     <th class="money-column">청구금액</th>
                     <th class="money-column">입금액</th>
                     <th class="money-column">미수금</th>
@@ -258,9 +258,13 @@
                         <strong th:text="${row.vendorName}">거래처</strong>
                     </td>
 
-                    <td class="cycle-column"
-                        th:text="${row.paymentCycle.label}">
-                        월 단위
+                    <td class="cycle-column" th:with="names=${payerNames[row.vendorId]}">
+                        <span th:if="${names == null}">미등록</span>
+                        <span th:if="${names != null and names.size() == 1}" th:text="${names[0]}"></span>
+                        <details th:if="${names != null and names.size() > 1}">
+                            <summary th:text="|${names[0]} 외 ${names.size() - 1}명|"></summary>
+                            <ul><li th:each="name : ${names}" th:text="${name}"></li></ul>
+                        </details>
                     </td>
 
                     <td class="money-column"

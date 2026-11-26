@@ -11,6 +11,13 @@
     <link rel="stylesheet" th:href="@{/css/weekly-payments.css(v=20260831_2)}">
     <link rel="stylesheet" th:href="@{/css/weekly-payments-calendar-polish.css(v=20260907_1)}">
     <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261125_polish1)}">
+    <style>
+        .weekly-table-wrap .weekly-payment-table { min-width: 620px; }
+        .weekly-payment-table td:nth-child(2), .weekly-payment-table th:nth-child(2) { text-align: left; }
+        .weekly-payment-table details summary { cursor: pointer; }
+        .weekly-payment-table details form { display: grid; gap: .4rem; margin-top: .4rem; }
+        .weekly-payment-table details label { display: grid; gap: .2rem; }
+    </style>
 </head>
 <body>
 <main class="container weekly-payment-page">
@@ -72,23 +79,70 @@
 
     <div class="alert warning" th:if="${report.missingPriceCount > 0}">단가가 없는 판매 <strong th:text="|${report.missingPriceCount}건|"></strong>은 주간 사용금액에서 제외되었습니다.</div>
 
+    <section class="panel" th:if="${periodPreview != null}" aria-labelledby="period-preview-title">
+        <h2 id="period-preview-title">정산 기간 변경 확인</h2>
+        <p th:text="|${periodPreview.previous.vendorName} · 기존 ${periodPreview.previous.periodStart} ~ ${periodPreview.previous.periodEnd} → 변경 ${periodPreview.start} ~ ${periodPreview.end}|"></p>
+        <p th:text="|사용금액 ${#numbers.formatDecimal(periodPreview.previous.billedAmount, 0, 'COMMA', 0, 'POINT')}원 → ${#numbers.formatDecimal(periodPreview.billed, 0, 'COMMA', 0, 'POINT')}원|"></p>
+        <p th:text="|입금액 ${#numbers.formatDecimal(periodPreview.previous.paidAmount, 0, 'COMMA', 0, 'POINT')}원 · 남은 금액 ${#numbers.formatDecimal(periodPreview.previous.outstandingAmount, 0, 'COMMA', 0, 'POINT')}원 → ${#numbers.formatDecimal(periodPreview.outstanding, 0, 'COMMA', 0, 'POINT')}원|"></p>
+        <p>기존 입금 기록은 같은 회차에 유지됩니다. 변경한 기간의 판매는 다른 달력 주의 기본 집계에서 제외됩니다.</p>
+        <form th:action="@{/payments/weekly/period}" method="post">
+            <input type="hidden" name="weekStart" th:value="${selectedWeek}">
+            <input type="hidden" name="vendorId" th:value="${periodPreview.previous.vendorId}">
+            <input type="hidden" name="start" th:value="${periodPreview.start}">
+            <input type="hidden" name="end" th:value="${periodPreview.end}">
+            <input type="hidden" name="confirmation" th:value="${periodPreview.confirmation}">
+            <button type="submit">변경 확정</button>
+            <a class="secondary-link" th:href="@{/payments/weekly(week=${selectedWeek})}">취소</a>
+        </form>
+    </section>
+
     <section class="panel">
-        <div class="panel-heading"><div><h2>일~토 사용금액 · 입금상태</h2><p>선택한 달력 주간의 판매금액을 합산하고 등록한 입금액과 바로 비교합니다.</p></div></div>
+        <div class="panel-heading"><div><h2>거래처별 정산 · 입금 상태</h2><p>거래처별 정산 기간과 등록한 입금액을 비교합니다.</p></div></div>
         <div class="weekly-table-wrap">
             <table class="weekly-payment-table">
-                <thead><tr><th class="vendor-col">거래처</th><th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th class="total-col">주간 합계</th><th class="paid-col">입금액</th><th class="outstanding-col">남은 금액</th><th>상태</th><th class="action-col">관리</th></tr></thead>
+                <thead><tr><th class="vendor-col">거래처</th><th>정산 기간</th><th class="total-col">사용금액</th><th class="paid-col">입금액</th><th class="outstanding-col">남은 금액</th><th class="action-col">관리</th></tr></thead>
                 <tbody>
                 <tr th:each="row : ${report.vendorRows}" th:classappend="${row.status == '입금완료'} ? ' row-paid' : (${row.status == '일부입금'} ? ' row-partial' : '')">
                     <td class="vendor-col"><strong th:text="${row.vendorName}">거래처</strong></td>
-                    <td th:text="${#numbers.formatDecimal(row.sundayAmount, 0, 'COMMA', 0, 'POINT')}">0</td><td th:text="${#numbers.formatDecimal(row.mondayAmount, 0, 'COMMA', 0, 'POINT')}">0</td><td th:text="${#numbers.formatDecimal(row.tuesdayAmount, 0, 'COMMA', 0, 'POINT')}">0</td><td th:text="${#numbers.formatDecimal(row.wednesdayAmount, 0, 'COMMA', 0, 'POINT')}">0</td><td th:text="${#numbers.formatDecimal(row.thursdayAmount, 0, 'COMMA', 0, 'POINT')}">0</td><td th:text="${#numbers.formatDecimal(row.fridayAmount, 0, 'COMMA', 0, 'POINT')}">0</td><td th:text="${#numbers.formatDecimal(row.saturdayAmount, 0, 'COMMA', 0, 'POINT')}">0</td>
-                    <td class="total-col" th:text="${#numbers.formatDecimal(row.billedAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td><td class="paid-col" th:text="${#numbers.formatDecimal(row.paidAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td><td class="outstanding-col" th:text="${#numbers.formatDecimal(row.outstandingAmount, 0, 'COMMA', 0, 'POINT') + '원'}">0원</td>
-                    <td><span class="weekly-status" th:classappend="${row.status == '입금완료'} ? ' status-paid' : (${row.status == '일부입금'} ? ' status-partial' : (${row.status == '사용없음'} ? ' status-empty' : ' status-unpaid'))" th:text="${row.status}">미입금</span></td>
-                    <td class="action-col"><form th:if="${row.outstandingAmount.signum() > 0}" th:action="@{/payments/weekly/{vendorId}/complete(vendorId=${row.vendorId})}" method="post" th:attr="data-vendor=${row.vendorName},data-amount=${row.outstandingAmount.stripTrailingZeros().toPlainString()}" onsubmit="return confirmWeeklyComplete(this);"><input type="hidden" name="weekStart" th:value="${selectedWeek}"><button type="submit" class="weekly-complete-button">입금 완료</button></form><span th:if="${row.outstandingAmount.signum() <= 0 && row.billedAmount.signum() > 0}" class="complete-mark">✓ 완료</span><span th:if="${row.billedAmount.signum() == 0 && row.paidAmount.signum() == 0}" class="no-use-mark">-</span></td>
+                    <td>
+                        <details>
+                            <summary th:text="|${#temporals.format(row.periodStart, 'MM.dd')} ~ ${#temporals.format(row.periodEnd, 'MM.dd')}|"></summary>
+                            <p th:if="${!row.customPeriod}">기본 주간 · 다른 회차에 배정된 날짜 제외</p>
+                            <p th:if="${row.dailyAmounts.isEmpty()}">판매 기록 없음</p>
+                            <ul th:unless="${row.dailyAmounts.isEmpty()}">
+                                <li th:each="day : ${row.dailyAmounts}" th:text="|${day.date} · ${#numbers.formatDecimal(day.amount, 0, 'COMMA', 0, 'POINT')}원|"></li>
+                            </ul>
+                            <div th:unless="${row.unassignedAmounts.isEmpty()}">
+                                <p>선택 주에서 이 정산 기간에 포함되지 않은 판매</p>
+                                <ul><li th:each="day : ${row.unassignedAmounts}" th:text="|${day.date} · ${#numbers.formatDecimal(day.amount, 0, 'COMMA', 0, 'POINT')}원|"></li></ul>
+                            </div>
+                        </details>
+                    </td>
+                    <td class="total-col" th:text="|${#numbers.formatDecimal(row.billedAmount, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
+                    <td class="paid-col" th:text="|${#numbers.formatDecimal(row.paidAmount, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
+                    <td class="outstanding-col" th:text="|${#numbers.formatDecimal(row.outstandingAmount, 0, 'COMMA', 0, 'POINT')}원|">0원</td>
+                    <td class="action-col">
+                        <span class="weekly-status" th:text="${row.status}"></span>
+                        <form th:if="${row.outstandingAmount.signum() > 0}" th:action="@{/payments/weekly/{vendorId}/complete(vendorId=${row.vendorId})}" method="post" th:attr="data-vendor=${row.vendorName},data-amount=${row.outstandingAmount.stripTrailingZeros().toPlainString()}" onsubmit="return confirmWeeklyComplete(this);">
+                            <input type="hidden" name="weekStart" th:value="${selectedWeek}">
+                            <button type="submit" class="weekly-complete-button">입금 완료</button>
+                        </form>
+                        <details>
+                            <summary th:text="${row.customPeriod ? '기간 수정' : '기간 지정'}"></summary>
+                            <form th:action="@{/payments/weekly/period}" method="post">
+                                <input type="hidden" name="weekStart" th:value="${selectedWeek}">
+                                <input type="hidden" name="vendorId" th:value="${row.vendorId}">
+                                <label>시작일 <input type="date" name="start" th:value="${row.periodStart}" required></label>
+                                <label>종료일 <input type="date" name="end" th:value="${row.periodEnd}" required></label>
+                                <button type="submit">변경 결과 확인</button>
+                            </form>
+                        </details>
+                    </td>
                 </tr>
                 </tbody>
             </table>
         </div>
-        <p class="table-help">금액 단위: 원 · 가로로 밀어서 일~토 전체 금액을 확인할 수 있습니다.</p>
+        <p class="table-help">정산 기간을 누르면 일자별 사용금액을 볼 수 있습니다.</p>
     </section>
 
     <section class="panel">
@@ -103,6 +157,6 @@
 </main>
 <form id="songcheonPcLogoutForm" th:action="@{/logout}" method="post" style="display:none" aria-hidden="true"></form>
 <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261125_flat)}"></script><script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script><script defer th:src="@{/js/weekly-payments-calendar.js(v=20260831_1)}"></script>
-<script>function formatWeeklyWon(value){const number=Number(value||0);return Math.round(number).toLocaleString('ko-KR')+'원';}function confirmWeeklyComplete(form){const vendor=form.dataset.vendor||'거래처';const amount=form.dataset.amount||'0';return confirm(vendor+'\n'+'이 주의 남은 금액 '+formatWeeklyWon(amount)+'을 입금 완료 처리할까요?');}</script>
+<script>function formatWeeklyWon(value){const number=Number(value||0);return Math.round(number).toLocaleString('ko-KR')+'원';}function confirmWeeklyComplete(form){const vendor=form.dataset.vendor||'거래처';const amount=form.dataset.amount||'0';return confirm(vendor+'\n'+'이 정산 기간의 남은 금액 '+formatWeeklyWon(amount)+'을 입금 완료 처리할까요?');}</script>
 </body>
 </html>

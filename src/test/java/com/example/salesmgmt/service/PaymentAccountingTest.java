@@ -47,6 +47,56 @@ class PaymentAccountingTest {
     }
 
 
+    @Test void vendorPeriodsSpanMonthsAndEditsPreserveReceiptsAndMonthlyReports() {
+        var a = vendor("교차 정산", PaymentCycle.WEEKLY);
+        var b = vendor("수요일 정산", PaymentCycle.WEEKLY);
+        var legacy = vendor("기존 정산", PaymentCycle.WEEKLY);
+        var anchor = LocalDate.parse("2026-09-27");
+        var start = LocalDate.parse("2026-09-28");
+        var end = LocalDate.parse("2026-10-04");
+        sale(a, "2026-09-28", "1000");
+        sale(a, "2026-10-04", "2000");
+        sale(a, "2026-10-05", "4000");
+        sale(b, "2026-09-30", "3000");
+        sale(legacy, "2026-09-28", "7000");
+        weekly.addPayment(anchor, legacy.getId(), start, BigDecimal.valueOf(900), "기존 입금");
+        var legacyReceipt = weeklyPayments.findForWeek(anchor).getFirst().getId();
+        var monthlyBefore = monthly.createMonthlyReport(september);
+        var preview = weekly.previewPeriod(a.getId(), anchor, start, end);
+        assertThat(preview.billed()).isEqualByComparingTo("3000");
+        weekly.savePeriod(a.getId(), anchor, start, end, preview.confirmation());
+        assertThat(monthly.createMonthlyReport(september)).isEqualTo(monthlyBefore);
+        var wednesday = LocalDate.parse("2026-09-30");
+        var bEnd = LocalDate.parse("2026-10-06");
+        var second = weekly.previewPeriod(b.getId(), anchor, wednesday, bEnd);
+        weekly.savePeriod(b.getId(), anchor, wednesday, bEnd, second.confirmation());
+        assertThat(weekly.createReport(anchor).vendorRows()).anySatisfy(row -> {
+            if (!row.vendorId().equals(b.getId())) throw new AssertionError();
+            assertThat(row.periodStart()).isEqualTo(wednesday);
+        });
+        var next = weekly.createReport(anchor.plusWeeks(1)).vendorRows().stream()
+                .filter(row -> row.vendorId().equals(a.getId())).findFirst().orElseThrow();
+        assertThat(next.billedAmount()).isEqualByComparingTo("4000");
+        assertThatThrownBy(() -> weekly.previewPeriod(a.getId(), anchor.plusWeeks(1), end, end.plusDays(3)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> weekly.previewPeriod(legacy.getId(), anchor, start, end))
+                .isInstanceOf(IllegalArgumentException.class);
+        weekly.addPayment(anchor, a.getId(), end, BigDecimal.valueOf(500), "부분 입금");
+        var aReceipt = weeklyPayments.findForWeek(anchor).getFirst().getId();
+        var sepWithPayment = monthly.createMonthlyReport(september);
+        var octWithPayment = monthly.createMonthlyReport(september.plusMonths(1));
+        var revised = weekly.previewPeriod(a.getId(), anchor, start, end.plusDays(1));
+        assertThat(revised.outstanding()).isEqualByComparingTo("6500");
+        weekly.savePeriod(a.getId(), anchor, start, end.plusDays(1), revised.confirmation());
+        assertThat(weekly.createReport(anchor).vendorRows().stream()
+                .filter(row -> row.vendorId().equals(a.getId())).findFirst().orElseThrow().outstandingAmount())
+                .isEqualByComparingTo("6500");
+        assertThat(weeklyPayments.findForWeek(anchor)).extracting(WeeklyPaymentEntity::getId)
+                .containsExactlyInAnyOrder(legacyReceipt, aReceipt);
+        assertThat(monthly.createMonthlyReport(september)).isEqualTo(sepWithPayment);
+        assertThat(monthly.createMonthlyReport(september.plusMonths(1))).isEqualTo(octWithPayment);
+    }
+
     @Test void palgongTofuPurchaseIsNegativePayableAndNotReceivable() {
         var palgong=vendor("팔공",PaymentCycle.MONTHLY);
         var regular=vendor("일반마트",PaymentCycle.MONTHLY);

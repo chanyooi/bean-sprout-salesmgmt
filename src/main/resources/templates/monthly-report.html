@@ -76,7 +76,7 @@
         <p th:text="|${report.startDate} ~ ${report.endDate}|">기간</p>
     </section>
 
-    <div class="summary-grid five report-summary">
+    <div class="summary-grid four report-summary">
         <article class="summary-card primary-metric">
             <span>확정 매출</span>
             <strong th:text="|${#numbers.formatDecimal(report.confirmedSales, 0, 'COMMA', 0, 'POINT')}원|">
@@ -90,10 +90,6 @@
         <article class="summary-card">
             <span>거래처</span>
             <strong th:text="|${report.vendorCount}곳|">0곳</strong>
-        </article>
-        <article class="summary-card">
-            <span>전체 수량</span>
-            <strong th:text="${report.totalQuantity.stripTrailingZeros().toPlainString()}">0</strong>
         </article>
         <article class="summary-card"
                  th:classappend="${report.hasMissingPrices()} ? ' warning-card' : ' success-card'">

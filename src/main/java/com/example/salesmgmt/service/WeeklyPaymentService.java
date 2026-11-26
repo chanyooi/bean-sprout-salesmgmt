@@ -5,6 +5,8 @@ import com.example.salesmgmt.entity.SalesItemEntity;
 import com.example.salesmgmt.entity.VendorEntity;
 import com.example.salesmgmt.entity.VendorProfileEntity;
 import com.example.salesmgmt.entity.WeeklyPaymentEntity;
+import com.example.salesmgmt.entity.WeeklySettlementPeriodEntity;
+import com.example.salesmgmt.repository.WeeklySettlementPeriodRepository;
 import com.example.salesmgmt.repository.SalesItemRepository;
 import com.example.salesmgmt.repository.VendorProfileRepository;
 import com.example.salesmgmt.repository.VendorRepository;
@@ -22,6 +24,11 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.HexFormat;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 @Service
 public class WeeklyPaymentService {
@@ -33,17 +40,20 @@ public class WeeklyPaymentService {
     private final VendorRepository vendorRepository;
     private final VendorProfileRepository vendorProfileRepository;
     private final SalesItemRepository salesItemRepository;
+    private final WeeklySettlementPeriodRepository periods;
 
     public WeeklyPaymentService(
             WeeklyPaymentRepository weeklyPaymentRepository,
             VendorRepository vendorRepository,
             VendorProfileRepository vendorProfileRepository,
-            SalesItemRepository salesItemRepository
+            SalesItemRepository salesItemRepository,
+            WeeklySettlementPeriodRepository periods
     ) {
         this.weeklyPaymentRepository = weeklyPaymentRepository;
         this.vendorRepository = vendorRepository;
         this.vendorProfileRepository = vendorProfileRepository;
         this.salesItemRepository = salesItemRepository;
+        this.periods = periods;
     }
 
     public LocalDate resolveWeekStart(String requestedDate) {
@@ -69,30 +79,26 @@ public class WeeklyPaymentService {
             targetByVendorId.put(profile.getVendor().getId(), profile.getVendor());
         }
 
-        Map<Long, BigDecimal[]> dailyByVendor = new LinkedHashMap<>();
-        Map<Long, BigDecimal> billedByVendor = new LinkedHashMap<>();
-        long missingPriceCount = 0;
-
-        for (SalesItemEntity item : salesItemRepository.findForMonthlyReport(weekStart, weekEnd)) {
-            Long vendorId = item.getSalesOrder().getVendor().getId();
-            if (!targetByVendorId.containsKey(vendorId)) {
-                continue;
-            }
-
-            BigDecimal amount = ReceivableBillingAdjustmentService.billingAmount(item);
-            if (item.getLineAmount() == null && amount.signum() == 0) {
-                missingPriceCount++;
-                continue;
-            }
-
-            LocalDate date = item.getSalesOrder().getDeliveryDate();
-            int dayIndex = sundayFirstIndex(date.getDayOfWeek());
-
-            BigDecimal[] daily = dailyByVendor.computeIfAbsent(vendorId, ignored -> zeroWeek());
-            daily[dayIndex] = daily[dayIndex].add(amount);
-            billedByVendor.merge(vendorId, amount, BigDecimal::add);
+        List<WeeklySettlementPeriodEntity> relevant = periods.findForCalendarWeek(weekStart, weekEnd);
+        Map<Long, List<WeeklySettlementPeriodEntity>> periodsByVendor = new LinkedHashMap<>();
+        for (var period : relevant) {
+            periodsByVendor.computeIfAbsent(period.getVendor().getId(), ignored -> new ArrayList<>()).add(period);
         }
-
+        LocalDate queryStart = weekStart;
+        LocalDate queryEnd = weekEnd;
+        for (var period : relevant) {
+            if (!period.getWeekAnchor().equals(weekStart)) continue;
+            if (period.getStartsOn().isBefore(queryStart)) queryStart = period.getStartsOn();
+            if (period.getEndsOn().isAfter(queryEnd)) queryEnd = period.getEndsOn();
+        }
+        Map<Long, List<SalesItemEntity>> salesByVendor = new LinkedHashMap<>();
+        for (var item : salesItemRepository.findForMonthlyReport(queryStart, queryEnd)) {
+            Long id = item.getSalesOrder().getVendor().getId();
+            if (targetByVendorId.containsKey(id)) {
+                salesByVendor.computeIfAbsent(id, ignored -> new ArrayList<>()).add(item);
+            }
+        }
+        long missingPriceCount = 0;
         List<WeeklyPaymentEntity> payments = weeklyPaymentRepository.findForWeek(weekStart);
         Map<Long, BigDecimal> paidByVendor = new LinkedHashMap<>();
         for (WeeklyPaymentEntity payment : payments) {
@@ -112,8 +118,27 @@ public class WeeklyPaymentService {
         for (VendorProfileEntity profile : weeklyProfiles) {
             VendorEntity vendor = profile.getVendor();
             Long vendorId = vendor.getId();
-            BigDecimal[] daily = dailyByVendor.getOrDefault(vendorId, zeroWeek());
-            BigDecimal billed = safe(billedByVendor.get(vendorId));
+            var vendorPeriods = periodsByVendor.getOrDefault(vendorId, List.of());
+            var custom = vendorPeriods.stream().filter(period -> period.getWeekAnchor().equals(weekStart))
+                    .findFirst().orElse(null);
+            LocalDate start = custom == null ? weekStart : custom.getStartsOn();
+            LocalDate end = custom == null ? weekEnd : custom.getEndsOn();
+            var daily = new TreeMap<LocalDate, BigDecimal>();
+            var unassigned = new TreeMap<LocalDate, BigDecimal>();
+            for (var item : salesByVendor.getOrDefault(vendorId, List.of())) {
+                LocalDate date = item.getSalesOrder().getDeliveryDate();
+                boolean assigned = custom != null ? contains(start, end, date)
+                        : contains(start, end, date) && vendorPeriods.stream().noneMatch(period ->
+                            contains(period.getStartsOn(), period.getEndsOn(), date));
+                BigDecimal amount = ReceivableBillingAdjustmentService.billingAmount(item);
+                if (assigned && item.getLineAmount() == null && amount.signum() == 0) missingPriceCount++;
+                if (assigned) daily.merge(date, amount, BigDecimal::add);
+                if (!assigned && custom != null && contains(weekStart, weekEnd, date)
+                        && vendorPeriods.stream().noneMatch(period -> contains(period.getStartsOn(), period.getEndsOn(), date))) {
+                    unassigned.merge(date, amount, BigDecimal::add);
+                }
+            }
+            BigDecimal billed = sum(daily);
             BigDecimal paid = safe(paidByVendor.get(vendorId));
             BigDecimal outstanding = billed.subtract(paid);
 
@@ -127,13 +152,11 @@ public class WeeklyPaymentService {
             rows.add(new VendorRow(
                     vendorId,
                     vendor.getInputName(),
-                    money(daily[0]),
-                    money(daily[1]),
-                    money(daily[2]),
-                    money(daily[3]),
-                    money(daily[4]),
-                    money(daily[5]),
-                    money(daily[6]),
+                    start,
+                    end,
+                    custom != null,
+                    dailyRows(daily),
+                    dailyRows(unassigned),
                     money(billed),
                     money(paid),
                     money(outstanding),
@@ -175,6 +198,14 @@ public class WeeklyPaymentService {
     ) {
         LocalDate weekStart = normalizeWeekStart(requestedWeekStart);
         VendorEntity vendor = targetVendorById(vendorId);
+        if (periods.findByVendor_IdAndWeekAnchor(vendorId, weekStart).isEmpty()) {
+            LocalDate weekEnd = weekStart.plusDays(6);
+            var covering = periods.findByVendor_IdAndStartsOnLessThanEqualAndEndsOnGreaterThanEqual(vendorId, weekEnd, weekStart);
+            if (weekStart.datesUntil(weekEnd.plusDays(1)).allMatch(day -> covering.stream().anyMatch(period ->
+                    contains(period.getStartsOn(), period.getEndsOn(), day)))) {
+                throw new IllegalArgumentException("이 주의 날짜는 다른 정산 회차에 포함되어 있습니다. 해당 회차를 선택해 주세요.");
+            }
+        }
         LocalDate actualPaymentDate = paymentDate == null ? LocalDate.now() : paymentDate;
         assertNoDuplicateWeeklyPayment(
                 weekStart,
@@ -226,9 +257,9 @@ public class WeeklyPaymentService {
 
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void deletePayment(Long paymentId) {
-        if (!weeklyPaymentRepository.existsById(paymentId)) {
-            throw new IllegalArgumentException("삭제할 주별 입금 기록을 찾을 수 없습니다.");
-        }
+        var payment = weeklyPaymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("삭제할 주별 입금 기록을 찾을 수 없습니다."));
+        vendorRepository.findByIdForUpdate(payment.getVendor().getId());
         weeklyPaymentRepository.deleteById(paymentId);
     }
 
@@ -299,12 +330,77 @@ public class WeeklyPaymentService {
         return base.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
     }
 
-    private int sundayFirstIndex(DayOfWeek dayOfWeek) {
-        return dayOfWeek == DayOfWeek.SUNDAY ? 0 : dayOfWeek.getValue();
+    private static boolean contains(LocalDate start, LocalDate end, LocalDate date) {
+        return !date.isBefore(start) && !date.isAfter(end);
     }
 
-    private BigDecimal[] zeroWeek() {
-        return new BigDecimal[] { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO };
+    private BigDecimal sum(Map<LocalDate, BigDecimal> daily) {
+        return daily.values().stream().reduce(ZERO, BigDecimal::add);
+    }
+
+    private List<DailyAmount> dailyRows(Map<LocalDate, BigDecimal> daily) {
+        return daily.entrySet().stream().map(entry -> new DailyAmount(entry.getKey(), money(entry.getValue()))).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PeriodPreview previewPeriod(Long vendorId, LocalDate requestedWeek, LocalDate start, LocalDate end) {
+        var vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new IllegalArgumentException("거래처를 찾을 수 없습니다."));
+        return preparePeriod(vendor, normalizeWeekStart(requestedWeek), start, end);
+    }
+
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void savePeriod(Long vendorId, LocalDate requestedWeek, LocalDate start, LocalDate end, String confirmation) {
+        LocalDate anchor = normalizeWeekStart(requestedWeek);
+        var vendor = targetVendorById(vendorId);
+        var preview = preparePeriod(vendor, anchor, start, end);
+        if (!preview.confirmation().equals(confirmation)) {
+            throw new IllegalArgumentException("정산 내역이 변경되었습니다. 변경 결과를 다시 확인해 주세요.");
+        }
+        var existing = periods.findByVendor_IdAndWeekAnchor(vendorId, anchor);
+        if (existing.isPresent()) existing.get().changeDates(start, end);
+        else periods.save(new WeeklySettlementPeriodEntity(vendor, anchor, start, end));
+    }
+
+    private PeriodPreview preparePeriod(VendorEntity vendor, LocalDate anchor, LocalDate start, LocalDate end) {
+        if (start == null || end == null || end.isBefore(start) || end.isAfter(start.plusDays(365))) {
+            throw new IllegalArgumentException("시작일과 종료일을 확인해 주세요. 한 회차는 최대 366일입니다.");
+        }
+        if (end.isBefore(anchor) || start.isAfter(anchor.plusDays(6))) {
+            throw new IllegalArgumentException("정산 기간에 달력에서 선택한 주의 날짜가 포함되어야 합니다.");
+        }
+        var overlaps = periods.findByVendor_IdAndStartsOnLessThanEqualAndEndsOnGreaterThanEqual(vendor.getId(), end, start);
+        if (overlaps.stream().anyMatch(period -> !period.getWeekAnchor().equals(anchor))) {
+            throw new IllegalArgumentException("이 거래처의 다른 정산 기간과 겹칩니다.");
+        }
+        var existing = periods.findByVendor_IdAndWeekAnchor(vendor.getId(), anchor);
+        var attached = weeklyPaymentRepository.findForWeek(anchor).stream()
+                .filter(payment -> payment.getVendor().getId().equals(vendor.getId())).toList();
+        if (existing.isEmpty() && !attached.isEmpty() && (!start.equals(anchor) || !end.equals(anchor.plusDays(6)))) {
+            throw new IllegalArgumentException("이미 입금이 기록된 기존 회차의 기간은 그대로 유지됩니다. 입금 기록이 없는 회차를 선택해 주세요.");
+        }
+        if (weeklyPaymentRepository.findOverlappingWeeks(start.minusDays(6), end).stream()
+                .anyMatch(payment -> payment.getVendor().getId().equals(vendor.getId())
+                        && !payment.getWeekStart().equals(anchor)
+                        && periods.findByVendor_IdAndWeekAnchor(vendor.getId(), payment.getWeekStart()).isEmpty())) {
+            throw new IllegalArgumentException("이미 입금이 기록된 다른 기존 회차와 겹칩니다.");
+        }
+        var previous = createReport(anchor).vendorRows().stream().filter(row -> row.vendorId().equals(vendor.getId()))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("주별 정산 대상 거래처가 아닙니다."));
+        var sales = salesItemRepository.findForVendorPeriod(vendor.getId(), start, end);
+        BigDecimal billed = money(sales.stream().map(ReceivableBillingAdjustmentService::billingAmount)
+                .reduce(ZERO, BigDecimal::add));
+        String snapshot = previous + "|" + start + "|" + end + "|" + billed + "|"
+                + attached.stream().map(payment -> payment.getId() + ":" + payment.getAmount()).toList()
+                + "|" + sales.stream().map(item -> item.getId() + ":" + item.getSalesOrder().getDeliveryDate()
+                        + ":" + ReceivableBillingAdjustmentService.billingAmount(item)).sorted().toList();
+        try {
+            String token = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(snapshot.getBytes(StandardCharsets.UTF_8)));
+            return new PeriodPreview(previous, start, end, billed, money(billed.subtract(previous.paidAmount())), token);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 
     private String statusFor(BigDecimal billed, BigDecimal paid, BigDecimal outstanding) {
@@ -347,18 +443,21 @@ public class WeeklyPaymentService {
     public record VendorRow(
             Long vendorId,
             String vendorName,
-            BigDecimal sundayAmount,
-            BigDecimal mondayAmount,
-            BigDecimal tuesdayAmount,
-            BigDecimal wednesdayAmount,
-            BigDecimal thursdayAmount,
-            BigDecimal fridayAmount,
-            BigDecimal saturdayAmount,
+            LocalDate periodStart,
+            LocalDate periodEnd,
+            boolean customPeriod,
+            List<DailyAmount> dailyAmounts,
+            List<DailyAmount> unassignedAmounts,
             BigDecimal billedAmount,
             BigDecimal paidAmount,
             BigDecimal outstandingAmount,
             String status
     ) {}
+
+    public record DailyAmount(LocalDate date, BigDecimal amount) {}
+
+    public record PeriodPreview(VendorRow previous, LocalDate start, LocalDate end,
+                                BigDecimal billed, BigDecimal outstanding, String confirmation) {}
 
     public record PaymentRow(
             Long paymentId,

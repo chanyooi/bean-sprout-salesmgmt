@@ -32,6 +32,34 @@ class PersonalLedgerControllerTest {
     @Autowired com.example.salesmgmt.repository.PaymentRepository payments;
     @Autowired com.example.salesmgmt.service.PersonalTransferMatchingService transfers;
 
+    @Test void monthlyPaymentsShowsLinkedPayersAndKeepsUnlinkedNamesPrivate() throws Exception {
+        VendorEntity registered = vendors.save(new VendorEntity("입금자 등록 거래처", "입금자 등록 거래처", true));
+        VendorEntity unregistered = vendors.save(new VendorEntity("입금자 미등록 거래처", "입금자 미등록 거래처", true));
+        LocalDate date = LocalDate.of(2026, 10, 15);
+        payments.save(new com.example.salesmgmt.entity.PaymentEntity(
+                registered, "2026-10", date, BigDecimal.TEN, null));
+        payments.save(new com.example.salesmgmt.entity.PaymentEntity(
+                unregistered, "2026-10", date, BigDecimal.ONE, null));
+        var first = transactions.save(new PersonalBankTransactionEntity(
+                "payer-visible-1", "qa-bank", date, BigDecimal.TEN, BigDecimal.ZERO, "등록 송금인", "비공개 메모"));
+        var second = transactions.save(new PersonalBankTransactionEntity(
+                "payer-visible-2", "qa-bank", date, BigDecimal.ONE, BigDecimal.ZERO, "별도 송금인", "비공개 메모"));
+        transactions.save(new PersonalBankTransactionEntity(
+                "payer-private", "qa-bank", date, BigDecimal.ONE, BigDecimal.ZERO, "미연결 송금인", "비공개 메모"));
+        for (var tx : List.of(first, second)) {
+            mvc.perform(post("/personal-ledger/" + tx.getId() + "/link")
+                    .with(user("admin").roles("ADMIN")).with(csrf())
+                    .param("month", "2026-10").param("vendorId", registered.getId().toString())
+                    .param("remember", tx == first ? "true" : "false"))
+                    .andExpect(status().is3xxRedirection());
+        }
+        String html = mvc.perform(get("/payments").param("month", "2026-10")
+                        .with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(html).contains("입금자명", "등록 송금인 외 1명", "별도 송금인", ">미등록<");
+        assertThat(html).doesNotContain("미연결 송금인", "비공개 메모");
+    }
+
     private String bankSelector(String account) throws Exception {
         return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
                     .digest(account.getBytes(java.nio.charset.StandardCharsets.UTF_8)))

@@ -1,6 +1,11 @@
 package com.example.salesmgmt.controller;
 
 import com.example.salesmgmt.service.PaymentService;
+import com.example.salesmgmt.repository.PersonalBankAliasRepository;
+import com.example.salesmgmt.repository.PersonalBankTransactionRepository;
+import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import com.example.salesmgmt.service.VendorManagementService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,12 +25,19 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final VendorManagementService vendorManagementService;
 
+    private final PersonalBankAliasRepository aliases;
+    private final PersonalBankTransactionRepository transactions;
+
     public PaymentController(
             PaymentService paymentService,
-            VendorManagementService vendorManagementService
+            VendorManagementService vendorManagementService,
+            PersonalBankAliasRepository aliases,
+            PersonalBankTransactionRepository transactions
     ) {
         this.paymentService = paymentService;
         this.vendorManagementService = vendorManagementService;
+        this.aliases = aliases;
+        this.transactions = transactions;
     }
 
     @GetMapping("/payments")
@@ -36,10 +48,22 @@ public class PaymentController {
         YearMonth selectedMonth =
                 paymentService.resolveMonth(month);
 
-        model.addAttribute(
-                "report",
-                paymentService.createMonthlyReport(selectedMonth)
-        );
+        var report = paymentService.createMonthlyReport(selectedMonth);
+        model.addAttribute("report", report);
+        var vendorIds = report.vendorRows().stream().map(row -> row.vendorId()).distinct().toList();
+        var names = new LinkedHashMap<Long, LinkedHashSet<String>>();
+        if (!vendorIds.isEmpty()) {
+            aliases.findByVendorIdIn(vendorIds).stream()
+                    .sorted(java.util.Comparator.comparing(alias -> alias.getAlias()))
+                    .forEach(alias -> names.computeIfAbsent(alias.getVendorId(), key -> new LinkedHashSet<>()).add(alias.getAlias()));
+            transactions.findLinkedPayerNames(vendorIds).stream()
+                    .filter(row -> !((String) row[1]).isBlank())
+                    .sorted(java.util.Comparator.comparing(row -> (String) row[1]))
+                    .forEach(row -> names.computeIfAbsent((Long) row[0], key -> new LinkedHashSet<>()).add((String) row[1]));
+        }
+        var payerNames = new LinkedHashMap<Long, List<String>>();
+        names.forEach((id, values) -> payerNames.put(id, List.copyOf(values)));
+        model.addAttribute("payerNames", payerNames);
         model.addAttribute(
                 "vendors",
                 vendorManagementService.findAllRows()

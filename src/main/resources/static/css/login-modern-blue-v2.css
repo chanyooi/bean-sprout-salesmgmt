@@ -133,30 +133,26 @@ body.songcheon-login-page {
 }
 
 .modern-password-field input {
-    padding-right: 48px;
+    padding-right: 54px !important;
 }
 
-.modern-password-toggle {
+body .modern-password-field .modern-password-toggle {
     position: absolute;
-    top: 50%;
-    right: 7px;
-    transform: translateY(-50%);
-    width: 34px;
-    height: 34px;
+    inset: 50% 4px auto auto;
+    transform: translateY(-50%) !important;
+    width: 44px;
+    height: 44px;
     padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
     border: 0;
-    border-radius: 7px;
     background: transparent;
-    color: #666b72;
+    color: #6b7280;
     cursor: pointer;
 }
 
-.modern-password-toggle:hover {
-    background: #f2f4f6;
-    color: #17191c;
+body .modern-password-field .modern-password-toggle:hover {
+    color: #1f2937;
 }
 
 .modern-password-toggle svg {
