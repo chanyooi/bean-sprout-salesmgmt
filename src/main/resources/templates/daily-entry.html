@@ -15,10 +15,11 @@
     <link rel="stylesheet" th:href="@{/css/pc-logout-fixed.css(v=20260814_1)}">
     <link rel="stylesheet" th:href="@{/css/daily-entry.css(v=20261002_2)}">
     <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
+    <link rel="stylesheet" th:href="@{/css/date-controls.css(v=20261126_1)}">
 </head>
 <body class="daily-entry-page">
 <main class="container">
-    <section class="hero">
+    <section class="hero sc-entry-heading">
         <div class="hero-row">
             <div>
                 <p class="eyebrow">매일 납품 등록</p>
@@ -40,33 +41,17 @@
          th:if="${saveError}"
          th:text="${saveError}"></div>
 
-    <section class="panel daily-entry-date-panel">
-        <div class="daily-entry-toolbar">
-            <div>
-                <p class="eyebrow">선택 날짜</p>
-                <h2 th:text="${dateLabel}">2026년 8월 28일 금요일</h2>
-                <div class="daily-entry-summary">
-                    <span class="daily-entry-chip">
-                        거래처 <strong th:text="${vendorCount}">76</strong>곳
-                    </span>
-                    <span class="daily-entry-chip">
-                        입력된 거래처 <strong th:text="${page.filledVendorCount}">0</strong>곳
-                    </span>
-                </div>
-            </div>
-
-            <div class="daily-entry-date-nav">
-                <a class="secondary-link" th:href="@{/daily-entry(date=${previousDate})}">← 전날</a>
-                <label class="daily-entry-date-picker">
-                    <span class="sr-only">날짜 선택</span>
-                    <input type="date"
-                           th:value="${selectedDate}"
-                           data-entry-date>
-                </label>
-                <a class="secondary-link" th:href="@{/daily-entry(date=${today})}">오늘</a>
-                <a class="secondary-link" th:href="@{/daily-entry(date=${nextDate})}">다음날 →</a>
-            </div>
+    <section class="sc-entry-toolbar" aria-label="납품 입력 현황과 조회일">
+        <div class="sc-entry-counts">
+            <span>거래처 <strong th:text="${vendorCount}">76</strong>곳</span>
+            <span>입력 완료 <strong th:text="${page.filledVendorCount}">0</strong>곳</span>
         </div>
+        <nav class="sc-date-controls sc-entry-controls" aria-label="납품일 이동">
+            <a th:href="@{/daily-entry(date=${previousDate})}">전날</a>
+            <input type="date" th:value="${selectedDate}" aria-label="납품일" data-entry-date>
+            <a th:href="@{/daily-entry(date=${today})}">오늘</a>
+            <a th:href="@{/daily-entry(date=${nextDate})}">다음날</a>
+        </nav>
     </section>
 
     <section class="panel daily-entry-input-panel">

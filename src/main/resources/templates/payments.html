@@ -24,6 +24,7 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
+    <link rel="stylesheet" th:href="@{/css/date-controls.css(v=20261126_1)}">
 </head>
 <body>
 <main class="container">
@@ -66,34 +67,12 @@
          th:text="${errorMessage}">
     </div>
 
-    <section class="panel">
-        <div class="sales-filter-toolbar">
-            <a class="month-arrow"
-               th:href="@{/payments(month=${previousMonth})}">
-                이전 달
-            </a>
-
-            <form class="sales-filter-form"
-                  th:action="@{/payments}"
-                  method="get">
-
-                <label for="month">정산월</label>
-
-                <input id="month"
-                       name="month"
-                       type="month"
-                       th:value="${selectedMonth}"
-                       required>
-
-                <button type="submit">조회</button>
-            </form>
-
-            <a class="month-arrow"
-               th:href="@{/payments(month=${nextMonth})}">
-                다음 달
-            </a>
-        </div>
-    </section>
+    <form class="sc-date-controls sc-month-controls" th:action="@{/payments}" method="get" aria-label="정산월 조회">
+        <a th:href="@{/payments(month=${previousMonth})}" aria-label="이전 달">‹</a>
+        <input id="month" name="month" type="month" th:value="${selectedMonth}" aria-label="정산월" required>
+        <button type="submit">조회</button>
+        <a th:href="@{/payments(month=${nextMonth})}" aria-label="다음 달">›</a>
+    </form>
 
     <section class="summary-grid four">
         <article class="summary-card">
