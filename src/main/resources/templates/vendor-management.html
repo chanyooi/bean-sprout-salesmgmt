@@ -169,5 +169,7 @@
   document.getElementById('initialFilter').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;document.querySelectorAll('#initialFilter button').forEach(function(x){x.classList.remove('active')});b.classList.add('active');activeInitial=b.dataset.initial||'';apply();});
 })();
 </script>
+<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=iwii3ygty2&submodules=geocoder"></script>
+<script defer th:src="@{/js/vendor-address-location.js(v=20261127_2)}"></script>
 </body>
 </html>

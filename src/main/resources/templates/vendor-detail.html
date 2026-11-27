@@ -45,6 +45,8 @@
         </div>
         <form th:action="@{/vendor-management/{vendorId}/info(vendorId=${detail.vendorId})}" method="post" style="margin-top:18px">
             <input type="hidden" name="month" th:value="${selectedMonth}">
+            <input type="hidden" name="latitude" th:value="${profile.latitude}">
+            <input type="hidden" name="longitude" th:value="${profile.longitude}">
             <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
                 <label style="display:flex;flex-direction:column;gap:7px;font-weight:700;color:#333d4b">
                     거래처명
@@ -248,5 +250,7 @@
 <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261125_flat)}"></script>
 <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
 <script defer th:src="@{/js/sales-trend.js(v=20261021_1)}"></script>
+<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=iwii3ygty2&submodules=geocoder"></script>
+<script defer th:src="@{/js/vendor-address-location.js(v=20261127_2)}"></script>
 </body>
 </html>

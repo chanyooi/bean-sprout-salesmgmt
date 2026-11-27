@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -152,6 +153,19 @@ public class VendorManagementService {
         VendorProfileEntity profile = vendorProfileRepository
                 .findByVendor_Id(vendorId)
                 .orElseGet(() -> new VendorProfileEntity(vendor));
+
+        // Address-only edits must not erase a valid existing point, or retain a stale point after a move.
+        boolean sameAddress = Objects.equals(normalizeAddress(address), normalizeAddress(profile.getAddress()));
+        if (sameAddress && latitude == null && longitude == null) {
+            latitude = profile.getLatitude();
+            longitude = profile.getLongitude();
+        } else if (!sameAddress && latitude != null && longitude != null
+                && profile.getLatitude() != null && profile.getLongitude() != null
+                && latitude.compareTo(profile.getLatitude()) == 0
+                && longitude.compareTo(profile.getLongitude()) == 0) {
+            latitude = null;
+            longitude = null;
+        }
 
         RouteCode previousRoute = profile.getRouteCode();
         Integer previousOrder = profile.getRouteOrder();
@@ -339,6 +353,10 @@ public class VendorManagementService {
                 profile.getLatitude(),
                 profile.getLongitude()
         );
+    }
+
+    private static String normalizeAddress(String address) {
+        return address == null || address.isBlank() ? null : address.trim();
     }
 
     private void validateCoordinates(
