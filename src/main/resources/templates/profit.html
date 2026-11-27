@@ -23,13 +23,13 @@
     <link rel="stylesheet" th:href="@{/css/sms-send-inline-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
+<link rel="stylesheet" th:href="@{/css/compact-operations.css(v=20261127_1)}">
 </head>
 <body>
 <main class="container">
     <section class="hero">
         <div class="hero-row">
             <div>
-                <p class="eyebrow">손익 관리</p>
                 <h1>원가·이익</h1>
             </div>
         </div>
@@ -88,7 +88,7 @@
         <div class="expense-manager-head">
             <div>
                 <h2>월 운영비</h2>
-                <p>항목이 늘어나도 분류별로 접어서 관리합니다. 월급·월세처럼 반복되는 비용은 지난달 값을 그대로 불러올 수 있습니다.</p>
+                
             </div>
             <div class="expense-manager-actions">
                 <form th:action="@{/profit/expense-items/copy-previous}" method="post">
@@ -106,17 +106,17 @@
             <div class="expense-overview-card primary">
                 <span>이번 달 운영비</span>
                 <strong th:text="|${#numbers.formatDecimal(operatingExpenseTotal, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
-                <small>아래 직접 등록한 운영비 합계</small>
+                
             </div>
             <div class="expense-overview-card">
                 <span>등록 항목</span>
                 <strong th:text="|${#lists.size(expenseItems)}개|">0개</strong>
-                <small>필요한 항목을 자유롭게 추가</small>
+                
             </div>
             <div class="expense-overview-card">
                 <span>자동 반영 원가</span>
                 <strong th:text="|${#numbers.formatDecimal(tofuPurchaseCost, 0, 'COMMA', 0, 'POINT')}원|">0원</strong>
-                <small>손두부 매입원가 · 직접 입력 불필요</small>
+                
             </div>
         </div>
 
@@ -313,7 +313,7 @@
     <script defer th:src="@{/js/premium-mobile-v2.js(v=20261125_flat)}"></script>
     <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
     <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
-    <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261125_flat)}"></script>
+    <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261127_region)}"></script>
     <form id="songcheonPcLogoutForm"
           th:action="@{/logout}"
           method="post"

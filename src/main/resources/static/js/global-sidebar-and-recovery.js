@@ -3,6 +3,7 @@
 
     function group() {
         if (path === '/') return 'dashboard';
+        if (path.startsWith('/region-sales')) return 'region';
         if (path.startsWith('/daily-entry') || path.startsWith('/upload')) return 'entry';
         if (path.startsWith('/statement')) return 'statement';
         if (path.startsWith('/vendor-management')
@@ -105,6 +106,7 @@
                 ${link('/vendors', 'route', '배송 코스', '거래처 배송 순서', 'route', 'sky')}
                 ${paymentMenu()}
                 ${link('/profit', 'profit', '원가 · 이익', '원가와 수익 분석', 'profit', 'purple')}
+                ${link('/region-sales', 'profit', '지역 매출 분석', '', 'region', 'blue')}
             </nav>
             <div class="dgs-bottom">${link('/admin/users', 'users', '사용자 관리', '계정 · 권한 설정', 'users', 'slate')}</div>`;
         document.body.appendChild(sidebar);
@@ -246,6 +248,7 @@
             ${mobileCard('/vendors', 'route', '배송 코스', '거래처 배송 순서', 'route', 'sky')}
             ${mobilePaymentMenu()}
             ${mobileCard('/profit', 'profit', '원가 · 이익', '원가와 수익 분석', 'profit', 'purple')}
+            ${mobileCard('/region-sales', 'profit', '지역 매출 분석', '', 'region', 'blue')}
             ${hasUsers ? mobileCard('/admin/users', 'users', '사용자 관리', '계정 · 권한 설정', 'users', 'slate') : ''}`;
         if (ledgerLink) nav.append(ledgerLink);
         nav.dataset.pcUpgraded = 'true';

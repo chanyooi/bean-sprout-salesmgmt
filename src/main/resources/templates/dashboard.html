@@ -25,6 +25,7 @@
     <link rel="stylesheet" th:href="@{/css/statement-send-premium-v2.css(v=20260817_2)}">
     <link rel="stylesheet" th:href="@{/css/sales-trend.css(v=20261021_1)}">
     <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
+<link rel="stylesheet" th:href="@{/css/compact-operations.css(v=20261127_1)}">
 </head>
 <body>
 
@@ -85,14 +86,14 @@
 
     <section class="sales-trend-panel" aria-label="송천 전체 월별 매출 추이">
         <div class="sales-trend-heading">
-            <div><h2>송천 전체 매출 추이</h2><p>선택한 달까지 최근 12개월의 확정 매출</p></div>
-            <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a>
+            <div><h2>월별 매출</h2></div>
+            <div class="region-dashboard-links"><a th:href="@{/region-sales(month=${selectedMonth})}">지역 매출 분석 ›</a> <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a></div>
         </div>
         <div class="sales-trend-chart" data-sales-trend="bar">
             <div class="sales-trend-data" th:each="point : ${salesTrend}"
                  th:data-label="${point.month}" th:data-amount="${point.amount}"></div>
         </div>
-        <p class="sales-trend-hint">단가 미등록 건은 제외됩니다. 이번 달은 아직 집계 중일 수 있습니다.</p>
+        
     </section>
     <section class="sc-mobile-kpi-section">
         <div class="sc-section-heading">
@@ -330,7 +331,6 @@
     <section class="hero dashboard-hero">
         <div class="hero-row">
             <div>
-                <p class="eyebrow">사업 현황</p>
                 <h1>송천 매출 관리</h1>
             </div>
 
@@ -376,14 +376,14 @@
 
     <section class="sales-trend-panel" aria-label="송천 전체 월별 매출 추이">
         <div class="sales-trend-heading">
-            <div><h2>송천 전체 매출 추이</h2><p>선택한 달까지 최근 12개월의 확정 매출</p></div>
-            <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a>
+            <div><h2>월별 매출</h2></div>
+            <div class="region-dashboard-links"><a th:href="@{/region-sales(month=${selectedMonth})}">지역 매출 분석 ›</a> <a th:href="@{/reports/monthly(month=${selectedMonth})}">월매출 상세 ›</a></div>
         </div>
         <div class="sales-trend-chart" data-sales-trend="bar">
             <div class="sales-trend-data" th:each="point : ${salesTrend}"
                  th:data-label="${point.month}" th:data-amount="${point.amount}"></div>
         </div>
-        <p class="sales-trend-hint">단가 미등록 건은 제외됩니다. 이번 달은 아직 집계 중일 수 있습니다.</p>
+        
     </section>
     <section class="dashboard-metrics final-dashboard-metrics">
         <a class="metric-card"
@@ -392,13 +392,7 @@
             <strong th:text="${#numbers.formatDecimal(sales.confirmedSales, 0, 'COMMA', 0, 'POINT') + '원'}">
                 0원
             </strong>
-            <small>
-                <span th:text="|주문 ${sales.orderCount}건 · 거래처 ${sales.vendorCount}곳|"></span>
-                <span class="box-inline"
-                      th:text="|📦 ${calendar.monthlyBoxCount.stripTrailingZeros().toPlainString()}박스|">
-                    📦 0박스
-                </span>
-            </small>
+            
         </a>
 
         <a class="metric-card"
@@ -407,7 +401,7 @@
             <strong th:text="${#numbers.formatDecimal(profit.estimatedProfit, 0, 'COMMA', 0, 'POINT') + '원'}">
                 0원
             </strong>
-            <small th:text="|예상이익률 ${profit.estimatedProfitMarginPercent}%|"></small>
+            
         </a>
 
         <a class="metric-card warning-metric"
@@ -424,7 +418,6 @@
         <article class="panel dashboard-overview-card">
             <div class="overview-card-head">
                 <div>
-                    <p class="eyebrow">이번 달 요약</p>
                     <h2>운영 현황</h2>
                 </div>
             </div>
@@ -451,7 +444,6 @@
         <article class="panel dashboard-overview-card attention-card">
             <div class="overview-card-head">
                 <div>
-                    <p class="eyebrow">확인할 항목</p>
                     <h2>입금 현황</h2>
                 </div>
                 <a class="overview-detail-link" th:href="@{/payments(month=${selectedMonth})}">관리하기</a>
@@ -472,12 +464,8 @@
 <section class="panel dashboard-calendar-section">
         <div class="panel-heading dashboard-calendar-heading">
             <div>
-                <p class="eyebrow">일별 매출</p>
                 <h2>매출 캘린더</h2>
-                <p>
-                    날짜를 누르면 당일 판매내역을 바로 확인합니다.
-                    3.5kg일반·3.5kg곱슬·숙주는 수량 1개당 박스 1개로 계산합니다.
-                </p>
+                
             </div>
 
             <div class="calendar-heading-summary">
@@ -548,7 +536,6 @@
              th:if="${calendar.selectedDate != null}">
         <div class="panel-heading split-heading">
             <div>
-                <p class="eyebrow">선택 날짜</p>
                 <h2 th:text="|${calendar.selectedDate} 판매내역|">
                     일별 판매내역
                 </h2>
@@ -673,7 +660,7 @@
 })();
 </script>
 
-    <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261125_flat)}"></script>
+    <script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261127_region)}"></script>
     <form id="songcheonPcLogoutForm"
           th:action="@{/logout}"
           method="post"
