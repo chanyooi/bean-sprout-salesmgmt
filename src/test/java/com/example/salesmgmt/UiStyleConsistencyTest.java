@@ -25,9 +25,9 @@ class UiStyleConsistencyTest {
                 assertThat(contents.stripLeading()).as("Non-standard HTML header: "+page)
                         .startsWith("<!DOCTYPE html>");
                 assertThat(contents).as("Shared UI stylesheet missing: "+page)
-                        .contains("songcheon-ui.css(v=20261125_polish1)");
+                        .contains("songcheon-ui.css(v=20261126_headings)");
                 assertThat(contents).as("Stale CSS cache version: "+page)
-                        .doesNotContain("songcheon-ui.css(v=20261125_flat)");
+                        .doesNotContain("songcheon-ui.css(v=20261125_flat)", "songcheon-ui.css(v=20261125_polish1)");
             }
         }
     }

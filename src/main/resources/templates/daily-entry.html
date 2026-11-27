@@ -16,13 +16,13 @@
     <link rel="stylesheet" th:href="@{/css/daily-entry.css(v=20261002_2)}">
     <link rel="stylesheet" th:href="@{/css/songcheon-ui.css(v=20261126_headings)}">
     <link rel="stylesheet" th:href="@{/css/date-controls.css(v=20261126_1)}">
+<link rel="stylesheet" th:href="@{/css/compact-operations.css(v=20261127_1)}">
 </head>
 <body class="daily-entry-page">
 <main class="container">
     <section class="hero sc-entry-heading">
         <div class="hero-row">
             <div>
-                <p class="eyebrow">매일 납품 등록</p>
                 <h1>납품 입력</h1>
             </div>
             <div class="button-row">
@@ -58,9 +58,7 @@
         <div class="daily-entry-help">
             <div>
                 <h2>거래처별 수량 입력</h2>
-                <p class="helper">
-                    수량은 정수 단위로 입력하세요. 기존 숫자를 지우고 저장하면 해당 품목이 삭제됩니다.
-                </p>
+                
             </div>
             <div class="button-row daily-entry-layout-toolbar">
                 <button type="button" class="secondary-button" data-layout-edit>표 수정</button>
@@ -179,9 +177,7 @@
             </div>
 
             <div class="daily-entry-save-bar">
-                <p>
-                    날짜와 주문번호는 자동으로 처리됩니다. 저장된 날짜를 다시 저장하면 수정·삭제까지 반영됩니다.
-                </p>
+                
                 <button type="submit">이 날짜 저장</button>
             </div>
         </form>
@@ -197,7 +193,7 @@
 <script defer th:src="@{/js/premium-mobile-v2.js(v=20261125_flat)}"></script>
 <script defer th:src="@{/js/premium-mobile-greenfix.js(v=20260813_1)}"></script>
 <script defer th:src="@{/js/dashboard-single-menu.js(v=20260813_1)}"></script>
-<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261125_flat)}"></script>
+<script defer th:src="@{/js/global-sidebar-and-recovery.js(v=20261127_region)}"></script>
 <script defer th:src="@{/js/pc-logout-fixed.js(v=20260814_1)}"></script>
 <script th:inline="javascript">window.dailyEntryLayout = /*[[${entryLayout}]]*/ {};</script>
 <script defer th:src="@{/js/daily-entry-layout.js(v=20261006_1)}"></script>
