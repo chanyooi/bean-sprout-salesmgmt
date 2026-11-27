@@ -64,6 +64,11 @@ public class VendorProfileEntity {
     @Column(name = "longitude", precision = 10, scale = 7)
     private BigDecimal longitude;
 
+    @Column(name = "sales_region", length = 60)
+    private String salesRegion;
+
+    public String getSalesRegion() { return salesRegion; }
+
     protected VendorProfileEntity() {
     }
 
@@ -129,7 +134,9 @@ public class VendorProfileEntity {
         this.active = active;
         this.routeCode = routeCode == null ? RouteCode.NONE : routeCode;
         this.routeOrder = this.routeCode == RouteCode.NONE ? null : routeOrder;
-        this.address = blankToNull(address);
+        String nextAddress = blankToNull(address);
+        if (!java.util.Objects.equals(this.address, nextAddress)) this.salesRegion = null;
+        this.address = nextAddress;
         this.phone = blankToNull(phone);
         this.paymentCycle = paymentCycle == null
                 ? PaymentCycle.MONTHLY

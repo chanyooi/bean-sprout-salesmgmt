@@ -18,7 +18,7 @@ public class RegionalSalesController {
     public RegionalSalesController(SalesItemRepository items, VendorProfileRepository profiles) {
         this.items=items; this.profiles=profiles;
     }
-    public record Row(Long id,String name,String address,BigDecimal lat,BigDecimal lng,BigDecimal current,BigDecimal previous,long orders) {}
+    public record Row(Long id,String name,String address,BigDecimal lat,BigDecimal lng,BigDecimal current,BigDecimal previous,long orders,String savedRegion) {}
     private static class Amount {
         String name; BigDecimal sales=BigDecimal.ZERO; Set<String> orders=new HashSet<>();
         Amount(String name){this.name=name;}
@@ -62,7 +62,7 @@ public class RegionalSalesController {
             for(var b:baselines){Amount a=b.values().get(id);if(a!=null){old=old.add(a.sales);if(sample==null)sample=a;}}
             var p=byId.get(id);
             BigDecimal prior=comparable?old.divide(BigDecimal.valueOf(baselines.size()),2,RoundingMode.HALF_UP):null;
-            rows.add(new Row(id,sample.name,p==null?null:p.getAddress(),p==null?null:p.getLatitude(),p==null?null:p.getLongitude(),now==null?BigDecimal.ZERO:now.sales,prior,now==null?0:now.orders.size()));
+            rows.add(new Row(id,sample.name,p==null?null:p.getAddress(),p==null?null:p.getLatitude(),p==null?null:p.getLongitude(),now==null?BigDecimal.ZERO:now.sales,prior,now==null?0:now.orders.size(),p==null?null:p.getSalesRegion()));
         }
         rows.sort(Comparator.comparing(Row::name));
         model.addAttribute("rows",rows);model.addAttribute("selectedMonth",selected.toString());model.addAttribute("compare",compare);
