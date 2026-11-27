@@ -24,10 +24,56 @@ const points=mode==='vendor'?rows.filter(valid).map(r=>({...r,label:r.name})):li
 points.filter(p=>!selected||p.region===selected).forEach(p=>{const label=make('span',p.label+' '+(delta(p)==null?number(p.current):signed(delta(p))),'region-map-pin '+tone(delta(p)));const marker=new naver.maps.Marker({map,position:new naver.maps.LatLng(Number(p.lat),Number(p.lng)),icon:{content:label.outerHTML,anchor:new naver.maps.Point(30,15)}});naver.maps.Event.addListener(marker,'click',()=>{selected=p.region;render();});markers.push(marker);});
 }
 $('region-clear').onclick=()=>{selected=null;render();};$('region-sort').onchange=render;document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render();});
-function initMap(){if(!window.naver?.maps){$('region-map-error').hidden=false;$('region-map').hidden=true;return;}
-try{map=new naver.maps.Map('region-map',{center:new naver.maps.LatLng(36.1195,128.3446),zoom:12});const located=rows.filter(valid);
-if(located.length>1){const bounds=new naver.maps.LatLngBounds(new naver.maps.LatLng(Number(located[0].lat),Number(located[0].lng)),new naver.maps.LatLng(Number(located[0].lat),Number(located[0].lng)));located.forEach(r=>bounds.extend(new naver.maps.LatLng(Number(r.lat),Number(r.lng))));map.fitBounds(bounds);}if(located.length===1)map.setCenter(new naver.maps.LatLng(Number(located[0].lat),Number(located[0].lng)));
-if(naver.maps.Service?.reverseGeocode){const pending=located.filter(r=>r.region.startsWith('지역 미'));let i=0;const next=()=>{if(i>=pending.length)return;const r=pending[i++];naver.maps.Service.reverseGeocode({coords:new naver.maps.LatLng(Number(r.lat),Number(r.lng)),orders:'admcode'},(status,response)=>{if(status===naver.maps.Service.Status.OK){const name=response?.v2?.results?.[0]?.region?.area3?.name;if(name)r.region=name;}render();next();});};next();}
-}catch(e){map=null;$('region-map-error').hidden=false;}}
+function fitLocated(){
+ const located=rows.filter(valid);if(!map||!located.length)return;
+ if(located.length===1){map.setCenter(new naver.maps.LatLng(Number(located[0].lat),Number(located[0].lng)));return;}
+ const first=new naver.maps.LatLng(Number(located[0].lat),Number(located[0].lng));
+ const bounds=new naver.maps.LatLngBounds(first,first);
+ located.forEach(r=>bounds.extend(new naver.maps.LatLng(Number(r.lat),Number(r.lng))));map.fitBounds(bounds);
+}
+function lookup(request,callback){
+ let done=false;const finish=(status,response)=>{if(done)return;done=true;clearTimeout(timer);callback(status,response);};
+ const timer=setTimeout(()=>finish(null,null),6000);
+ try{request(finish);}catch(e){finish(null,null);}
+}
+function resolveLocations(){
+ const service=naver.maps.Service;
+ if(!service)return;
+ const pending=rows.filter(r=>(!valid(r)&&r.address?.trim())||(valid(r)&&r.region.startsWith('지역 미')));
+ const status=$('region-location-status');let nextIndex=0,completed=0;
+ if(!pending.length)return;
+ status.textContent='위치 확인 0/'+pending.length;
+ function complete(){
+   completed++;render();
+   status.textContent=completed===pending.length?(rows.filter(r=>!valid(r)&&r.address?.trim()).length?'주소 확인 필요 '+rows.filter(r=>!valid(r)&&r.address?.trim()).length+'곳':''):'위치 확인 '+completed+'/'+pending.length;
+   if(completed===pending.length)fitLocated();else next();
+ }
+ function reverse(r){
+   if(!valid(r)||!r.region.startsWith('지역 미')||!service.reverseGeocode){complete();return;}
+   lookup(cb=>service.reverseGeocode({coords:new naver.maps.LatLng(Number(r.lat),Number(r.lng)),orders:'admcode'},cb),(s,response)=>{
+     if(s===service.Status.OK){const name=response?.v2?.results?.[0]?.region?.area3?.name;if(name)r.region=name;}
+     complete();
+   });
+ }
+ function next(){
+   if(nextIndex>=pending.length)return;const r=pending[nextIndex++];
+   if(valid(r)||!service.geocode){reverse(r);return;}
+   lookup(cb=>service.geocode({query:r.address.trim()},cb),(s,response)=>{
+     const p=response?.v2?.addresses?.[0];
+     if(s===service.Status.OK&&p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y))){
+       r.lat=Number(p.y);r.lng=Number(p.x);
+       const regionName=parse(p.jibunAddress||p.roadAddress||r.address);
+       if(!regionName.startsWith('지역 미'))r.region=regionName;
+     }
+     reverse(r);
+   });
+ }
+ for(let i=0;i<Math.min(4,pending.length);i++)next();
+}
+function initMap(){
+ if(!window.naver?.maps){$('region-map-error').hidden=false;$('region-map').hidden=true;return;}
+ try{map=new naver.maps.Map('region-map',{center:new naver.maps.LatLng(36.1195,128.3446),zoom:12});fitLocated();resolveLocations();}
+ catch(e){map=null;$('region-map-error').hidden=false;}
+}
 initMap();render();
 })();

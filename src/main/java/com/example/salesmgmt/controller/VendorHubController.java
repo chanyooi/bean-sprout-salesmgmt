@@ -203,6 +203,8 @@ public class VendorHubController {
             @RequestParam(required = false) String phone,
             @RequestParam PaymentCycle paymentCycle,
             @RequestParam(required = false) String memo,
+            @RequestParam(required = false) BigDecimal latitude,
+            @RequestParam(required = false) BigDecimal longitude,
             @RequestParam String month,
             RedirectAttributes redirectAttributes
     ) {
@@ -235,8 +237,8 @@ public class VendorHubController {
                     phone,
                     paymentCycle,
                     memo,
-                    null,
-                    null
+                    latitude,
+                    longitude
             );
 
             redirectAttributes.addFlashAttribute(
